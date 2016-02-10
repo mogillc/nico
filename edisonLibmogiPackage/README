@@ -1,0 +1,77 @@
+To install all 
+run: ./configureHexapod.sh
+
+This installs a program called danceNico that will run the dance program for a Nico hexapod.  This program will automatically begin upon boot (no SSH required!).
+
+####################################################################
+06/13/15:
+Modified configureHexapod.sh to install the danceNicoCurses program as a daemon as a systemd process preferred, or if that is not installed then it will be installed as an init.d process.  Since the Edison Yocto image uses systemd, this will be used.  If systemd is installed, then the following commands may be used to start and stop the process, or disable the process on boot:
+systemctl start nico	# This will star  the processs, but should be enabled as a boot process anwyay
+systemctl stop nico
+systemctl enable nico 	# Sets the nico service as a boot process
+systemctl disable nico	# Removes the nico service from boot
+
+To check the status of the program when it is running as a daemon, use journalctl:
+journalctl -f -u nico
+
+
+####################################################################
+04/13/15:
+The new nico pcbs uses the FTDI FT230x chip which only has support in libftdi1-1.2 (updated from libftdi1-1.0).  The previous software worked but only when setting the baud rate to 4x the desired rate.  This has been patched to work with the new driver.
+
+
+####################################################################
+12/17/14:
+This version installs a start up daemon as a service in /etc/init.d/.  For debugging purposes, to stop/restart/start the program:
+/etc/init.d/nico start
+/etc/init.d/nico stop
+/etc/init.d/nico restart
+
+This was checked a couple of times by unplugging the power and re-plugging it back in and worked in the few tests performed.  The first test involved a soft reboot, but the USB2AX LED never turned on.  More testing will need to be performed.
+
+This is based on the installation of an executable called danceNico located in /usr/local/bin/.  This can be run directly, but you may get a hangup over SSH unless you use nohup.  There is also no reconnection attempts in the software, so if the serial port becomes disconnected then the easiest way to start things back up will be to cycle the power.
+
+For any changes to the danceNico program, "make install" will need to be performed in the examples build folder for the changes to be seen by the linux service.
+
+####################################################################
+12/13/14:
+Tested and works on edison image 16 (appears as version 69 when checking for the latest version on a prior version).
+
+This version does not require a special baked edison image nor does it require installing cmake manually.
+
+The new version crudely checks for previous installations of the libraries.  If they have been installed, then they will be skipped.  The hexapod library and examples get cmake and make performed on them all the time, just incase there are updates.
+
+running "./example/dance/build/dance f f t" is deprecated.  A script called run.sh is created in the home directory, use that instead with no options.
+
+Any errors and all standard output from the installation are written into a log file.
+
+####################################################################
+9/29/14:
+An Edison Yocto image is required with a baked in version of Cmake.  Camke may be able to built from source, but is untested for this implementation.  The source has been included.
+
+To install all 
+run: ./configureHexapod.sh
+
+This will install required libraries and compile the example program dance.  To run the program to be controlled by the iOS app:
+./example/dance/build/dance f f t
+
+Also included is libcd1394 which is able to grab an image from a Chameleon camera by running the grab_gray_image example.
+
+
+-----
+Notes on compiling edison-src weekly 68:
+
+libwebsockets fails to copy test keys, therefore create dummy keys?
+	touch edison-src/build/tmp/work/core2-32-poky-linux/libwebsockets/1.23-r0/build/libwebsockets-test-server.key.pem
+	touch edison-src/build/tmp/work/core2-32-poky-linux/libwebsockets/1.23-r0/build/libwebsockets-test-server.pem
+
+Make sure to run sudo ./flashall, don't follow PDF on bps
+
+####################################################################
+before 9/28/14:
+install libusb ipk
+install libftdi
+symlink the include and lib of libftdi
+install opencv ipks
+go to /usr/lib and make all the libopencv***.so symlinks
+modify hexapod cmake files according to opencv installation

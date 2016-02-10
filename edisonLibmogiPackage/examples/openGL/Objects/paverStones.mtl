@@ -1,0 +1,15 @@
+# Blender MTL File: 'paverStones.blend'
+# Material Count: 1
+
+newmtl PaverStoneTextures
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 0.612996 0.612996 0.612996
+Ks 0.500000 0.500000 0.500000
+Ni 1.000000
+d 1.000000
+illum 2
+map_Kd diffuse.png
+map_d displacement.png
+map_Bump normals.png
+map_Ks specularity.png

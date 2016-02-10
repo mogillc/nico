@@ -1,0 +1,28 @@
+/******************************************************************************
+ *                                                                            *
+ *             Copyright (C) 2016 Mogi, LLC - All Rights Reserved             *
+ *                            Author: Matt Bunting                            *
+ *                                                                            *
+ *   Proprietary and confidential.                                            *
+ *                                                                            *
+ *   Unauthorized copying of this file via any medium is strictly prohibited  *
+ *   without the explicit permission of Mogi, LLC.                            *
+ *                                                                            *
+ *   See license in root directory for terms.                                 *
+ *   http://www.binpress.com/license/view/l/0088eb4b29b2fcff36e42134b0949f93  *
+ *                                                                            *
+ *****************************************************************************/
+
+#ifndef MOGI_VERSION_INTERNAL_H
+#define MOGI_VERSION_INTERNAL_H
+
+@PORT_HEADERS@
+
+#define MOGI_MAJOR_VERSION @MAJOR_VERSION@
+#define MOGI_MINOR_VERSION @MINOR_VERSION@
+#define MOGI_MICRO_VERSION @MICRO_VERSION@
+
+const char MOGI_VERSION_STRING[] = "@VERSION_STRING@";
+const char MOGI_SVN_VERSION[] = "@SVN_VERSION@";
+
+#endif

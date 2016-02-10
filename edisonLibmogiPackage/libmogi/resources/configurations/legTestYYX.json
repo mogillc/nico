@@ -1,0 +1,46 @@
+{
+		"type" : "HexapodLegYYX",
+		"name" : "leg-right",
+		"location": [82.665, 0.0, 33.0],
+		"orientation": [ 1.0, 0.0, 0.0, 0.0],
+		"links":
+		[
+			{
+				"name" : "base",
+				"link": [0.0, 0.0, 0.0],
+				"links" :
+				[
+					{
+						"name" : "coxa",
+						"link": [110.0, 0.0, 0.0],
+						"startAngle" : -2.0943951024,
+						"motorID" : 1,
+						"motorReverse" : false,
+						"motorCenter" : 0.0,
+						"links" :
+						[
+							{
+								"name" : "femur",
+								"link": [37.7, 0.0, -33.85],
+								"startAngle" : 0.5,
+								"motorID" : 7,
+								"motorReverse" : false,
+								"motorCenter" : 0.0,
+								"links" :
+								[
+									{
+										"name" : "tibia",
+										"link": [ -91.55, 0.0, -177.06],
+										"startAngle" : 0.0,
+										"motorID" : 13,
+										"motorReverse" : true,
+										"motorCenter" : -1.5707963268
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	}

@@ -1,0 +1,17 @@
+# Blender v2.70 (sub 0) OBJ File: 'paverStones.blend'
+# www.blender.org
+mtllib paverStones.mtl
+o Floor_Plane
+v -1.500000 -1.500000 0.000000
+v 1.500000 -1.500000 0.000000
+v -1.500000 1.500000 0.000000
+v 1.500000 1.500000 0.000000
+vt 2.000000 -1.000000
+vt 2.000000 2.000000
+vt -1.000000 2.000000
+vt -1.000000 -1.000000
+g Floor_Plane_PaverStoneTextures
+usemtl PaverStoneTextures
+s off
+f 2/1 4/2 3/3
+f 1/4 2/1 3/3

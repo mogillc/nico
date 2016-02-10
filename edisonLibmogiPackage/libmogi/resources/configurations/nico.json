@@ -1,0 +1,294 @@
+{
+	"hexapod" :
+	{
+		"name": "nico",
+		"standingHeight": 30.0,
+		"minimumFootLiftHeight" : 10.0,
+		"maximumFootLiftHeight" : 15.0,
+		"links":
+		[
+			{
+				"name" : "body",
+				"links":
+				[
+					{
+						"type" : "HexapodLegZYY",
+						"name" : "leg",
+						"location": [42.0, 0.0, 18.0],
+						"orientation": [ 1.0, 0.0, 0.0, 0.0],
+						"links":
+						[
+							{
+								"name" : "base",
+								"link": [0.0, 0.0, 15.0],
+								"links" :
+								[
+									{
+										"name" : "coxa",
+										"link": [29.0, 0.0, -24.0],
+										"startAngle" : 0.0,
+										"motorID" : 1,
+										"motorReverse" : false,
+										"motorCenter" : 0.0,
+										"links" :
+										[
+											{
+												"name" : "femur",
+												"link": [60.0, 0.0, 0.0],
+												"startAngle" : -2.2116812281,
+												"motorID" : 2,
+												"motorReverse" : false,
+												"motorCenter" : 0.0,
+												"links" :
+												[
+													{
+														"name" : "tibia",
+														"link": [95.0, 0.0, -31.0],
+														"startAngle" : 2.3561944902,
+														"motorID" : 3,
+														"motorReverse" : true,
+														"motorCenter" : -1.5707963268
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					},
+					{
+						"type" : "HexapodLegZYY",
+						"name" : "leg",
+						"location": [34.18, 53.2, 18.0],
+						"orientation": [ 0.924878, 0.0, 0.0, 0.380263],
+						"links":
+						[
+							{
+								"name" : "base",
+								"link": [0.0, 0.0, 15.0],
+								"links" :
+								[
+									{
+										"name" : "coxa",
+										"link": [29.0, 0.0, -24.0],
+										"startAngle" : 0.0,
+										"motorID" : 4,
+										"motorReverse" : false,
+										"motorCenter" : 0.0,
+										"links" :
+										[
+											{
+												"name" : "femur",
+												"link": [60.0, 0.0, 0.0],
+												"startAngle" : -2.2116812281,
+												"motorID" : 5,
+												"motorReverse" : false,
+												"motorCenter" : 0.0,
+												"links" :
+												[
+													{
+														"name" : "tibia",
+														"link": [95.0, 0.0, -31.0],
+														"startAngle" : 2.3561944902,
+														"motorID" : 6,
+														"motorReverse" : true,
+														"motorCenter" : -1.5707963268
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					},
+					{
+						"type" : "HexapodLegZYY",
+						"name" : "leg",
+						"location": [-34.18, 53.2, 18.0],
+						"orientation": [ 0.380263, 0.0, 0.0, 0.924878],
+						"links":
+						[
+							{
+								"name" : "base",
+								"link": [0.0, 0.0, 15.0],
+								"links" :
+								[
+									{
+										"name" : "coxa",
+										"link": [29.0, 0.0, -24.0],
+										"startAngle" : 0.0,
+										"motorID" : 7,
+										"motorReverse" : false,
+										"motorCenter" : 0.0,
+										"links" :
+										[
+											{
+												"name" : "femur",
+												"link": [60.0, 0.0, 0.0],
+												"startAngle" : -2.2116812281,
+												"motorID" : 8,
+												"motorReverse" : false,
+												"motorCenter" : 0.0,
+												"links" :
+												[
+													{
+														"name" : "tibia",
+														"link": [95.0, 0.0, -31.0],
+														"startAngle" : 2.3561944902,
+														"motorID" : 9,
+														"motorReverse" : true,
+														"motorCenter" : -1.5707963268
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					},
+					{
+						"type" : "HexapodLegZYY",
+						"name" : "leg",
+						"location": [-42.0, 0.0, 18.0],
+						"orientation": [ 0.0, 0.0, 0.0, 1.0],
+						"links":
+						[
+							{
+								"name" : "base",
+								"link": [0.0, 0.0, 15.0],
+								"links" :
+								[
+									{
+										"name" : "coxa",
+										"link": [29.0, 0.0, -24.0],
+										"startAngle" : 0.0,
+										"motorID" : 10,
+										"motorReverse" : false,
+										"motorCenter" : 0.0,
+										"links" :
+										[
+											{
+												"name" : "femur",
+												"link": [60.0, 0.0, 0.0],
+												"startAngle" : -2.2116812281,
+												"motorID" : 11,
+												"motorReverse" : false,
+												"motorCenter" : 0.0,
+												"links" :
+												[
+													{
+														"name" : "tibia",
+														"link": [95.0, 0.0, -31.0],
+														"startAngle" : 2.3561944902,
+														"motorID" : 12,
+														"motorReverse" : true,
+														"motorCenter" : -1.5707963268
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					},
+					{
+						"type" : "HexapodLegZYY",
+						"name" : "leg",
+						"location": [-34.18, -53.2, 18.0],
+						"orientation": [ -0.380263, 0.0, 0.0, 0.924878],
+						"links":
+						[
+							{
+								"name" : "base",
+								"link": [0.0, 0.0, 15.0],
+								"links" :
+								[
+									{
+										"name" : "coxa",
+										"link": [29.0, 0.0, -24.0],
+										"startAngle" : 0.0,
+										"motorID" : 13,
+										"motorReverse" : false,
+										"motorCenter" : 0.0,
+										"links" :
+										[
+											{
+												"name" : "femur",
+												"link": [60.0, 0.0, 0.0],
+												"startAngle" : -2.2116812281,
+												"motorID" : 14,
+												"motorReverse" : false,
+												"motorCenter" : 0.0,
+												"links" :
+												[
+													{
+														"name" : "tibia",
+														"link": [95.0, 0.0, -31.0],
+														"startAngle" : 2.3561944902,
+														"motorID" : 15,
+														"motorReverse" : true,
+														"motorCenter" : -1.5707963268
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					},
+					{
+						"type" : "HexapodLegZYY",
+						"name" : "leg",
+						"location": [34.18, -53.2, 18.0],
+						"orientation": [ 0.924878, 0.0, 0.0, -0.380263],
+						"links":
+						[
+							{
+								"name" : "base",
+								"link": [0.0, 0.0, 15.0],
+								"links" :
+								[
+									{
+										"name" : "coxa",
+										"link": [29.0, 0.0, -24.0],
+										"startAngle" : 0.0,
+										"motorID" : 16,
+										"motorReverse" : false,
+										"motorCenter" : 0.0,
+										"links" :
+										[
+											{
+												"name" : "femur",
+												"link": [60.0, 0.0, 0.0],
+												"startAngle" : -2.2116812281,
+												"motorID" : 17,
+												"motorReverse" : false,
+												"motorCenter" : 0.0,
+												"links" :
+												[
+													{
+														"name" : "tibia",
+														"link": [95.0, 0.0, -31.0],
+														"startAngle" : 2.3561944902,
+														"motorID" : 18,
+														"motorReverse" : true,
+														"motorCenter" : -1.5707963268
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	}
+}
