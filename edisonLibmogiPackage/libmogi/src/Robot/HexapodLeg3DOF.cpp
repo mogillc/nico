@@ -23,6 +23,7 @@ extern "C" {
 
 	namespace Mogi {
 		using namespace Math;
+		using namespace App;
 
 		namespace Robot {
 
@@ -41,25 +42,25 @@ extern "C" {
 			int HexapodLeg3DOF::setTibiaDimensions(const Vector* dimensions) {
 				return setNodeDimensions(3, dimensions);
 			}
-#ifdef LIBJSONCPP_FOUND
-			int HexapodLeg3DOF::setConfigurationFromJSONValue( Json::Value leg ) {
+
+			int HexapodLeg3DOF::setConfigurationFromJSONValue( JsonValueInterface& leg ) {
 
 				setStringValueIfSafe( &name, leg["name"]);
 
 
 				//setBase(location, orientation);
 
-				Json::Value legLinks = leg["links"];
+				JsonValueInterface legLinks = leg["links"];
 				if (!legLinks.isArray() || legLinks.size() != 1) {
 					return -1;
 				}
 
-				Json::Value base = legLinks[0];
+				JsonValueInterface base = legLinks[0];
 				if (base["name"].isString()) {	// TODO
 				}
 
 				Vector link(3);
-				Json::Value baseLink = base["link"];
+				JsonValueInterface baseLink = base["link"];
 				if (baseLink.isArray() && baseLink.size() == 3) {
 					for (unsigned int j = 0; j < 3; j++) {
 						link(j) = baseLink[j].asDouble();
@@ -67,20 +68,20 @@ extern "C" {
 					setBaseDimensions(&link);
 				}
 
-				Json::Value baseLinks = base["links"];
+				JsonValueInterface baseLinks = base["links"];
 				if (!baseLinks.isArray() || baseLinks.size() != 1) {
 					std::cerr << "Unable to parse JSON configuration for HexapodLegZYY for base links of " << name << std::endl;
 					return -1;
 				}
 
-				Json::Value coxa = baseLinks[0];
+				JsonValueInterface coxa = baseLinks[0];
 
 				if (!coxa.isObject()) {
 					std::cerr << "Unable to parse JSON configuration for HexapodLegZYY for coxa of" << name << std::endl;
 					return -1;
 				}
 
-				Json::Value coxaLink = coxa["link"];
+				JsonValueInterface coxaLink = coxa["link"];
 				if (coxaLink.isArray() && coxaLink.size() == 3) {
 					for (unsigned int j = 0; j < 3; j++) {
 						link(j) = coxaLink[j].asDouble();
@@ -110,21 +111,21 @@ extern "C" {
 				//			}
 				//		}
 
-				Json::Value coxaLinks = coxa["links"];
+				JsonValueInterface coxaLinks = coxa["links"];
 
 				if (!coxaLinks.isArray() || coxaLinks.size() != 1) {
 					std::cerr << "Unable to parse JSON configuration for HexapodLegZYY for coxa links of" << name << std::endl;
 					return -1;
 				}
 
-				Json::Value femur = coxaLinks[0];
+				JsonValueInterface femur = coxaLinks[0];
 
 				if (!femur.isObject()) {
 					std::cerr << "Unable to parse JSON configuration for HexapodLegZYY for femur of" << name << std::endl;
 					return -1;
 				}
 
-				Json::Value femurLink = femur["link"];
+				JsonValueInterface femurLink = femur["link"];
 				if (femurLink.isArray() && femurLink.size() == 3) {
 					for (unsigned int j = 0; j < 3; j++) {
 						link(j) = femurLink[j].asDouble();
@@ -153,21 +154,21 @@ extern "C" {
 				//			}
 				//		}
 
-				Json::Value femurLinks = femur["links"];
+				JsonValueInterface femurLinks = femur["links"];
 
 				if (!femurLinks.isArray() || femurLinks.size() != 1) {
 					std::cerr << "Unable to parse JSON configuration for HexapodLegZYY for femur links of" << name << std::endl;
 					return -1;
 				}
 
-				Json::Value tibia = femurLinks[0];
+				JsonValueInterface tibia = femurLinks[0];
 
 				if (!tibia.isObject()) {
 					std::cerr << "Unable to parse JSON configuration for HexapodLegZYY for tibia of" << name << std::endl;
 					return -1;
 				}
 
-				Json::Value tibiaLink = tibia["link"];
+				JsonValueInterface tibiaLink = tibia["link"];
 				if (tibiaLink.isArray() && tibiaLink.size() == 3) {
 					for (unsigned int j = 0; j < 3; j++) {
 						link(j) = tibiaLink[j].asDouble();
@@ -198,7 +199,7 @@ extern "C" {
 				
 				return 0;
 			}
-#endif
+
 		}
 	}
 #ifdef _cplusplus

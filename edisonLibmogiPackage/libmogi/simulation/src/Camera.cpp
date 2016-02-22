@@ -37,19 +37,23 @@ Camera::Camera() {
 	isProjection = true;
 }
 
-void Camera::set(aiCamera* camera) {
-	aspect = camera->mAspect;
-	farClip = camera->mClipPlaneFar;
-	nearClip = camera->mClipPlaneNear;
-	FOV = camera->mHorizontalFOV;
-	name = camera->mName.C_Str();
-	orientation(0) = camera->mPosition[0];
-	orientation(1) = camera->mPosition[1];
-	orientation(2) = camera->mPosition[2];
-	// NOT FINISHED!
-	// camera->mUp // the Up vector;
-	// camera->mLookAt // the vector that the camera is looking at
-}
+	void Camera::setName( std::string name ) {
+		this->name = name;
+	}
+
+//void Camera::set(aiCamera* camera) {
+//	aspect = camera->mAspect;
+//	farClip = camera->mClipPlaneFar;
+//	nearClip = camera->mClipPlaneNear;
+//	FOV = camera->mHorizontalFOV;
+//	name = camera->mName.C_Str();
+//	orientation(0) = camera->mPosition[0];
+//	orientation(1) = camera->mPosition[1];
+//	orientation(2) = camera->mPosition[2];
+//	// NOT FINISHED!
+//	// camera->mUp // the Up vector;
+//	// camera->mLookAt // the vector that the camera is looking at
+//}
 
 void Camera::makeProjection(int xRes, int yRes, float fov, float clipNear,
 		float clipFar) {

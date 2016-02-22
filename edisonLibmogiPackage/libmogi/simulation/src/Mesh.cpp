@@ -39,24 +39,24 @@ MBmesh::~MBmesh() {
 	bones.clear();
 }
 
-MBmesh& MBmesh::operator=(const MBmesh& param) {
-	name = param.name;
-	indices = param.indices;
-	data = param.data;
-
-	glBindBuffer(GL_ARRAY_BUFFER, vertexBufferObject);
-	glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(VertexData), &data[0],
-			GL_STATIC_DRAW);
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferObject);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int),
-			&indices[0], GL_STATIC_DRAW);
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-	return *this;
-}
+//MBmesh& MBmesh::operator=(const MBmesh& param) {
+//	name = param.name;
+//	indices = param.indices;
+//	data = param.data;
+//
+//	glBindBuffer(GL_ARRAY_BUFFER, vertexBufferObject);
+//	glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(VertexData), &data[0],
+//			GL_STATIC_DRAW);
+//
+//	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferObject);
+//	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int),
+//			&indices[0], GL_STATIC_DRAW);
+//
+//	glBindBuffer(GL_ARRAY_BUFFER, 0);
+//	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+//
+//	return *this;
+//}
 
 int MBmesh::drawWithMaterials(MBshader* shader,
 		std::vector<MBmaterial*>& materials) {
@@ -121,106 +121,32 @@ int MBmesh::draw(MBshader* shader) {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-	return totalTriangles;
+	return getNumberOfVertices()/3;
 }
 
-int MBmesh::set(aiMesh* mesh, aiMaterial** materials, std::string fileLocation,
-		int materialIDOffset) {
-	// Name:
-	if (mesh->mName.length <= 1) {
-		name = fileLocation;
-	} else {
-		name = mesh->mName.C_Str();
-	}
-	std::cout << "\t\tAdding mesh: " << name << std::endl;
-
-	// Bitangents: (not needed...?)
-	objectLocation = fileLocation;
-	// Bones:
-	bones = getBones(mesh);
-
-	// Faces (indices):
-	// indices.clear();
-	for (int i = 0; i < mesh->mNumFaces; i++) {
-		aiFace face = mesh->mFaces[i];
-		for (int j = 0; j < face.mNumIndices; j++)  // 0..2
-				{
-			indices.push_back(face.mIndices[j]);
-		}
+	void MBmesh::setObjectLocation(const std::string& path) {
+		this->objectLocation = path;
 	}
 
-	// Material Index:
-	materialIndex = mesh->mMaterialIndex + materialIDOffset;
-
-	// Vertex Colors:
-	// Normals:
-	// Tangents:
-	// Texture Coordinates:
-	// Vertices:
-	aiColor4D col;
-	aiMaterial* mat = materials[mesh->mMaterialIndex];
-	aiGetMaterialColor(mat, AI_MATKEY_COLOR_DIFFUSE, &col);
-	Vector3d defaultColor;
-	defaultColor.x = col.r;
-	defaultColor.y = col.g;
-	defaultColor.z = col.b;
-	// data.clear();
-	// importTextures(mat);
-	for (int i = 0; i < mesh->mNumVertices; i++) {
-		VertexData tmp;
-		Vector3d tmpVec;
-
-		// position
-		tmpVec.x = mesh->mVertices[i].x;
-		tmpVec.y = mesh->mVertices[i].y;
-		tmpVec.z = mesh->mVertices[i].z;
-		tmp.position = tmpVec;
-
-		// normals
-		tmpVec.x = mesh->mNormals[i].x;
-		tmpVec.y = mesh->mNormals[i].y;
-		tmpVec.z = mesh->mNormals[i].z;
-		tmp.normal = tmpVec;
-
-		// tangent
-		if (mesh->mTangents) {
-			tmpVec.x = mesh->mTangents[i].x;
-			tmpVec.y = mesh->mTangents[i].y;
-			tmpVec.z = mesh->mTangents[i].z;
-		} else {
-			tmpVec.x = 1.0;
-			tmpVec.y = tmpVec.z = 0;
-		}
-		tmp.tangent = tmpVec;
-
-		// colors
-		if (mesh->mColors[0]) {
-			//!= material color
-			tmpVec.x = mesh->mColors[0][i].r;
-			tmpVec.y = mesh->mColors[0][i].g;
-			tmpVec.z = mesh->mColors[0][i].b;
-		} else {
-			tmpVec = defaultColor;
-		}
-		tmp.color = tmpVec;
-
-		// color
-		if (mesh->mTextureCoords[0]) {
-			tmpVec.x = mesh->mTextureCoords[0][i].x;
-			tmpVec.y = mesh->mTextureCoords[0][i].y;
-		} else {
-			tmpVec.x = tmpVec.y = tmpVec.z = 0.0;
-		}
-		tmp.U = tmpVec.x;
-		tmp.V = tmpVec.y;
-		data.push_back(tmp);
+	void MBmesh::setBones( const std::vector<Bone*>& bones) {
+		this->bones = bones;
 	}
 
-	loadVerticesToVertexBufferObject();
+	void MBmesh::setMaterialIndex( const int& index ) {
+		this->materialIndex = index;
+	}
 
-	totalTriangles = mesh->mNumVertices / 3;
-	return totalTriangles;
-}
+	void MBmesh::setIndices( const std::vector<unsigned int>& indices ) {
+		this->indices = indices;
+	}
+
+	void MBmesh::setVertexData( const std::vector<VertexData>& vertexData ) {
+		data = vertexData;
+	}
+
+	int MBmesh::getNumberOfVertices() {
+		return data.size();
+	}
 
 	void MBmesh::setColor(float red, float green, float blue) {
 		for (std::vector<VertexData>::iterator it = data.begin(); it != data.end(); it++) {
@@ -248,6 +174,43 @@ void MBmesh::matchBonesToNodes(Math::Node* rootNode) {
 		bones[i]->findNode(rootNode);
 	}
 }
+
+	void MBmesh::generateCodeFromMesh() {
+		std::cout << "Generated post process:" << std::endl;
+
+		std::cout << "void generatedPostProcessMeshCode(MBmesh* meshToSet) {" << std::endl;
+		std::cout << "VertexData data;" << std::endl;
+		std::cout << "std::vector<VertexData> vertexData;" << std::endl;
+		for (std::vector<VertexData>::iterator it = getVertexData().begin(); it != getVertexData().end(); it++) {
+			std::cout << "data.normal.x = " << (*it).normal.x << ";" << std::endl;
+			std::cout << "data.normal.y = " << (*it).normal.y << ";" << std::endl;
+			std::cout << "data.normal.z = " << (*it).normal.z << ";" << std::endl;
+			std::cout << "data.position.x = " << (*it).position.x << ";" << std::endl;
+			std::cout << "data.position.y = " << (*it).position.y << ";" << std::endl;
+			std::cout << "data.position.z = " << (*it).position.z << ";" << std::endl;
+			std::cout << "data.color.x = " << (*it).color.x << ";" << std::endl;
+			std::cout << "data.color.y = " << (*it).color.y << ";" << std::endl;
+			std::cout << "data.color.z = " << (*it).color.z << ";" << std::endl;
+			std::cout << "data.tangent.x = " << (*it).tangent.x << ";" << std::endl;
+			std::cout << "data.tangent.y = " << (*it).tangent.y << ";" << std::endl;
+			std::cout << "data.tangent.z = " << (*it).tangent.z << ";" << std::endl;
+			std::cout << "data.U = " << (*it).U << ";" << std::endl;
+			std::cout << "data.V = " << (*it).V << ";" << std::endl;
+			std::cout << "vertexData.push_back(data);" << std::endl;
+		}
+
+		std::cout << "unsigned int index;" << std::endl;
+		std::cout << "std::vector<unsigned int> indices;" << std::endl;
+		for (std::vector<unsigned int>::iterator it = getIndices().begin(); it != getIndices().end(); it++) {
+			std::cout << "index = " << (*it) << ";" << std::endl;
+			std::cout << "indices.push_back(index);" << std::endl;
+		}
+		std::cout << "meshToSet->setVertexData(vertexData);" << std::endl;
+		std::cout << "meshToSet->setIndices(indices);" << std::endl;
+		std::cout << "meshToSet->loadVerticesToVertexBufferObject();" << std::endl;
+		std::cout << "}" << std::endl;
+
+	}
 
 #ifdef _cplusplus
 }

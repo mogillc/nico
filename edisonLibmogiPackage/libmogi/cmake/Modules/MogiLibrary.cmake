@@ -81,10 +81,13 @@ function( new_mogi_library LIBNAME )
 	file(GLOB_RECURSE ${LIBNAME}_HEADERS "include/*.h")
 	if( BUILD_FOR_IOS )
 		set( ${LIBNAME}_SOURCES ${${LIBNAME}_SOURCES} 
-								${CMAKE_SOURCE_DIR}/port/ios/resourceObject.mm )
+								${CMAKE_SOURCE_DIR}/port/ios/resourceObject.mm 
+								${CMAKE_SOURCE_DIR}/port/ios/jsonWrapper.mm )
 		set( ${LIBNAME}_HEADERS ${${LIBNAME}_HEADERS} 
 								${CMAKE_SOURCE_DIR}/port/ios/resourceObject.h
-								${CMAKE_SOURCE_DIR}/port/ios/resourceInterface.h )
+								${CMAKE_SOURCE_DIR}/port/ios/resourceInterface.h
+								${CMAKE_SOURCE_DIR}/port/ios/jsonWrapper.h
+								${CMAKE_SOURCE_DIR}/port/ios/jsonWrapperIOS.h )
 		#message( "${LIBNAME}_SOURCES=${${LIBNAME}_SOURCES}")
 	endif()
 	set(c_sources     ${${LIBNAME}_SOURCES} ${${LIBNAME}_HEADERS})

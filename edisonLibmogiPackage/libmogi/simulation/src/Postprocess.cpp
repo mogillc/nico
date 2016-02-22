@@ -15,6 +15,7 @@
 
 #include "postprocess.h"
 #include <mogi.h>
+#include <math.h>
 
 #ifdef _cplusplus
 extern "C" {
@@ -22,6 +23,8 @@ extern "C" {
 
 using namespace Mogi;
 using namespace Simulation;
+
+	void generatedPostProcessMeshCode(MBmesh* meshToSet);
 
 MBpostprocess::MBpostprocess() {
 	frameBuffer = new FrameBuffer();
@@ -44,14 +47,6 @@ MBpostprocess::MBpostprocess() {
 	modelViewProjectionMatrix = camera.getProjectionMatrix()
 			* camera.getViewMatrix();
 	biasedModelViewProjectionMatrix = biasMatrix * modelViewProjectionMatrix;
-
-	GLfloat tempVertices[] = { -1, -1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1,
-			1, 0, 0, 1, -1, 1, 0, 0, 0, 1, 1, 0, 0, 1, -1, -1, 0, 0, 0, 1, 1, 0,
-			0, 1, 1, -1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1 };
-	planeVertices = new GLfloat[60];
-	for (int i = 0; i < 60; i++) {
-		planeVertices[i] = tempVertices[i];
-	}
 
 	// renderPlane.vertexData = planeVertices;
 	// renderPlane.vertexSize = sizeof(tempVertices);
@@ -80,24 +75,32 @@ MBpostprocess::MBpostprocess() {
 	basicShader.initialize(vertexSource.c_str(), fragmentSource.c_str());
 	std::cout << "Done." << std::endl;
 
-	Scene temp;	// TODO: this is really hacky.
-	temp.loadObject("postProcess.dae", postProcessPlane.c_str());
-	std::vector<MBmesh*> tempMeshes;
+	generatedPostProcessMeshCode(&renderPlane);
 
-	if (temp.rootNode.numberOfChildren() > 0) {
-		tempMeshes = temp.nodeToMeshMap[temp.rootNode.child(0)];
-	}
-	if (tempMeshes.size() == 1) {	// this is a little strict, but we onl expect a single mesh here.
-		renderPlane = *tempMeshes[0];
-	} else {
-		std::cout << "Error!  Could not load mesh from " << postProcessPlane
-				<< "/postProcess.dae, POST PROCESSING WILL NOT WORK!"
-				<< std::endl;
-	}
+	// The below commented code was used just to generate the code for the
+	// function: void generatedPostProcessMeshCode(MBmesh* meshToSet);
+	// which is used above.
+
+//	Scene temp;	// TODO: this is really hacky.
+////	temp.loadObject("postProcess.dae", postProcessPlane.c_str());
+//	Importer::loadObject(&temp, "postProcess.dae", postProcessPlane.c_str());
+//
+//	std::vector<MBmesh*> tempMeshes;
+//
+//	if (temp.rootNode.numberOfChildren() > 0) {
+//		tempMeshes = temp.nodeToMeshMap[temp.rootNode.child(0)];
+//	}
+//	if (tempMeshes.size() == 1) {	// this is a little strict, but we onl expect a single mesh here.
+//		renderPlane = *tempMeshes[0];
+//		renderPlane.generateCodeFromMesh();
+//	} else {
+//		std::cout << "Error!  Could not load mesh from " << postProcessPlane
+//				<< "/postProcess.dae, POST PROCESSING WILL NOT WORK!"
+//				<< std::endl;
+//	}
 }
 
 MBpostprocess::~MBpostprocess() {
-	delete[] planeVertices;
 }
 
 Texture& MBpostprocess::getDepthTexture() {
@@ -323,6 +326,119 @@ int MBdeferredLighting::process(MBGBuffer* geometryBuffer, Camera& renderCamera,
 	glDisable(GL_BLEND);
 	return 0;
 }
+
+
+	void generatedPostProcessMeshCode(MBmesh* meshToSet) {
+		VertexData data;
+		std::vector<VertexData> vertexData;
+		data.normal.x = 0;
+		data.normal.y = 0;
+		data.normal.z = 1;
+		data.position.x = -1;
+		data.position.y = -1;
+		data.position.z = 0;
+		data.color.x = 0.6;
+		data.color.y = 0.6;
+		data.color.z = 0.6;
+		data.tangent.x = 1;
+		data.tangent.y = 0;
+		data.tangent.z = 0;
+		data.U = 0;
+		data.V = 0;
+		vertexData.push_back(data);
+		data.normal.x = 0;
+		data.normal.y = 0;
+		data.normal.z = 1;
+		data.position.x = 1;
+		data.position.y = -1;
+		data.position.z = 0;
+		data.color.x = 0.6;
+		data.color.y = 0.6;
+		data.color.z = 0.6;
+		data.tangent.x = 1;
+		data.tangent.y = 0;
+		data.tangent.z = 0;
+		data.U = 0;
+		data.V = 0;
+		vertexData.push_back(data);
+		data.normal.x = 0;
+		data.normal.y = 0;
+		data.normal.z = 1;
+		data.position.x = 1;
+		data.position.y = 1;
+		data.position.z = 0;
+		data.color.x = 0.6;
+		data.color.y = 0.6;
+		data.color.z = 0.6;
+		data.tangent.x = 1;
+		data.tangent.y = 0;
+		data.tangent.z = 0;
+		data.U = 0;
+		data.V = 0;
+		vertexData.push_back(data);
+		data.normal.x = 0;
+		data.normal.y = 0;
+		data.normal.z = 1;
+		data.position.x = -1;
+		data.position.y = 1;
+		data.position.z = 0;
+		data.color.x = 0.6;
+		data.color.y = 0.6;
+		data.color.z = 0.6;
+		data.tangent.x = 1;
+		data.tangent.y = 0;
+		data.tangent.z = 0;
+		data.U = 0;
+		data.V = 0;
+		vertexData.push_back(data);
+		data.normal.x = 0;
+		data.normal.y = 0;
+		data.normal.z = 1;
+		data.position.x = -1;
+		data.position.y = -1;
+		data.position.z = 0;
+		data.color.x = 0.6;
+		data.color.y = 0.6;
+		data.color.z = 0.6;
+		data.tangent.x = 1;
+		data.tangent.y = 0;
+		data.tangent.z = 0;
+		data.U = 0;
+		data.V = 0;
+		vertexData.push_back(data);
+		data.normal.x = 0;
+		data.normal.y = 0;
+		data.normal.z = 1;
+		data.position.x = 1;
+		data.position.y = 1;
+		data.position.z = 0;
+		data.color.x = 0.6;
+		data.color.y = 0.6;
+		data.color.z = 0.6;
+		data.tangent.x = 1;
+		data.tangent.y = 0;
+		data.tangent.z = 0;
+		data.U = 0;
+		data.V = 0;
+		vertexData.push_back(data);
+		unsigned int index;
+		std::vector<unsigned int> indices;
+		index = 0;
+		indices.push_back(index);
+		index = 1;
+		indices.push_back(index);
+		index = 2;
+		indices.push_back(index);
+		index = 3;
+		indices.push_back(index);
+		index = 4;
+		indices.push_back(index);
+		index = 5;
+		indices.push_back(index);
+		meshToSet->setVertexData(vertexData);
+		meshToSet->setIndices(indices);
+		meshToSet->loadVerticesToVertexBufferObject();
+	}
 
 #ifdef _cplusplus
 }

@@ -325,7 +325,7 @@ namespace Mogi {
 			bool terminate;
 
 		public:
-#ifdef LIBJSONCPP_FOUND
+
 			/*! \brief Sets parameters of the hexapod if defined in the JSON configuration.
 
 			 Note: This or an inherited version MUST be performed, otherwise the node
@@ -334,8 +334,7 @@ namespace Mogi {
 			 \param jsonConfiguration The JSON string containing the configuration.
 			 \return 0 if success, otherwise a failure occurred.
 			 */
-			int setConfigurationFromJSONValue(Json::Value jsonConfiguration);
-#endif
+			int setConfigurationFromJSONValue(App::JsonValueInterface& jsonConfiguration);
 
 			/*! \brief Gets the body Node.
 			 \return The body's Node.

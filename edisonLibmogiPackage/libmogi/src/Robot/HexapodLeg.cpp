@@ -96,8 +96,8 @@ extern "C" {
 			Node* HexapodLeg::getBaseNode() {
 				return nodeLocation;
 			}
-#ifdef LIBJSONCPP_FOUND
-			HexapodLeg* HexapodLeg::createFromJSON( Json::Value jsonConfiguration, Math::Node* root ) {
+
+			HexapodLeg* HexapodLeg::createFromJSON( App::JsonValueInterface& jsonConfiguration, Math::Node* root ) {
 				if (!jsonConfiguration["type"].isString()) {
 					return NULL;
 				}
@@ -126,7 +126,7 @@ extern "C" {
 				
 				return result;
 			}
-#endif
+
 		}
 	}
 

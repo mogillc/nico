@@ -53,27 +53,27 @@ KeyScale::KeyScale() {
 	value.setLength(3);
 }
 
-void KeyLocation::set(aiVectorKey* key) {
-	time = key->mTime;
-	value(0) = key->mValue.x;
-	value(1) = key->mValue.y;
-	value(2) = key->mValue.z;
-}
-
-void KeyScale::set(aiVectorKey* key) {
-	time = key->mTime;
-	value(0) = key->mValue.x;
-	value(1) = key->mValue.y;
-	value(2) = key->mValue.z;
-}
-
-void MBkeyRotation::set(aiQuatKey* key) {
-	time = key->mTime;
-	value(0) = key->mValue.w;
-	value(1) = key->mValue.x;
-	value(2) = key->mValue.y;
-	value(3) = key->mValue.z;
-}
+//void KeyLocation::set(aiVectorKey* key) {
+//	time = key->mTime;
+//	value(0) = key->mValue.x;
+//	value(1) = key->mValue.y;
+//	value(2) = key->mValue.z;
+//}
+//
+//void KeyScale::set(aiVectorKey* key) {
+//	time = key->mTime;
+//	value(0) = key->mValue.x;
+//	value(1) = key->mValue.y;
+//	value(2) = key->mValue.z;
+//}
+//
+//void MBkeyRotation::set(aiQuatKey* key) {
+//	time = key->mTime;
+//	value(0) = key->mValue.w;
+//	value(1) = key->mValue.x;
+//	value(2) = key->mValue.y;
+//	value(3) = key->mValue.z;
+//}
 
 #ifdef _cplusplus
 }

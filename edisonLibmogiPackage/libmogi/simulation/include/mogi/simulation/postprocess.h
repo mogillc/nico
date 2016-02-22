@@ -38,7 +38,6 @@ protected:
 	Math::Matrix biasedModelViewProjectionMatrix;
 
 	MBmesh renderPlane;
-	GLfloat* planeVertices;
 
 	// IO
 	FrameBuffer* frameBuffer;

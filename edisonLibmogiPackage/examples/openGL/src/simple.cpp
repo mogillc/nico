@@ -35,6 +35,8 @@
 #include <mogi/simulation/light.h>
 #include <mogi/simulation/postprocess.h>
 
+#include <mogi/simulation/importer/importer.h>
+
 #define N_LIGHTS (2)
 
 using namespace Mogi;
@@ -149,12 +151,12 @@ void init(int argc, char *argv[])
 	paverStoneModel = new Scene;
 	paverStoneModel->cameras.push_back(camera);
 
-	paverStoneModel->loadObject("paverStones.obj","Objects");
+	Importer::loadObject(paverStoneModel,"paverStones.obj","Objects");
 	//paverStoneModel->attachObject("tyke.dae", "Objects");
-	paverStoneModel->loadObject("brickWall.obj", "Objects/brickWall");
-	paverStoneModel->loadObject("testCube.ply", "Objects");
+	Importer::loadObject(paverStoneModel,"brickWall.obj", "Objects/brickWall");
+	Importer::loadObject(paverStoneModel,"testCube.ply", "Objects");
 
-	Node* node = paverStoneModel->loadObject("tyke.dae", "Objects");//paverStoneModel->findNodeByName("Form38");
+	Node* node = Importer::loadObject(paverStoneModel,"tyke.dae", "Objects");//paverStoneModel->findNodeByName("Form38");
 	if (node) {
 		node->setLocation(0, 0, 0.2);
 		node->setScale(.1);
@@ -162,7 +164,7 @@ void init(int argc, char *argv[])
 
 	char newName[64];
 	for (int i = 0; i < N_LIGHTS; i++) {
-		node = paverStoneModel->loadObject("lightModel.dae", "Objects");
+		node = Importer::loadObject(paverStoneModel,"lightModel.dae", "Objects");
 		// paverStoneModel->findNodeByName("lightModel");
 		if (node) {
 			node->setLocation(0, 0, -1);

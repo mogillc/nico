@@ -17,11 +17,8 @@
 static const char* const Communicator_C_Id = "$Id$";
 #endif
 
-#ifdef LIBJSONCPP_FOUND
-
 #include <iostream>
 
-#include <json/json.h>
 #include <math.h>
 #include "appcomm.h"
 
@@ -39,7 +36,7 @@ private:
 	std::map<std::string, AppOption*>* optionSet;
 	std::string optionTitle;
 	JsonSubject* subject;
-	void update(const Json::Value& newValue) {
+	void update( JsonValueInterface& newValue) {
 		if (newValue.isString()) {
 			if (newValue.asString() == optionTitle) {
 				//					std::cerr << "Option success for " <<
@@ -71,7 +68,7 @@ int JsonOptionPruner::objectCount = 0;
 class JsonDoubleObserver: public JsonValueObserver {
 private:
 	double* pointerToValue;
-	void update(const Json::Value& newValue) {
+	void update( JsonValueInterface& newValue) {
 		if (newValue.isDouble()) {
 			*pointerToValue = newValue.asDouble();
 		}
@@ -265,7 +262,7 @@ std::string AppOption::typeString() {
 std::string Communicator::generateTransmitBuffer() {
 	static int protocolCount = 0;
 	protocolCount++;
-	Json::Value root;
+	JsonValueInterface root;
 
 	root["protocolCount"] = protocolCount;
 
@@ -315,7 +312,7 @@ std::string Communicator::generateTransmitBuffer() {
 
 		commandIndex++;
 	}
-	//std::cout << "result : " << root.toStyledString() ; // ADRIAN: uncomment
+//	std::cout << "result : " << root.toStyledString() << std::endl; // ADRIAN: uncomment
 
 	return root.toStyledString();
 }
@@ -524,4 +521,3 @@ int Communicator::handlePossibleBuffer() {
 }
 #endif
 
-#endif // LIBJSONCPP_FOUND

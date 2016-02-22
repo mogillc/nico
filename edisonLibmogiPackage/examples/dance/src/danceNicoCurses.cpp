@@ -56,7 +56,7 @@ public:
 class JsonStringObserver : public App::JsonValueObserver {
 private:
 	DanceState *dancestate;
-	void update( const Json::Value& newValue ) {
+	void update( Mogi::App::JsonValueInterface& newValue ) {
 		if (newValue.isString()) {
 			std::string value = newValue.asString();
 			std::cout << "Cool! Got the string: " << value << std::endl;

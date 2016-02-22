@@ -22,7 +22,7 @@
 
 #include <vector>
 
-#include <assimp/scene.h>
+//#include <assimp/scene.h>
 
 namespace Mogi {
 namespace Simulation {
@@ -57,15 +57,30 @@ public:
 
 	MBmaterial();
 
-	void set(aiMaterial *material, std::string directoryOfObject);
+	void setName(const std::string& name);
+	const std::string& getName() { return name; }
+	void setDirectory(const std::string& path);
+	const std::string& getDirectory() { return directory; }
+
+//	void set(aiMaterial *material, std::string directoryOfObject);
 
 	void setColorDiffuse(float red, float green, float blue);
+	void setColorAmbient(float red, float green, float blue);
+	void setColorEmissive(float red, float green, float blue);
+	void setColorSpecular(float red, float green, float blue);
+	void setColorTransparent(float red, float green, float blue);
 
-	void importTextures(aiMaterial *material);
-	int loadTextures(aiMaterial *material, aiTextureType type,
-			std::string uniformVariable);
+	void setShininess(float level, float strength);
+	void setMetallicLevel(float level);
+
+	void forceDisable(bool colorMap, bool normalMap, bool heightMap, bool specularityMap);
+
+//	void importTextures(aiMaterial *material);
+//	int loadTextures(aiMaterial *material, aiTextureType type, std::string uniformVariable);
 
 	void sendToShader(MBshader *shader);
+
+	void addTexture(Texture* texture);
 };
 }
 }

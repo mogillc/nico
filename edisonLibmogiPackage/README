@@ -1,7 +1,23 @@
-To install all 
-run: ./configureHexapod.sh
+API: http://svn.mogi.io:8080/api/api/
 
-This installs a program called danceNico that will run the dance program for a Nico hexapod.  This program will automatically begin upon boot (no SSH required!).
+To install and configure sip or rsync this directory and its contents to an Intel Edison. Then SSH or pull up a console, cd into the copied root directory, then run one of the following: 
+./configureHexapod.sh -n    # for nico
+./configureHexapod.sh -d    # for dmitri
+
+This installs a program called danceNico that will run the dance program for a Nico/Dmitri hexapod.  This installs a systemd service named "nico" (even for a dmitri configuration).  To run the service:
+systemctl start nico
+
+To stop the service:
+systemctl stop nico
+
+To run the service on boot:
+systemctl enable nico
+
+
+This software package also installs a utility to write/read/search for dynamixel motors.  To see how to use the utility run:
+dynamixel -h
+
+
 
 ####################################################################
 06/13/15:

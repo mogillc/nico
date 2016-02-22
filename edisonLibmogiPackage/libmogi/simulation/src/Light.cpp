@@ -14,7 +14,7 @@
  *****************************************************************************/
 
 #include "light.h"
-
+#include <math.h>
 using namespace std;
 
 #ifdef _cplusplus
@@ -25,55 +25,55 @@ using namespace Mogi;
 using namespace Simulation;
 using namespace Math;
 
-MBlight *MBlight::create(aiLight *light) {
-	MBlight *result = NULL;
-	switch (light->mType) {
-	case aiLightSource_POINT:
-		result = new MBpointLight;
-		break;
-
-	case aiLightSource_SPOT:
-		result = new MBspotLight;
-		break;
-
-	case aiLightSource_DIRECTIONAL:
-		result = new MBdirectionalLight;
-		break;
-
-	default:
-		break;
-	}
-
-	if (result != NULL) {
-		result->name = light->mName.C_Str();
-
-		result->set(light);
-	}
-
-	return result;
-}
-
-void MBpointLight::set(aiLight *light) {
-	std::cout << "\t\tAdding point light: " << name << std::endl;
-
-	FOV = light->mAngleOuterCone * 180.0 / MOGI_PI;
-
-	attenuationConstant = light->mAttenuationConstant;
-	attenuationLinear = light->mAttenuationLinear;
-	attenuationQuadratic = light->mAttenuationQuadratic;
-}
-
-void MBspotLight::set(aiLight *light) {
-	std::cout << "\t\tAdding spot light: " << name << std::endl;
-
-	FOV = light->mAngleOuterCone * 180.0 / MOGI_PI;
-
-	innerCone = light->mAngleInnerCone;
-	outerCone = light->mAngleOuterCone;
-}
-
-void MBdirectionalLight::set(aiLight *light) {
-}
+//MBlight *MBlight::create(aiLight *light) {
+//	MBlight *result = NULL;
+//	switch (light->mType) {
+//	case aiLightSource_POINT:
+//		result = new MBpointLight;
+//		break;
+//
+//	case aiLightSource_SPOT:
+//		result = new MBspotLight;
+//		break;
+//
+//	case aiLightSource_DIRECTIONAL:
+//		result = new MBdirectionalLight;
+//		break;
+//
+//	default:
+//		break;
+//	}
+//
+//	if (result != NULL) {
+//		result->name = light->mName.C_Str();
+//
+//		result->set(light);
+//	}
+//
+//	return result;
+//}
+//
+//void MBpointLight::set(aiLight *light) {
+//	std::cout << "\t\tAdding point light: " << name << std::endl;
+//
+//	FOV = light->mAngleOuterCone * 180.0 / MOGI_PI;
+//
+//	attenuationConstant = light->mAttenuationConstant;
+//	attenuationLinear = light->mAttenuationLinear;
+//	attenuationQuadratic = light->mAttenuationQuadratic;
+//}
+//
+//void MBspotLight::set(aiLight *light) {
+//	std::cout << "\t\tAdding spot light: " << name << std::endl;
+//
+//	FOV = light->mAngleOuterCone * 180.0 / MOGI_PI;
+//
+//	innerCone = light->mAngleInnerCone;
+//	outerCone = light->mAngleOuterCone;
+//}
+//
+//void MBdirectionalLight::set(aiLight *light) {
+//}
 
 MBlight::MBlight() {
 	width = 4000;
@@ -94,6 +94,10 @@ MBlight::MBlight() {
 	frameBuffer = new FrameBuffer();
 	frameBuffer->resize(width, height);
 }
+
+	void MBlight::setName(const std::string& name) {
+		this->name = name;
+	}
 
 bool MBlight::prepareShadowMap() {
 	if (shadowEnable) {
@@ -256,6 +260,11 @@ void MBpointLight::sendToShader(MBshader *shader, const Matrix& modelMatrix,
 	shader->sendMatrix(variableName, color);
 }
 
+	void MBspotLight::setCone(float innerCone, float outerCone) {
+		this->innerCone = innerCone;
+		this->outerCone = outerCone;
+	}
+
 void MBspotLight::sendToShader(MBshader *shader, const Matrix& modelMatrix,
 		int index) {
 	Matrix shadowMatrix = buildShadowMapMatrix(modelMatrix);
@@ -286,6 +295,12 @@ void MBdirectionalLight::sendToShader(MBshader *shader,
 	shader->sendMatrix(variableName, color);
 }
 
+
+	void MBpointLight::setAttenuationFactors(float constant, float linear, float quadratic) {
+		this->attenuationConstant = constant;
+		this->attenuationLinear = linear;
+		this->attenuationQuadratic = quadratic;
+	}
 void MBpointLight::updateSphere() {
 	float maxChannel = fmax(fmax(color(0), color(1)), color(2));
 	sphereSize = (-attenuationLinear

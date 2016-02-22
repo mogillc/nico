@@ -24,6 +24,11 @@
 #endif
 
 std::string _getMogiResourceDirectory();
+
+#ifdef BUILD_FOR_IOS
 GLuint _loadTexture(const char* name);
+#endif
+
+
 
 #endif

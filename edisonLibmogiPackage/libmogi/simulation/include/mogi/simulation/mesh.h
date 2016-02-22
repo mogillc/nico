@@ -43,10 +43,6 @@
 #include <iostream>
 #include <vector>
 
-#include <assimp/postprocess.h>
-#include <assimp/scene.h>
-#include <assimp/Importer.hpp>
-
 #include "bone.h"
 #include "camera.h"
 #include "material.h"
@@ -95,7 +91,7 @@ private:
 	std::vector<Bone*> bones;  // Loaded from mBones
 
 	unsigned int materialIndex;
-	int totalTriangles;
+//	int totalTriangles;
 
 	std::string objectLocation;
 
@@ -104,9 +100,20 @@ public:
 	std::string fileName;
 
 	// New methods/attributes:
-	int set(aiMesh* mesh, aiMaterial** materials, std::string fileLocation,
-			int materialIDOffset);
+//	int set(aiMesh* mesh, aiMaterial** materials, std::string fileLocation,
+//			int materialIDOffset);
+	void setObjectLocation(const std::string& path);
+	void setBones( const std::vector<Bone*>& bones);
+	void setMaterialIndex( const int& index );
+
+	void setIndices( const std::vector<unsigned int>& indices );
+	void setVertexData( const std::vector<VertexData>& vertexData );
+	std::vector<unsigned int>& getIndices( ) { return indices; }
+	std::vector<VertexData>& getVertexData( ) { return data; }
+
 	void matchBonesToNodes(Math::Node* rootNode);
+
+	int getNumberOfVertices();
 
 	int getMaterialIndex() { return materialIndex; };
 
@@ -134,7 +141,13 @@ public:
 	MBmesh();
 	~MBmesh();
 
-	MBmesh& operator=(const MBmesh& param);
+	// This generates a function that will initialize a mesh in the same way as this mesh.
+	// This is useful when needing to load a same file many times, or when the target
+	// platform has no easy way to load files.
+	// This was used to generate code for the post processing mesh in Postprocess.cpp.
+	void generateCodeFromMesh();
+
+	//MBmesh& operator=(const MBmesh& param);
 };
 }
 }

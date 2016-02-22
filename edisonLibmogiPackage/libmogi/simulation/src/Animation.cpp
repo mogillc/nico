@@ -33,34 +33,35 @@ Animation::~Animation() {
 	}
 }
 
-Animation::Animation(const Animation& param) {
-	init();
-}
-
-Animation& Animation::operator=(const Animation& param) {
-	if (this != &param)  // only run if it is not the same object
-			{
-	}
-	return *this;
-}
+//Animation::Animation(const Animation& param) {
+//	init();
+//}
+//
+//Animation& Animation::operator=(const Animation& param) {
+//	if (this != &param)  // only run if it is not the same object
+//			{
+//	}
+//	return *this;
+//}
 
 void Animation::init() {
 	loopTime = 0;
 }
 
-void Animation::set(aiAnimation* animation) {
-	name = animation->mName.C_Str();
-	duration = animation->mDuration;
-	ticksPerSecond = animation->mTicksPerSecond;
-
-	Channel* tempChannel;
-	channels.clear();
-	for (int i = 0; i < animation->mNumChannels; i++) {
-		tempChannel = new Channel;
-		tempChannel->set(animation->mChannels[i]);
-		channels.push_back(tempChannel);
-	}
-}
+//void Animation::set(aiAnimation* animation) {
+//	name = animation->mName.C_Str();
+//	duration = animation->mDuration;
+//	ticksPerSecond = animation->mTicksPerSecond;
+//
+//	Channel* tempChannel;
+//	channels.clear();
+//	for (int i = 0; i < animation->mNumChannels; i++) {
+//		tempChannel = new Channel;
+//		tempChannel->set(animation->mChannels[i]);
+//		
+//		channels.push_back(tempChannel);
+//	}
+//}
 
 void Animation::matchChannelsToNodes(Math::Node* rootNode) {
 	for (std::vector<Channel*>::iterator it = channels.begin();

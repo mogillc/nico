@@ -26,7 +26,7 @@
 
 #include <vector>
 
-#include <assimp/scene.h>
+//#include <assimp/scene.h>
 
 namespace Mogi {
 namespace Simulation {
@@ -62,14 +62,15 @@ protected:
 	float intensity;
 
 public:
-	static MBlight* create(aiLight* light);
+	//static MBlight* create(aiLight* light);
 	// Attributes:
 
 	// Methods:
 	MBlight();
 	virtual ~MBlight();
 
-	virtual void set(aiLight* light) = 0;
+	//virtual void set(aiLight* light) = 0;
+	void setName(const std::string& name);
 
 	void setLocation(double x, double y, double z);
 	void setLocation(Math::Vector loc);
@@ -148,9 +149,10 @@ private:
 	float outerCone;
 
 public:
-	void set(aiLight* light);
+	//void set(aiLight* light);
 	void sendToShader(MBshader* shader, const Math::Matrix& modelMatrix,
 			int index);
+	void setCone(float innerCone, float outerCone);
 };
 
 class MBpointLight: public MBlight {
@@ -165,14 +167,16 @@ private:
 	void updateSphere();
 
 public:
-	void set(aiLight* light);
+	//void set(aiLight* light);
 	void sendToShader(MBshader* shader, const Math::Matrix& modelMatrix,
 			int index);
+
+	void setAttenuationFactors(float constant, float linear, float quadratic);
 };
 
 class MBdirectionalLight: public MBlight {
 public:
-	void set(aiLight* light);
+	//void set(aiLight* light);
 	void sendToShader(MBshader* shader, const Math::Matrix& modelMatrix,
 			int index);
 };

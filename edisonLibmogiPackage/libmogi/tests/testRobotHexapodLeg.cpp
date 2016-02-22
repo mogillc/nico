@@ -58,9 +58,8 @@ bool testConfiguration() {
 	std::string jsonConfiguration((std::istreambuf_iterator<char>(jsonConfigurationFile)),
 								  std::istreambuf_iterator<char>());
 
-	Json::Value legConfiguration;
-	Json::Reader reader;
-	if (!reader.parse(jsonConfiguration, legConfiguration)) {
+	App::JsonValueInterface legConfiguration;
+	if (App::JsonValueInterface::parse(jsonConfiguration, legConfiguration)) {
 		std::cerr << "Unable to parse JSON configuration from: " << jsonConfiguration << std::endl;
 		return false;
 	}
@@ -175,9 +174,8 @@ bool testConfigurationYYX() {
 	std::string jsonConfiguration((std::istreambuf_iterator<char>(jsonConfigurationFile)),
 								  std::istreambuf_iterator<char>());
 
-	Json::Value legConfiguration;
-	Json::Reader reader;
-	if (!reader.parse(jsonConfiguration, legConfiguration)) {
+	App::JsonValueInterface legConfiguration;
+	if (App::JsonValueInterface::parse(jsonConfiguration, legConfiguration)) {
 		std::cerr << "Unable to parse JSON configuration from: " << jsonConfiguration << std::endl;
 		return false;
 	}

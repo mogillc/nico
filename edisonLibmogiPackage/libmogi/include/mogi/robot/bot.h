@@ -89,13 +89,12 @@ namespace Mogi {
 			 */
 			int setConfigurationFromJSONString(std::string jsonConfiguration);
 
-#ifdef LIBJSONCPP_FOUND
 			/*! \brief Sets parameters of the robot if defined in the JSON configuration.
 			 \param leg The JSON string containing the configuration.
 			 \return 0 if success, otherwise a failure occurred.
 			 */
-			virtual int setConfigurationFromJSONValue(Json::Value leg);
-#endif
+			virtual int setConfigurationFromJSONValue(App::JsonValueInterface& leg);
+			
 		};
 		
 	}

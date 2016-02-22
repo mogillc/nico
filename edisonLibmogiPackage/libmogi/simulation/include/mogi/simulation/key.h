@@ -16,7 +16,7 @@
 #ifndef MOGI_KEY_H
 #define MOGI_KEY_H
 
-#include <assimp/scene.h>
+//#include <assimp/scene.h>
 #include <vector>
 
 #include "mogi/math/mmath.h"
@@ -45,7 +45,7 @@ public:
 class MBkeyRotation: public MBkey {
 public:
 	Math::Quaternion value;
-	void set(aiQuatKey* key);
+//	void set(aiQuatKey* key);
 };
 
 /**
@@ -55,7 +55,7 @@ class KeyLocation: public MBkey {
 public:
 	Math::Vector value;
 	KeyLocation();
-	void set(aiVectorKey* key);
+//	void set(aiVectorKey* key);
 };
 
 /**
@@ -65,7 +65,7 @@ class KeyScale: public MBkey {
 public:
 	Math::Vector value;
 	KeyScale();
-	void set(aiVectorKey* key);
+//	void set(aiVectorKey* key);
 };
 }
 }

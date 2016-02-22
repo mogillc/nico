@@ -34,12 +34,12 @@ void DanceParameters::setFromFile( std::string filePath ) {
 	std::string jsonConfiguration((std::istreambuf_iterator<char>(jsonConfigurationFile)),
 																std::istreambuf_iterator<char>());
 
-	Json::Value root;   // will contains the root value after parsing.
-	Json::Reader reader;
+	App::JsonValueInterface root;   // will contains the root value after parsing.
+	//Json::Reader reader;
 
 //	std::cout << "file contents:" << jsonConfiguration;
 
-	bool parsingSuccessful = reader.parse(jsonConfiguration, root);
+	bool parsingSuccessful = !App::JsonValueInterface::parse(jsonConfiguration, root);// reader.parse(jsonConfiguration, root);
 
 	if (!parsingSuccessful) {
 		std::cerr << " - Could not parse JSON from: " << filePath << std::endl;

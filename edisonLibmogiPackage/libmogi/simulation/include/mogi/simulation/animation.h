@@ -16,7 +16,7 @@
 #ifndef MOGI_ANIMATION_H
 #define MOGI_ANIMATION_H
 
-#include <assimp/scene.h>
+//#include <assimp/scene.h>
 #include <vector>
 
 #include "channel.h"
@@ -46,14 +46,14 @@ private:
 public:
 	Animation();
 	~Animation();
-	Animation(const Animation& param);
-	Animation& operator=(const Animation&);
+//	Animation(const Animation& param);
+//	Animation& operator=(const Animation&);
 
 	//! Defines the animation from Assimp
 	/*!
 	 \param animation The animation from Assimp.
 	 */
-	void set(aiAnimation* animation);
+	//void set(aiAnimation* animation);
 
 	//! Sets the animation's channel's parent node.
 	/*!

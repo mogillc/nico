@@ -38,16 +38,6 @@ MBshader::~MBshader() {
 	}
 }
 
-MBshader &MBshader::operator=(const MBshader &param) {
-	this->g_program = param.g_program;
-
-	return *this;
-}
-
-MBshader::MBshader(const MBshader &param) {
-	this->g_program = param.g_program;
-}
-
 GLuint MBshader::program() {
 	return g_program;
 }
@@ -67,23 +57,7 @@ int MBshader::initialize(const char *vertShaderPath,
 	}
 	return ret;
 }
-/*
- int MBshader::initialize()
- {
- int ret = 0;
- bool everythingIsCool;
- everythingIsCool = loadShaders( &g_program );
- if (everythingIsCool) {
- everythingIsCool = validateProgram( g_program );
- if (everythingIsCool == false) {
- ret = -2;
- }
- } else {
- ret = -1;
- }
- return ret;
- }
- */
+
 void MBshader::enableAttributes() {
 	hasAttributes = true;
 }
@@ -319,27 +293,6 @@ bool Simulation::loadShaders(GLuint *g_program, const char *vertShaderPath,
 		return false;
 	}
 
-	// Get uniform locations.
-	// uniforms[UNIFORM_MODELVIEWPROJECTION_MATRIX] =
-	// glGetUniformLocation(*g_program, "modelViewProjectionMatrix");
-	// uniforms[UNIFORM_NORMAL_MATRIX] = glGetUniformLocation(*g_program,
-	// "normalMatrix");
-	// uniforms[UNIFORM_MODELVIEW_MATRIX] = glGetUniformLocation(*g_program,
-	// "modelViewMatrix");
-	// uniforms[UNIFORM_LIGHT_POSITION] = glGetUniformLocation(*g_program,
-	// "lightPos");
-
-	// printf(" - uniforms[UNIFORM_MODELVIEWPROJECTION_MATRIX] = %d\n",
-	// uniforms[UNIFORM_MODELVIEWPROJECTION_MATRIX]);
-	// printf(" - uniforms[UNIFORM_NORMAL_MATRIX] = %d\n",
-	// uniforms[UNIFORM_NORMAL_MATRIX]);
-	// printf(" - position location: %d\n", glGetAttribLocation( *g_program,
-	// "position"));
-	// printf(" - normal location: %d\n", glGetAttribLocation( *g_program,
-	// "normal"));
-	// printf(" - color location: %d\n", glGetAttribLocation( *g_program,
-	// "color"));
-
 	// Release vertex and fragment shaders.
 	if (vertShader) {
 		glDetachShader(*g_program, vertShader);
@@ -350,16 +303,6 @@ bool Simulation::loadShaders(GLuint *g_program, const char *vertShaderPath,
 		glDeleteShader(fragShader);
 	}
 
-	// printf(" - uniforms[UNIFORM_MODELVIEWPROJECTION_MATRIX] = %d\n",
-	// uniforms[UNIFORM_MODELVIEWPROJECTION_MATRIX]);
-	// printf(" - uniforms[UNIFORM_NORMAL_MATRIX] = %d\n",
-	// uniforms[UNIFORM_NORMAL_MATRIX]);
-	// printf(" - position location: %d\n", glGetAttribLocation( *g_program,
-	// "position"));
-	// printf(" - normal location: %d\n", glGetAttribLocation( *g_program,
-	// "normal"));
-	// printf(" - color location: %d\n", glGetAttribLocation( *g_program,
-	// "color"));
 
 	return true;
 }

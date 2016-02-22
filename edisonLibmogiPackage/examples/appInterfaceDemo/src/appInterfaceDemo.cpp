@@ -19,7 +19,7 @@ using namespace Mogi::App;
 // For Segmented Controllers, Buttons, and Text Fields:
 class JsonStringObserver : public JsonValueObserver {
 private:
-	void update( const Json::Value& newValue ) {
+	void update( JsonValueInterface& newValue ) {
 		if (newValue.isString()) {
 			std::string value = newValue.asString();
 			std::cout << "Cool! Got the string: " << value << std::endl;
@@ -33,7 +33,7 @@ public:
 // For Switches:
 class JsonBoolObserver : public JsonValueObserver {
 private:
-	void update( const Json::Value& newValue ) {
+	void update( JsonValueInterface& newValue ) {
 		if (newValue.isBool()) {
 			std::cout << "Cool! Got the Bool: " << newValue.asBool() << std::endl;
 		} else {
@@ -45,7 +45,7 @@ private:
 // For sliders:
 class JsonDoubleObserver : public JsonValueObserver {
 private:
-	void update( const Json::Value& newValue ) {
+	void update( JsonValueInterface& newValue ) {
 		if (newValue.isDouble()) {
 			std::cout << "Cool! Got the Double: " << newValue.asDouble() << std::endl;
 		} else {
@@ -57,7 +57,7 @@ private:
 // For... nothing in this version...
 class JsonIntObserver : public JsonValueObserver {
 private:
-	void update( const Json::Value& newValue ) {
+	void update( JsonValueInterface& newValue ) {
 		if (newValue.isInt()) {
 			std::cout << "Cool! Got the Int: " << newValue.asInt() << std::endl;
 		} else {

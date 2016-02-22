@@ -16,11 +16,9 @@
 #ifndef MOGI_JSON_H
 #define MOGI_JSON_H
 
-#ifdef LIBJSONCPP_FOUND
-
 #include <map>
-
-#include <json/json.h>  // I would like to remove the dependency eventually
+#include <vector>
+#include <string>
 
 namespace Mogi {
 
@@ -32,6 +30,54 @@ namespace Mogi {
 
 		// class JsonKeyObserver;
 		class JsonValueObserver;
+
+		/*!
+		 @class JsonValueInterface
+		 \brief Acts as an interface to JSON values handled by separate parsers on varying platforms.
+		 @since 2016-02-10
+		 */
+		class JsonValueInterface {
+		private:
+			void* value;
+			JsonValueInterface* child;
+			JsonValueInterface* parent;
+		public:
+
+			static int parse( std::string jsonString, JsonValueInterface& value );
+			static int parse( const char *beginDoc, const char *endDoc, JsonValueInterface& value );
+
+			JsonValueInterface();
+			JsonValueInterface(const JsonValueInterface&);
+			~JsonValueInterface();
+
+			bool isBool() const;
+			bool isInt() const;
+			bool isDouble() const;
+			bool isString() const;
+			bool isArray() const;
+			bool isObject() const;
+
+			int asBool() const;
+			int asInt() const;
+			double asDouble() const;
+			std::string asString() const;
+			int size() const;	// array size, if array
+			JsonValueInterface& operator[](const unsigned int&);
+			//JsonValueInterface operator[](const char*) const;
+			JsonValueInterface& operator[](const std::string&);
+
+			std::vector<std::string> getMemberNames() const;
+
+			JsonValueInterface& operator=( const bool& other );
+			JsonValueInterface& operator=( const int& other );
+			JsonValueInterface& operator=( const double& other );
+			JsonValueInterface& operator=( const std::string& other );
+			JsonValueInterface& operator=( const JsonValueInterface& other );
+
+			std::string toStyledString() const;
+
+			void* getRaw();
+		};
 
 		/*!
 		 @class JsonSubject
@@ -50,7 +96,7 @@ namespace Mogi {
 				void addValueObserver(JsonValueObserver* valueObserver);
 				void eraseValueObserver(JsonValueObserver* valueObserver);
 				int valueObserverCount();
-				void update(const Json::Value& newValue); // notifies all value observers
+				void update( JsonValueInterface& newValue); // notifies all value observers
 			};
 
 		private:
@@ -63,7 +109,7 @@ namespace Mogi {
 			 \brief Notifies all observers of a value change.
 			 \param jsonObject The new value.
 			 */
-			void notifyObservers(const Json::Value& jsonObject);
+			void notifyObservers( JsonValueInterface& jsonObject);
 
 		public:
 			~JsonSubject();
@@ -72,15 +118,13 @@ namespace Mogi {
 			 Given a key, this will create a key observer or append the listener to an
 			 existing key observer
 			 */
-			void addValueObserver(const std::string& key,
-								  JsonValueObserver* valueObserver);
+			void addValueObserver(const std::string& key, JsonValueObserver* valueObserver);
 
 			/**
 			 Given a key, this will create a key observer or append the listener to an
 			 existing key observer
 			 */
-			void eraseValueObserver(const std::string& key,
-									JsonValueObserver* valueObserver);
+			void eraseValueObserver(const std::string& key, JsonValueObserver* valueObserver);
 
 			/**
 			 Notifies all key observers when the json string contains the key
@@ -104,7 +148,7 @@ namespace Mogi {
 			 \brief Called when a JSON value has been updated.
 			 \param newValue The new JSON value.
 			 */
-			virtual void update(const Json::Value& newValue) = 0;
+			virtual void update( JsonValueInterface& newValue) = 0;
 		};
 
 		/*!
@@ -115,7 +159,7 @@ namespace Mogi {
 		 */
 		class JsonObjectObserver: public JsonValueObserver, public JsonSubject {
 		private:
-			void update(const Json::Value& newValue);
+			void update( JsonValueInterface& newValue);
 		};
 
 		/*!
@@ -127,7 +171,7 @@ namespace Mogi {
 		class JsonArrayObserver: public JsonValueObserver {
 		private:
 			std::map<int, JsonValueObserver*> jsonArrayValues;
-			void update(const Json::Value& newValue);
+			void update( JsonValueInterface& newValue);
 
 		public:
 
@@ -145,23 +189,21 @@ namespace Mogi {
 	 \param value The JSON value to be converted.
 	 \return True is success, Faluse if fail.
 	 */
-	bool setIntValueIfSafe(int* storage, Json::Value& value);
+	bool setIntValueIfSafe(int* storage, App::JsonValueInterface& value);
 
 	/*! \brief Converts the value to a double, if the type matches.
 	 \param storage The location to store the value.  Only set if value is of the correct type.
 	 \param value The JSON value to be converted.
 	 \return True is success, Faluse if fail.
 	 */
-	bool setDoubleValueIfSafe(double* storage, Json::Value& value);
+	bool setDoubleValueIfSafe(double* storage, App::JsonValueInterface& value);
 
 	/*! \brief Converts the value to a string, if the type matches.
 	 \param storage The location to store the value.  Only set if value is of the correct type.
 	 \param value The JSON value to be converted.
 	 \return True is success, Faluse if fail.
 	 */
-	bool setStringValueIfSafe(std::string* storage, Json::Value& value);
+	bool setStringValueIfSafe(std::string* storage, App::JsonValueInterface& value);
 }
-
-#endif // LIBJSONCPP_FOUND
 
 #endif

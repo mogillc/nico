@@ -34,6 +34,7 @@ extern "C" {
 namespace Mogi {
 using namespace Dynamixel;
 using namespace Math;
+using namespace App;
 
 namespace Robot {
 
@@ -85,7 +86,7 @@ Hexapod::~Hexapod() {
 
 
 //int Hexapod::setConfigurationFromJSONString(std::string jsonConfiguration) {
-//	Json::Value root;
+//	JsonValueInterface root;
 //	Json::Reader reader;
 //
 //	if (!reader.parse(jsonConfiguration, root)) {
@@ -93,10 +94,10 @@ Hexapod::~Hexapod() {
 //				<< std::endl;
 //		return -1;
 //	}
-	#ifdef LIBJSONCPP_FOUND
-int Hexapod::setConfigurationFromJSONValue(Json::Value root) {
 
-	Json::Value hexapod = root["hexapod"];
+int Hexapod::setConfigurationFromJSONValue(JsonValueInterface& root) {
+	JsonValueInterface hexapod;
+	hexapod = root["hexapod"];
 	setStringValueIfSafe(&name, hexapod["name"]);
 
 	if (hexapod["WalkingDynamics"].isString()) {
@@ -114,28 +115,26 @@ int Hexapod::setConfigurationFromJSONValue(Json::Value root) {
 	double minimumFootLiftHeight = 5;
 	double maximumFootLiftHeight = 20;
 
-	setDoubleValueIfSafe(&minimumFootLiftHeight,
-			hexapod["minimumFootLiftHeight"]);
-	setDoubleValueIfSafe(&maximumFootLiftHeight,
-			hexapod["maximumFootLiftHeight"]);
+	setDoubleValueIfSafe(&minimumFootLiftHeight, hexapod["minimumFootLiftHeight"]);
+	setDoubleValueIfSafe(&maximumFootLiftHeight, hexapod["maximumFootLiftHeight"]);
 
-	mWalkingDynamics->setHeightBounds(minimumFootLiftHeight,
-			maximumFootLiftHeight);
+	mWalkingDynamics->setHeightBounds(minimumFootLiftHeight, maximumFootLiftHeight);
 
 	if (!setDoubleValueIfSafe(&standingHeight, hexapod["standingHeight"])) {
-		std::cerr << "WARNING! Could not find the hexapod's standing height"
-				<< std::endl;
+		std::cerr << "WARNING! Could not find the hexapod's standing height" << std::endl;
 	}
 
-	Json::Value linkArray = hexapod["links"];
+	JsonValueInterface linkArray;
+	linkArray = hexapod["links"];
 	if (!linkArray.isArray() || linkArray.size() != 1) {
+		std::cerr << "ERROR! key \"links\" is not an array!" << std::endl;
 		return -1;
 	}
 
-	Json::Value body = linkArray[0];
+	JsonValueInterface body = linkArray[0];
 	setStringValueIfSafe(&getBodyNode()->name, body["name"]);
 
-	Json::Value bodyLinks = body["links"];
+	JsonValueInterface bodyLinks = body["links"];
 	if (!bodyLinks.isArray() || bodyLinks.size() != 6) {
 		std::cerr
 				<< "Unable to parse body links from JSON configuration for Hexapod."
@@ -143,7 +142,7 @@ int Hexapod::setConfigurationFromJSONValue(Json::Value root) {
 		return -1;
 	}
 	for (unsigned int i = 0; i < bodyLinks.size(); i++) {
-		Json::Value leg = bodyLinks[i];
+		JsonValueInterface leg = bodyLinks[i];
 		//setStringValueIfSafe(&legs[i]->name, leg["name"]);
 
 		HexapodLeg* newLeg = HexapodLeg::createFromJSON(leg, getBodyNode());
@@ -156,13 +155,13 @@ int Hexapod::setConfigurationFromJSONValue(Json::Value root) {
 
 		Vector location(3);
 		Quaternion orientation;
-		Json::Value locationArray = leg["location"];
+		JsonValueInterface locationArray = leg["location"];
 		if (locationArray.isArray() && locationArray.size() == 3) {
 			for (unsigned int j = 0; j < 3; j++) {
 				location(j) = locationArray[j].asDouble();
 			}
 		}
-		Json::Value orientationArray = leg["orientation"];
+		JsonValueInterface orientationArray = leg["orientation"];
 		if (orientationArray.isArray() && orientationArray.size() == 4) {
 			for (unsigned int j = 0; j < 4; j++) {
 				orientation(j) = orientationArray[j].asDouble();
@@ -171,17 +170,17 @@ int Hexapod::setConfigurationFromJSONValue(Json::Value root) {
 		this->coxaLocationRelativeToBody[i] = location; // TODO: fix this to make more general for any leg base
 		legs[i]->setBase(location, orientation);
 
-		Json::Value legLinks = leg["links"];
+		JsonValueInterface legLinks = leg["links"];
 		if (!legLinks.isArray() || legLinks.size() != 1) {
 			return -1;
 		}
 
-		Json::Value base = legLinks[0];
+		JsonValueInterface base = legLinks[0];
 //		if (base["name"].isString()) {	// TODO
 //		}
 
 //		Vector link(3);
-//		Json::Value baseLink = base["link"];
+//		JsonValueInterface baseLink = base["link"];
 //		if (baseLink.isArray() && baseLink.size() == 3) {
 //			for (unsigned int j = 0; j < 3; j++) {
 //				link(j) = baseLink[j].asDouble();
@@ -189,7 +188,7 @@ int Hexapod::setConfigurationFromJSONValue(Json::Value root) {
 //			legs[i]->setBaseDimensions(&link);
 //		}
 
-		Json::Value baseLinks = base["links"];
+		JsonValueInterface baseLinks = base["links"];
 		if (!baseLinks.isArray() || baseLinks.size() != 1) {
 			std::cerr
 					<< "Unable to parse JSON configuration for Hexapod for base links "
@@ -197,7 +196,7 @@ int Hexapod::setConfigurationFromJSONValue(Json::Value root) {
 			continue;
 		}
 
-		Json::Value coxa = baseLinks[0];
+		JsonValueInterface coxa = baseLinks[0];
 
 		if (!coxa.isObject()) {
 			std::cerr
@@ -206,7 +205,7 @@ int Hexapod::setConfigurationFromJSONValue(Json::Value root) {
 			continue;
 		}
 //
-//		Json::Value coxaLink = coxa["link"];
+//		JsonValueInterface coxaLink = coxa["link"];
 //		if (coxaLink.isArray() && coxaLink.size() == 3) {
 //			for (unsigned int j = 0; j < 3; j++) {
 //				link(j) = coxaLink[j].asDouble();
@@ -235,7 +234,7 @@ int Hexapod::setConfigurationFromJSONValue(Json::Value root) {
 			}
 		}
 
-		Json::Value coxaLinks = coxa["links"];
+		JsonValueInterface coxaLinks = coxa["links"];
 
 		if (!coxaLinks.isArray() || coxaLinks.size() != 1) {
 			std::cerr
@@ -244,7 +243,7 @@ int Hexapod::setConfigurationFromJSONValue(Json::Value root) {
 			continue;
 		}
 
-		Json::Value femur = coxaLinks[0];
+		JsonValueInterface femur = coxaLinks[0];
 
 		if (!femur.isObject()) {
 			std::cerr
@@ -253,7 +252,7 @@ int Hexapod::setConfigurationFromJSONValue(Json::Value root) {
 			continue;
 		}
 
-//		Json::Value femurLink = femur["link"];
+//		JsonValueInterface femurLink = femur["link"];
 //		if (femurLink.isArray() && femurLink.size() == 3) {
 //			for (unsigned int j = 0; j < 3; j++) {
 //				link(j) = femurLink[j].asDouble();
@@ -279,21 +278,21 @@ int Hexapod::setConfigurationFromJSONValue(Json::Value root) {
 			}
 		}
 
-		Json::Value femurLinks = femur["links"];
+		JsonValueInterface femurLinks = femur["links"];
 
 		if (!femurLinks.isArray() || femurLinks.size() != 1) {
 			std::cerr << "Unable to parse JSON configuration for Hexapod for femur links " << i << std::endl;
 			continue;
 		}
 
-		Json::Value tibia = femurLinks[0];
+		JsonValueInterface tibia = femurLinks[0];
 
 		if (!tibia.isObject()) {
 			std::cerr << "Unable to parse JSON configuration for Hexapod for tibia " << i << std::endl;
 			continue;
 		}
 
-//		Json::Value tibiaLink = tibia["link"];
+//		JsonValueInterface tibiaLink = tibia["link"];
 //		if (tibiaLink.isArray() && tibiaLink.size() == 3) {
 //			for (unsigned int j = 0; j < 3; j++) {
 //				link(j) = tibiaLink[j].asDouble();
@@ -322,7 +321,7 @@ int Hexapod::setConfigurationFromJSONValue(Json::Value root) {
 
 	return 0;
 }
-#endif
+
 
 void Hexapod::entryAction() {  // TODO: Finish this to fit the setup/loop/finish
 

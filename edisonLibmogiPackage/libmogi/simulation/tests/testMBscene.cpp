@@ -15,6 +15,7 @@
 #ifdef SDL2_FOUND
 
 #include <scene.h>
+#include "importer/importer.h"
 #include <iostream>
 
 // Need SDL for image file loading:
@@ -59,7 +60,7 @@ bool testObjectAdd() {
 	Scene *scene = new Scene;
 
 	std::cout << "Trying to add a null stringed object file to the scene ... ";
-	Node *result = scene->loadObject(NULL, NULL);
+	Node *result = Importer::loadObject(scene, NULL, NULL);// scene->loadObject(NULL, NULL);
 	if (result != NULL) {
 		std::cout << "FAILED" << std::endl;
 		allTestsPass = false;
@@ -68,7 +69,7 @@ bool testObjectAdd() {
 	}
 
 	std::cout << "Trying to add a non-existent object file to the scene ... ";
-	result = scene->loadObject("/sjdhfsd/ahfa", "fsdfsdf");
+	result = Importer::loadObject(scene, "/sjdhfsd/ahfa", "fsdfsdf");
 	if (result != NULL) {
 		std::cout << "FAILED" << std::endl;
 		allTestsPass = false;

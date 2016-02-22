@@ -16,7 +16,7 @@
 #ifndef MOGI_CHANNEL_H
 #define MOGI_CHANNEL_H
 
-#include <assimp/scene.h>
+//#include <assimp/scene.h>
 #include <vector>
 
 #include "key.h"
@@ -44,7 +44,7 @@ public:
 	void clearKeys();
 
 public:
-	void set(aiNodeAnim *channel);
+	//void set(aiNodeAnim *channel);
 	void findNode(Math::Node *rootNode);
 
 	Channel();

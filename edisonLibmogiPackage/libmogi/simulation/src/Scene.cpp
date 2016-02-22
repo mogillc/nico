@@ -36,18 +36,6 @@ Scene::~Scene() {
 	clearVectors();
 }
 
-Scene::Scene(const Scene &param) {
-	initialize();
-}
-
-Scene &Scene::operator=(const Scene &param) {
-	if (this != &param)  // only run if it is not the same object
-			{
-	}
-
-	return *this;
-}
-
 void Scene::initialize() {
 	totalTriangles = 0;
 	rootNode.name = "Root Node";
@@ -153,192 +141,152 @@ void Scene::attachMeshToNode(Math::Node* node, int meshId) {
 	std::sort(meshesToDraw.begin(), meshesToDraw.end(), cmp);
 }
 
-void populateNode(Node **theNode, aiNode *node, Node *nodeParent,
-		int meshIDOffset, std::vector<NodeMatrixAndMeshID*>* meshesToDraw) {
-	(*theNode)->name = node->mName.C_Str();
-	// std::cout << "\t\t";
-	// for (int i = 0; i < prettyPrintTracker; i++) {
-	//	std::cout << "|--";
-	//}
-	// std::cout << "Node name: " << name << ", Mesh Ids: ";
-	// theNode->parent = nodeParent;
-	//(*theNode)->moveToUnderParent(nodeParent);
-	*theNode = nodeParent->adoptChild(theNode);
+//int Scene::set(const aiScene *scene, const char *fileName, bool createNode) {
+//	std::string fileLocation(objectLocation);
+//	fileLocation.append("/");
+//	fileLocation.append(fileName);
+//
+//	// First process the nodes:
+//	// std::cout << "\tScanning Nodes, current Mesh size: " << meshes.size() << ":
+//	// " << std::endl;
+//
+//	// rootNode.set(scene->mRootNode, NULL, meshes.size());
+//	Node *currentNode = NULL;
+//	if (createNode) {
+//		currentNode = rootNode.addNode("dummy");
+//		// currentNode->set( scene->mRootNode, &rootNode, meshes.size());
+//		populateNode(&currentNode, scene->mRootNode, &rootNode, meshes.size(), &meshesToDraw);
+//	}
+//	// rootNode.findChildByName("dummy")->set( scene->mRootNode, &rootNode,
+//	// meshes.size());
+//
+//	// Now process the animations:
+//	// std::cout << "\tNumber of Animations : " << scene->mNumAnimations <<
+//	// std::endl;
+//	Animation *animation;
+//	for (int i = 0; i < scene->mNumAnimations; i++) {
+//		animation = new Animation;
+//		//animation->set(scene->mAnimations[i]);
+//		Simulation::Importer::set(scene->mAnimations[i], animation);
+//		
+//		// Now that we are here, process the channels (since nodes were solved
+//		// ABOVE)
+//		animation->matchChannelsToNodes(&rootNode);
+//		animations.push_back(animation);
+//	}
+//
+//	// Set the materials:
+//	// std::cout << "\tNumber of Textures   : " << scene->mNumTextures <<
+//	// std::endl;
+//	// std::cout << "\tNumber of Materials  : " << scene->mNumMaterials <<
+//	// std::endl;
+//	MBmaterial *material;
+//	int materialIDOffset = materials.size();
+//	for (int i = 0; i < scene->mNumMaterials; i++) {
+//		material = new MBmaterial;
+////		material->set(scene->mMaterials[i], objectLocation);
+//		Importer::set(scene->mMaterials[i], objectLocation, material);
+//		materials.push_back(material);
+//	}
+//
+//	// Set the textures:
+//	Texture *texture;
+//	for (int i = 0; i < scene->mNumTextures; i++) {
+//		texture = new Texture;
+////		texture->set(scene->mTextures[i]);
+//		Importer::set(scene->mTextures[i], texture);
+//		textures.push_back(texture);
+//	}
+//
+//	// Set the meshes:
+//	int triangles = 0;
+//	/// std::cout << "\tNumber of Meshes     : " << scene->mNumMeshes <<
+//	/// std::endl;
+//	MBmesh *mesh;
+//	for (int i = 0; i < scene->mNumMeshes; i++) {
+//		mesh = new MBmesh();
+////		triangles += mesh->set(scene->mMeshes[i], scene->mMaterials,
+////				objectLocation, materialIDOffset);
+//		triangles += Importer::set(scene->mMeshes[i], scene->mMaterials, objectLocation, materialIDOffset, mesh)/3;
+//		mesh->matchBonesToNodes(&rootNode);
+//		mesh->fileName = fileLocation;
+//		meshes.push_back(mesh);
+//
+//		nodeToMeshMap[currentNode].push_back(mesh);
+//	}
+//
+//	// Set the lights:
+//	// std::cout << "\tNumber of Lights     : " << scene->mNumLights << std::endl;
+//	MBlight *light;
+//	for (int i = 0; i < scene->mNumLights; i++) {
+////		light = MBlight::create(scene->mLights[i]);
+//		light = Importer::createAndSet(scene->mLights[i]);
+//		if (light == NULL) {
+//			std::cerr << "Error: Unable to create light: " << scene->mLights[i]->mName.C_Str() << std::endl;
+//			continue;
+//		}
+//		light->findNode(&rootNode);
+//		lights.push_back(light);
+//	}
+//
+//	// Set the cameras:
+//	// std::cout << "\tNumber of Cameras    : " << scene->mNumCameras <<
+//	// std::endl;
+//	Camera *camera;
+//	for (int i = 0; i < scene->mNumCameras; i++) {
+//		camera = new Camera;
+////		camera->set(scene->mCameras[i]);
+//		Importer::set(scene->mCameras[i], camera);
+//		// cameras.push_back(camera);
+//	}
+//	return triangles;
+//}
 
-	// nodeParent->adoptChild(&theNode);
-
-	for (int i = 0; i < node->mNumMeshes; i++) {
-		NodeMatrixAndMeshID *nodeMatrixAndID = new NodeMatrixAndMeshID;
-		nodeMatrixAndID->ID = node->mMeshes[i] + meshIDOffset;
-//		nodeMatrixAndID->modelMatrix = (*theNode)->getModelMatrix(); // &outputMatrix;	// NodeMatrixAndMeshID refactoring
-		nodeMatrixAndID->parentNode = *theNode;	// NodeMatrixAndMeshID refactoring
-		// std::cout << nodeMatrixAndID->ID << " ";
-		// meshIDs.push_back(nodeMatrixAndID);
-//		(*theNode)->pushMatrixAndMeshID(nodeMatrixAndID);
-		meshesToDraw->push_back(nodeMatrixAndID);
-	}
-
-	// std::cout << std::endl;
-
-	Node *child;
-	for (int i = 0; i < node->mNumChildren; i++) {
-		// prettyPrintTracker++;
-		child = new Node;
-		// child->set(node->mChildren[i], this, meshIDOffset);
-		populateNode(&child, node->mChildren[i], *theNode, meshIDOffset,
-				meshesToDraw);
-		//(*theNode)->pushChild(child);
-		//(*theNode)->adoptChild(&child);
-		// prettyPrintTracker--;
-	}
-
-	Matrix transformationMatrix(4, 4);
-	for (int i = 0; i < 4; i++) {
-		for (int j = 0; j < 4; j++) {
-			transformationMatrix(i, j) = node->mTransformation[i][j]; //*(node->mTransformation[i*4 + j]);
-		}
-	}
-	// resetModelMatrix();
-	// transformationMatrix.name(theNode->name.c_str());
-	// transformationMatrix.print_stats();
-	(*theNode)->setModelMatrix(transformationMatrix);
-}
-
-int Scene::set(const aiScene *scene, const char *fileName, bool createNode) {
-	std::string fileLocation(objectLocation);
-	fileLocation.append("/");
-	fileLocation.append(fileName);
-
-	// First process the nodes:
-	// std::cout << "\tScanning Nodes, current Mesh size: " << meshes.size() << ":
-	// " << std::endl;
-
-	// rootNode.set(scene->mRootNode, NULL, meshes.size());
-	Node *currentNode = NULL;
-	if (createNode) {
-		currentNode = rootNode.addNode("dummy");
-		// currentNode->set( scene->mRootNode, &rootNode, meshes.size());
-		populateNode(&currentNode, scene->mRootNode, &rootNode, meshes.size(), &meshesToDraw);
-	}
-	// rootNode.findChildByName("dummy")->set( scene->mRootNode, &rootNode,
-	// meshes.size());
-
-	// Now process the animations:
-	// std::cout << "\tNumber of Animations : " << scene->mNumAnimations <<
-	// std::endl;
-	Animation *animation;
-	for (int i = 0; i < scene->mNumAnimations; i++) {
-		animation = new Animation;
-		animation->set(scene->mAnimations[i]);
-		// Now that we are here, process the channels (since nodes were solved
-		// ABOVE)
-		animation->matchChannelsToNodes(&rootNode);
-		animations.push_back(animation);
-	}
-
-	// Set the materials:
-	// std::cout << "\tNumber of Textures   : " << scene->mNumTextures <<
-	// std::endl;
-	// std::cout << "\tNumber of Materials  : " << scene->mNumMaterials <<
-	// std::endl;
-	MBmaterial *material;
-	int materialIDOffset = materials.size();
-	for (int i = 0; i < scene->mNumMaterials; i++) {
-		material = new MBmaterial;
-		material->set(scene->mMaterials[i], objectLocation);
-		materials.push_back(material);
-	}
-
-	// Set the textures:
-	Texture *texture;
-	for (int i = 0; i < scene->mNumTextures; i++) {
-		texture = new Texture;
-		texture->set(scene->mTextures[i]);
-		textures.push_back(texture);
-	}
-
-	// Set the meshes:
-	int triangles = 0;
-	/// std::cout << "\tNumber of Meshes     : " << scene->mNumMeshes <<
-	/// std::endl;
-	MBmesh *mesh;
-	for (int i = 0; i < scene->mNumMeshes; i++) {
-		mesh = new MBmesh();
-		triangles += mesh->set(scene->mMeshes[i], scene->mMaterials,
-				objectLocation, materialIDOffset);
-		mesh->matchBonesToNodes(&rootNode);
-		mesh->fileName = fileLocation;
-		meshes.push_back(mesh);
-
-		nodeToMeshMap[currentNode].push_back(mesh);
-	}
-
-	// Set the lights:
-	// std::cout << "\tNumber of Lights     : " << scene->mNumLights << std::endl;
-	MBlight *light;
-	for (int i = 0; i < scene->mNumLights; i++) {
-		light = MBlight::create(scene->mLights[i]);
-		light->findNode(&rootNode);
-		lights.push_back(light);
-	}
-
-	// Set the cameras:
-	// std::cout << "\tNumber of Cameras    : " << scene->mNumCameras <<
-	// std::endl;
-	Camera *camera;
-	for (int i = 0; i < scene->mNumCameras; i++) {
-		camera = new Camera;
-		camera->set(scene->mCameras[i]);
-		// cameras.push_back(camera);
-	}
-	return triangles;
-}
-
-Node *Scene::loadObject(const char *filename, const char *location,
-		bool createNode) {
-	if (filename == NULL || location == NULL) {
-		return NULL;
-	}
-#ifdef BUILD_FOR_IOS
-	std::stringstream objectLocationss("");
-	objectLocationss << Mogi::getResourceDirectory() << "/" << location;
-	objectLocation = objectLocationss.str();
-#else
-	objectLocation = std::string(location);
-#endif
-
-	Assimp::Importer importer;
-	importer.SetPropertyInteger(AI_CONFIG_PP_LBW_MAX_WEIGHTS, 3);
-
-	std::string fileLocation(objectLocation);
-	fileLocation.append("/");
-	fileLocation.append(filename);
-
-	const aiScene *scene = importer.ReadFile(fileLocation,
-			aiProcess_GenSmoothNormals | aiProcess_Triangulate
-					| aiProcess_CalcTangentSpace | aiProcess_FlipUVs);
-	if (scene == NULL) {
-		std::cout << "The file wasn't successfuly opened: " << fileLocation
-				<< std::endl;
-		return NULL;
-	}
-
-	if (scene->mFlags == AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
-		std::cout
-				<< "The file was opened but is incomplete or doesn't contain a "
-						"root node: " << fileLocation << std::endl;
-		return NULL;
-	}
-
-	// std::cout << "Loading: " << fileLocation << "" << std::endl;
-
-	totalTriangles += set(scene, filename, createNode);
-
-	// std::cout << "File: " << fileLocation << " loaded!" << std::endl;
-
-	// set() appends the node to the end, so return the last node:
-	return rootNode.child(rootNode.numberOfChildren() - 1);
-}
+//Node *Scene::loadObject(const char *filename, const char *location,
+//		bool createNode) {
+//	if (filename == NULL || location == NULL) {
+//		return NULL;
+//	}
+//#ifdef BUILD_FOR_IOS
+//	std::stringstream objectLocationss("");
+//	objectLocationss << Mogi::getResourceDirectory() << "/" << location;
+//	objectLocation = objectLocationss.str();
+//#else
+//	objectLocation = std::string(location);
+//#endif
+//
+//	Assimp::Importer importer;
+//	importer.SetPropertyInteger(AI_CONFIG_PP_LBW_MAX_WEIGHTS, 3);
+//
+//	std::string fileLocation(objectLocation);
+//	fileLocation.append("/");
+//	fileLocation.append(filename);
+//
+//	const aiScene *scene = importer.ReadFile(fileLocation,
+//			aiProcess_GenSmoothNormals | aiProcess_Triangulate
+//					| aiProcess_CalcTangentSpace | aiProcess_FlipUVs);
+//	if (scene == NULL) {
+//		std::cout << "The file wasn't successfuly opened: " << fileLocation
+//				<< std::endl;
+//		return NULL;
+//	}
+//
+//	if (scene->mFlags == AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
+//		std::cout
+//				<< "The file was opened but is incomplete or doesn't contain a "
+//						"root node: " << fileLocation << std::endl;
+//		return NULL;
+//	}
+//
+//	// std::cout << "Loading: " << fileLocation << "" << std::endl;
+//
+//	totalTriangles += set(scene, filename, createNode);
+//
+//	// std::cout << "File: " << fileLocation << " loaded!" << std::endl;
+//
+//	// set() appends the node to the end, so return the last node:
+//	return rootNode.child(rootNode.numberOfChildren() - 1);
+//}
 
 void Scene::update() {
 	// Matrix modelMatrix = locationM * orientationM * scaleM;
@@ -472,23 +420,35 @@ MBmesh* Scene::getMesh(std::string meshName) {
 	return NULL;
 }
 
-	std::vector<MBmaterial*> Scene::getMaterials() {
+	std::vector<MBmaterial*>& Scene::getMaterials() {
 		return materials;
 	}
-
-int Scene::addMesh(std::string filename, std::string directory) {
-	std::string fullPath = directory;
-	fullPath.append("/");
-	fullPath.append(filename);
-	for (int i = 0; i < meshes.size(); i++) {
-		if (meshes[i]->fileName.compare(fullPath) == 0) {
-			return i;  // do not need to load a new mesh, it's already loaded
-		}
+	std::vector<NodeMatrixAndMeshID*>& Scene::getMeshestoDraw() {
+		return meshesToDraw;
+	}
+	std::vector<MBmesh*>& Scene::getMeshes() {
+		return meshes;
+	}
+	std::vector<Animation*>& Scene::getAnimations() {
+		return animations;
+	}
+	std::vector<Texture*>& Scene::getTextures() {
+		return textures;
 	}
 
-	loadObject(filename.c_str(), directory.c_str(), false);  // load a new mesh
-	return meshes.size() - 1;  // return the mesh index
-}
+//int Scene::addMesh(std::string filename, std::string directory) {
+//	std::string fullPath = directory;
+//	fullPath.append("/");
+//	fullPath.append(filename);
+//	for (int i = 0; i < meshes.size(); i++) {
+//		if (meshes[i]->fileName.compare(fullPath) == 0) {
+//			return i;  // do not need to load a new mesh, it's already loaded
+//		}
+//	}
+//
+//	loadObject(filename.c_str(), directory.c_str(), false);  // load a new mesh
+//	return meshes.size() - 1;  // return the mesh index
+//}
 
 ///////////////////////////////////////////////////////////////////////////////
 // write 2d text using GLUT

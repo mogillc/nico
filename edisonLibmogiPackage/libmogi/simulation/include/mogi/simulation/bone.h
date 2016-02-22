@@ -16,7 +16,6 @@
 #ifndef MOGI_BONE_H
 #define MOGI_BONE_H
 
-#include <assimp/scene.h>
 #include <vector>
 
 #include "mogi/math/mmath.h"
@@ -43,16 +42,16 @@ private:
 public:
 	Bone();
 	~Bone();
-	Bone(const Bone &param);
-	Bone &operator=(const Bone &);
-
-	void set(aiBone *bone);
+//	Bone(const Bone &param);
+//	Bone &operator=(const Bone &);
+//
+//	void set(aiBone *bone);
 	void set(const Bone *bone);
 	const std::string &getName();
 	void findNode(Math::Node *rootNode);
 };
 
-std::vector<Bone *> getBones(aiMesh *mesh);
+//std::vector<Bone *> getBones(aiMesh *mesh);
 }
 }
 

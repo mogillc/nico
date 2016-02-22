@@ -73,11 +73,9 @@ extern "C" {
 		setupNode(root);
 	}
 
-#ifdef LIBJSONCPP_FOUND
-	int Bot::setConfigurationFromJSONValue(Json::Value leg) {
+	int Bot::setConfigurationFromJSONValue(App::JsonValueInterface& leg) {
 		return -1;
 	}
-#endif
 
 	int Bot::setConfigurationFromJSONFilePath( std::string jsonConfigurationFilePath) {
 		std::ifstream jsonConfigurationFile(jsonConfigurationFilePath.c_str());
@@ -88,19 +86,9 @@ extern "C" {
 	}
 
 	int Bot::setConfigurationFromJSONString(std::string jsonConfiguration) {
-		#ifdef LIBJSONCPP_FOUND
-		Json::Value root;
-		Json::Reader reader;
-
-		if (!reader.parse(jsonConfiguration, root)) {
-			std::cerr << "Unable to parse JSON configuration from: " << jsonConfiguration << std::endl;
-			return -1;
-		}
+		App::JsonValueInterface root;
+		App::JsonValueInterface::parse(jsonConfiguration, root);
 		return setConfigurationFromJSONValue(root);
-#else 
-		std::cerr << "Error: Bot::setConfigurationFromJSONFilePath(): LibJsoncpp not installed, unable to parse." << std::endl;
-		return -1;
-#endif
 	}
 	
 #ifdef _cplusplus

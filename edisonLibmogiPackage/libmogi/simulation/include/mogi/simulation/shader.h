@@ -38,13 +38,13 @@
 #else // __APPLE__
 
 	#include <GL/glew.h>
-	#include <string.h>
-	//#include <GL/glut.h>
+//	#include <string.h>
+//	#include <GL/glut.h>
 	//#include <GL/gl.h>
 	//#include <GL/glu.h>
 	//#include <GL/glext.h>
-	#include <SDL2/SDL.h>
-	#include <SDL2/SDL_image.h>
+//	#include <SDL2/SDL.h>
+//	#include <SDL2/SDL_image.h>
 #endif // __APPLE__
 
 #include "mogi/math/mmath.h"
@@ -90,8 +90,6 @@ private:
 public:
 	MBshader();
 	~MBshader();
-	MBshader &operator=(const MBshader &param);
-	MBshader(const MBshader &param);
 
 	GLuint program();
 	// int initialize();

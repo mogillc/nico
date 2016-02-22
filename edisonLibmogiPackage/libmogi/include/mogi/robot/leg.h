@@ -61,20 +61,18 @@ namespace Mogi {
 			 */
 			Math::Node* getBaseNode();
 
-#ifdef LIBJSONCPP_FOUND
 			/*! \brief Creates a hexapod leg based on the configuration.
 			 \param jsonConfiguration The JSON configuration for this leg.
 			 \param root The root node to build the structure into (i.e. the body node).
 			 \return A newly allocated leg based on the configuration.  If configuration fails, NULL.
 			 */
-			static HexapodLeg* createFromJSON( Json::Value jsonConfiguration, Math::Node* root );
+			static HexapodLeg* createFromJSON( App::JsonValueInterface& jsonConfiguration, Math::Node* root );
 
 			/*! \brief Sets parameters of the leg if defined in the JSON configuration.
 			 \param leg The JSON string containing the configuration.
 			 \return 0 if success, otherwise a failure occurred.
 			 */
-			virtual int setConfigurationFromJSONValue( Json::Value leg ) = 0;
-#endif
+			virtual int setConfigurationFromJSONValue( App::JsonValueInterface& leg ) = 0;
 
 		protected:
 			/*! The inverse kinematics solver
@@ -129,13 +127,11 @@ namespace Mogi {
 			 */
 			int setTibiaDimensions(const Math::Vector* dimensions);
 
-#ifdef LIBJSONCPP_FOUND
 			/*! \brief Sets parameters of the leg if defined in the JSON configuration.
 			 \param leg The JSON string containing the configuration.
 			 \return 0 if success, otherwise a failure occurred.
 			 */
-			int setConfigurationFromJSONValue( Json::Value leg );
-#endif
+			int setConfigurationFromJSONValue( App::JsonValueInterface& leg );
 
 		};
 

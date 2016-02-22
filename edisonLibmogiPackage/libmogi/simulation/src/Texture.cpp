@@ -58,11 +58,6 @@ void Texture::setUniformIndex(int index) {
 	arrayIndex = index;
 }
 
-void Texture::set(aiTexture* texture) {
-	std::cout << "LOADING A TEXTURE WOEHOOHO!!!!1!! Unsupported :("
-			<< std::endl;
-}
-
 void Texture::sendTextureToShader(MBshader* shader) {
 	if (shaderUniformName != "") {
 		char uniformName[64];

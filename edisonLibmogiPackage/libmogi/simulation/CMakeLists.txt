@@ -45,8 +45,9 @@ if(OPENGL_FOUND)
 	#	Find Assimp:
 	#	Used heavily, in almost every file.
 	if(BUILD_FOR_IOS)
-		include_directories(/Users/matt/Downloads/assimp-master/include)
-		set( DEPENDENCIES ${DEPENDENCIES} ${CMAKE_SOURCE_DIR}/libassimp-fat.a ${CMAKE_SOURCE_DIR}/libzlibstatic.a )
+		add_definitions(-DASSIMP_FOUND)	# TODO: fix hardcoding
+		include_directories(/Users/matt/Downloads/assimp-master/include)	# TODO: fix hardcoding
+		set( DEPENDENCIES ${DEPENDENCIES} ${CMAKE_SOURCE_DIR}/libassimp-fat.a ${CMAKE_SOURCE_DIR}/libzlibstatic.a )	# TODO: fix hardcoding
 	else(BUILD_FOR_IOS)
 		find_package (LibAssimp)
 		if(ASSIMP_FOUND)

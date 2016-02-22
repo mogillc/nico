@@ -6,7 +6,7 @@
 //
 
 #include "common.h"
-
+#include <mogi/simulation/importer/importer.h>
 #include <mogi.h>
 #include <sstream>
 
@@ -191,6 +191,7 @@ extern "C" {
 #ifdef BUILD_FOR_IOS
 		shadowShader.initialize( "shaders/ios/shadowShader.vsh", "shaders/ios/shadowShader.fsh");
 		shaderForES.initialize( "shaders/ios-current/Shader.vsh", "shaders/ios-current/Shader.fsh");
+		//shaderForES.initialize( "shaders/ios-current/shadowShader.vsh", "shaders/ios-current/shadowShader.fsh");
 #else
 		shadowShader.initialize( "Shaders/shadowShader.vsh", "Shaders/shadowShader.fsh");
 #endif
@@ -199,12 +200,12 @@ extern "C" {
 	void UIhandler::initModels() {
 
 		mainScene->cameras.push_back(camera);
-
-		mainScene->loadObject("paverStones.obj","Objects");				// floor
-		mainScene->loadObject("brickWall.obj", "Objects/brickWall");	// walls
+		Importer::loadObject(mainScene, "paverStones.obj","Objects");	// floor
+		//mainScene->loadObject("paverStones.obj","Objects");				// floor
+		Importer::loadObject(mainScene, "brickWall.obj", "Objects/brickWall");	// walls
 
 		// simple object for testing:
-		Node* node = mainScene->loadObject("testCube.ply", "Objects");
+		Node* node = Importer::loadObject(mainScene, "testCube.ply", "Objects");
 		if(node) {
 			node->name = "testCube";
 		} else {
@@ -214,7 +215,7 @@ extern "C" {
 		char newName[64];
 
 		for (int i = 0; i < N_LIGHTS; i++) {
-			node = mainScene->loadObject("lightModel.dae", "Objects");
+			node = Importer::loadObject(mainScene, "lightModel.dae", "Objects");
 			if (node) {
 				node->setLocation(0, 0, -1);
 				node->setScale(25.4 / MM_PER_METER * 10.0);
@@ -546,7 +547,7 @@ extern "C" {
 
 		//glViewport( 0, 0, camera->getXresolution(), camera->getYresolution());
 		glViewport( 0, 0, screenWidth, screenHeight);
-		shaderForES.enableAttributes();
+		//shaderForES.enableAttributes();
 		shaderForES.useProgram();
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -611,7 +612,7 @@ extern "C" {
 
 	void hexapodToScene(Scene* mScene, Robot::Hexapod* mHexapod, std::string locationOfBodySTL) {
 		Node* body = mHexapod->getBodyNode();// nodeLocation->child(0);
-		mScene->attachMeshToNode(body, mScene->addMesh("body.stl", locationOfBodySTL.c_str()));
+		mScene->attachMeshToNode(body, Importer::addMesh(mScene, "body.stl", locationOfBodySTL.c_str()));
 
 		std::string locationOfLegSTL = locationOfBodySTL.append("/leg");
 		for (std::vector<Robot::HexapodLeg*>::iterator it = mHexapod->legs.begin(); it != mHexapod->legs.end(); it++) {
@@ -622,16 +623,16 @@ extern "C" {
 
 	void hexapodLegToScene(Scene* mScene, Robot::HexapodLeg* mHexapodLeg, std::string locationOfLegSTL) {
 		Node* base = mHexapodLeg->getBaseNode();
-		int bodyMeshID = mScene->addMesh("base.stl", locationOfLegSTL);
+		int bodyMeshID = Importer::addMesh(mScene, "base.stl", locationOfLegSTL);
 		mScene->attachMeshToNode(base, bodyMeshID);
 
 		Node* coxa = base->child(0);
 		Node* femur = coxa->child(0);
 		Node* tibia = femur->child(0);
 
-		int coxaMeshID = mScene->addMesh("coxa.stl", locationOfLegSTL);
-		int femurMeshID = mScene->addMesh("femur.stl", locationOfLegSTL);
-		int tibiaMeshID = mScene->addMesh("tibia.stl", locationOfLegSTL);
+		int coxaMeshID = Importer::addMesh(mScene, "coxa.stl", locationOfLegSTL);
+		int femurMeshID = Importer::addMesh(mScene, "femur.stl", locationOfLegSTL);
+		int tibiaMeshID = Importer::addMesh(mScene, "tibia.stl", locationOfLegSTL);
 
 		mScene->attachMeshToNode(coxa, coxaMeshID);
 		mScene->attachMeshToNode(femur, femurMeshID);

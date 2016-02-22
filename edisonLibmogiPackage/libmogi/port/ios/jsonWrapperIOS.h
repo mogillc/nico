@@ -31,6 +31,7 @@ namespace _JsonWrapperIOS {
 	bool isDoubleValue(void* value);
 	bool isStringValue(void* value);
 	bool isArrayValue(void* value);
+	bool isConstArrayValue(void* value);
 	bool isObjectValue(void* value);
 
 	void getValueFromIndex(void** storage, void** value, const int& index, void** parentValue);

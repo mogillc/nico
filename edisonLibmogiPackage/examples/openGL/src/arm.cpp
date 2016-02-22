@@ -119,7 +119,7 @@ void initArms() {
 	}
 
 	// Creates a controlled platform, see updateArmModels() for explaination:
-	Node* node = mUIhandler.mainScene->loadObject("launchpad.STL", Mogi::Simulation::Scene::getResourceDirectory().append("/models/arm").c_str());
+	Node* node = Simulation::Importer::loadObject(mUIhandler.mainScene, "launchpad.STL", Mogi::Simulation::Scene::getResourceDirectory().append("/models/arm").c_str());
 	if(node)
 	{
 		node->name = "launchpad";

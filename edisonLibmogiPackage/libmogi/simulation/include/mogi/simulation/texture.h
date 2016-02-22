@@ -21,8 +21,6 @@
 
 #include <vector>
 
-#include <assimp/scene.h>
-
 namespace Mogi {
 namespace Simulation {
 
@@ -53,7 +51,6 @@ public:
 	~Texture();
 
 	// Methods:
-	void set(aiTexture *texture);
 	void sendTextureToShader(MBshader *shader);
 	int loadFromImage(std::string file);
 	int create(int w, int h, bool isDepth);

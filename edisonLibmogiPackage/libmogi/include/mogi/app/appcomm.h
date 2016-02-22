@@ -16,8 +16,6 @@
 #ifndef MOGI_COMMUNICATION_H
 #define MOGI_COMMUNICATION_H
 
-#ifdef LIBJSONCPP_FOUND	// Currently heavily dependent on libjson
-
 #include "mogi/app/json.h"
 #include "mogi/math/mmath.h"
 #include "mogi/thread.h"
@@ -177,7 +175,7 @@ public:
 	/*! \brief Sends a JSON value in the next packet to be sent.
 	 @param value The JSON value to send.
 	 */
-	void sendJsonValue(Json::Value value);
+	void sendJsonValue(JsonValueInterface& value);
 
 private:
 	std::map<std::string, AppOption*> optionsFromUser;
@@ -288,7 +286,5 @@ public:
 }
 
 }
-
-#endif // LIBJSONCPP_FOUND
 
 #endif

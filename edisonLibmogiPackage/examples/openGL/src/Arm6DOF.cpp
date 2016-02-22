@@ -8,6 +8,7 @@
 #include "Arm6DOF.h"
 
 #include <sstream>
+#include <mogi/simulation/importer/importer.h>
 
 #ifdef _cplusplus
 extern "C" {
@@ -31,7 +32,7 @@ extern "C" {
       segment = segment->child(0);
       filename.str("");
       filename << "segment" << i << ".STL" << std::ends;
-						scene->attachMeshToNode(segment, scene->addMesh(filename.str(), modelsLocation));
+						scene->attachMeshToNode(segment, Simulation::Importer::addMesh(scene, filename.str(), modelsLocation));
 					}
 				}
 			}

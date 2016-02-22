@@ -19,10 +19,6 @@
 static const char* const JSONSUBJECT_C_Id = "$Id$";
 #endif
 
-#ifdef LIBJSONCPP_FOUND
-
-#include <json/json.h>
-
 #ifdef _cplusplus
 extern "C" {
 #endif
@@ -73,10 +69,9 @@ extern "C" {
 
 	bool JsonSubject::parseJson(const std::string::iterator& begin,
 								const std::string::iterator& end) {
-		Json::Value root;  // will contains the root value after parsing.
-		Json::Reader reader;
-
-		bool parsingSuccessful = reader.parse(&*begin, &*end, root);
+		JsonValueInterface root; // will contains the root value after parsing.
+		
+		bool parsingSuccessful = !JsonValueInterface::parse(&*begin, &*end, root);
 
 		if (parsingSuccessful) {
 			notifyObservers(root);
@@ -85,7 +80,7 @@ extern "C" {
 		return parsingSuccessful;
 	}
 
-	void JsonSubject::notifyObservers(const Json::Value& jsonObject) {
+	void JsonSubject::notifyObservers( JsonValueInterface& jsonObject) {
 		for (std::vector<JsonKeyObserver*>::iterator it =
 			 keyObserversToRemove.begin(); it != keyObserversToRemove.end();
 			 it++) {
@@ -133,7 +128,7 @@ extern "C" {
 		return valueObservers.size();
 	}
 
-	void JsonSubject::JsonKeyObserver::update(const Json::Value& newValue) {
+	void JsonSubject::JsonKeyObserver::update( JsonValueInterface& newValue) {
 		//		if (valuesObserversToErase.size() > 0) {
 		//			std::cout << " - - number of value obxervers BEFORE pruning: "
 		//<< valueObservers.size() << std::endl;
@@ -164,7 +159,7 @@ extern "C" {
 		}
 	}
 
-	bool Mogi::setIntValueIfSafe(int* storage, Json::Value& value) {
+	bool Mogi::setIntValueIfSafe(int* storage, JsonValueInterface& value) {
 		if (value.isInt()) {
 			*storage = value.asInt();
 			return true;
@@ -172,7 +167,7 @@ extern "C" {
 		return false;
 	}
 
-	bool Mogi::setDoubleValueIfSafe(double* storage, Json::Value& value) {
+	bool Mogi::setDoubleValueIfSafe(double* storage, JsonValueInterface& value) {
 		if (value.isDouble()) {
 			*storage = value.asDouble();
 			return true;
@@ -180,7 +175,7 @@ extern "C" {
 		return false;
 	}
 
-	bool Mogi::setStringValueIfSafe(std::string* storage, Json::Value& value) {
+	bool Mogi::setStringValueIfSafe(std::string* storage, JsonValueInterface& value) {
 		if (value.isString()) {
 			*storage = value.asString();
 			return true;
@@ -191,5 +186,3 @@ extern "C" {
 #ifdef _cplusplus
 }
 #endif
-
-#endif // LIBJSONCPP_FOUND

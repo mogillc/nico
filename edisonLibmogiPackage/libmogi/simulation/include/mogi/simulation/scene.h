@@ -41,9 +41,6 @@ typedef uint32_t UInt32;
 #include <vector>
 #include <map>
 
-#include <assimp/scene.h>
-#include <assimp/Importer.hpp>
-
 #include "animation.h"
 #include "bone.h"
 #include "light.h"
@@ -98,7 +95,7 @@ private:
 
 	int totalTriangles;
 
-	int set(const aiScene *scene, const char *filename, bool createNode = true);
+//	int set(const aiScene *scene, const char *filename, bool createNode = true);
 	void initialize();
 
 public:
@@ -119,16 +116,16 @@ public:
 	// Default constructors/destructor:
 	Scene();
 	~Scene();
-	Scene(const Scene &param);
-	Scene &operator=(const Scene &param);
+	//Scene(const Scene &param);
+	//Scene &operator=(const Scene &param);
 
 	void clearVectors();
 
 	// Methods:
 	void update();
 
-	Math::Node *loadObject(const char *filename, const char *location,
-			bool createNode = true);
+//	Math::Node *loadObject(const char *filename, const char *location,
+//			bool createNode = true);
 
 	int draw(Camera *cam, MBshader *shader);
 
@@ -148,10 +145,16 @@ public:
 
 	MBmesh *getMesh(std::string meshName);
 
-	std::vector<MBmaterial *> getMaterials();
+	std::vector<MBmesh*>& getMeshes();
+	std::vector<NodeMatrixAndMeshID*>& getMeshestoDraw();
+	std::vector<Animation*>& getAnimations();
+	std::vector<Texture*>& getTextures();
+	std::vector<MBmaterial*>& getMaterials();
+
+
 
 	void attachMeshToNode(Math::Node* node, int meshId);
-	int addMesh(std::string filename, std::string directory);
+	//int addMesh(std::string filename, std::string directory);
 
 	static std::string getResourceDirectory();
 };

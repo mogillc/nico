@@ -20,6 +20,7 @@
 #include <mogi/simulation/postprocess.h>
 #include <mogi/simulation/shader.h>
 #include <mogi/simulation/light.h>
+#include <mogi/simulation/importer/importer.h>
 
 #include <mogi/robot/hexapod.h>
 #include <mogi/statechart/statechart.h>

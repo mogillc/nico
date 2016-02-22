@@ -180,13 +180,10 @@ extern "C" {
 	using namespace _JsonWrapperIOS;
 
 	int JsonValueInterface::parse( std::string jsonString, JsonValueInterface& value ) {
-		//std::cerr << "Error: JsonValueInterface::parse() is unsupported in this build." << std::endl;
 		return parseJson( &value.value, jsonString);
 	}
 
 	int JsonValueInterface::parse( const char *beginDoc, const char *endDoc, JsonValueInterface& value ) {
-		std::cerr << "Error: JsonValueInterface::parse() is unsupported in this build." << std::endl;
-		return -1;
 		return parseJson( &value.value, std::string(beginDoc, endDoc-beginDoc) );
 	}
 
@@ -195,25 +192,14 @@ extern "C" {
 		value = getNewJsonValue();
 	}
 	JsonValueInterface::JsonValueInterface(const JsonValueInterface& other) {
-		std::cout << "In copy constructor)" << std::endl;
-		value = getNewJsonValue();
-//		setValueValue( &value, &other.value, &parent->value);
 		parent = NULL;
 		child = NULL;
 		setValueValue( &value, &other.value, parent == NULL ? NULL : &parent->value );
-		//*VALUE_CASTED = *(VALUE_TYPE*)(other.value);	// TODO: make copy function.
-		//parent = other.parent;
-//		if (other.child != NULL) {
-//			child = new JsonValueInterface;
-//			*child = *other.child;
-//		} else {
-//			child = NULL;
-//		}
+
 	}
 
 	JsonValueInterface::~JsonValueInterface() {
-		// Anything to be done here?
-		//deleteJsonValue(&value);
+		deleteJsonValue(&value);
 		if (child != NULL) {
 			child->parent = NULL;
 			delete child;
@@ -234,13 +220,11 @@ extern "C" {
 		return isStringValue( value );
 	}
 	bool JsonValueInterface::isArray() const {
-		return isArrayValue( value );
+		return isArrayValue( value ) || isConstArrayValue( value );
 	}
 	bool JsonValueInterface::isObject() const {
 		return isObjectValue( value );
 	}
-
-
 
 	int JsonValueInterface::asBool() const {
 		return getBoolValue( value );
@@ -258,40 +242,20 @@ extern "C" {
 		return getArraySize( value );
 	}
 
-
-
-
-
-
 	JsonValueInterface& JsonValueInterface::operator[](const unsigned int& index) {
 		if (child == NULL) {
 			child = new JsonValueInterface();
 		}
-//		if (!this->isArray()) {
-//			makeArray( &value, other, parent == NULL ? NULL : &parent->value );
-//		}
 		getValueFromIndex( &(child->value), &value, index, parent == NULL ? NULL : &parent->value  );
 		child->parent = this;
 		return *child;
 	}
-
-
-
-
 	JsonValueInterface& JsonValueInterface::operator[](const std::string& key) {
 		if (child == NULL) {
 			child = new JsonValueInterface();
 		}
-//		if (this->isObject()) {
-//			std::cout << " - operator[str] before: " << this->toStyledString() << std::endl;
-//		} else {
-//			std::cout << " - Oops, this is not yet an object..." << std::endl;
-//		}
-
 		getValueFromKey( &(child->value), &value, key, parent == NULL ? NULL : &parent->value  );
 		child->parent = this;
-//		std::cout << " - operator[str] after : " << this->toStyledString() << std::endl;
-//		std::cout << " - operator[str] child value ptr : " << (long)child->value << std::endl;
 		return *child;
 	}
 
@@ -316,9 +280,7 @@ extern "C" {
 		return *this;
 	}
 	JsonValueInterface& JsonValueInterface::operator=( const std::string& other ) {
-		std::cout << "In operator=(str), ptr = " << (long) value << std::endl;
 		setStringValue( &value, other, parent == NULL ? NULL : &parent->value );
-		std::cout << " - Result:" << getStringValue(value) << std::endl;
 		return *this;
 	}
 	JsonValueInterface& JsonValueInterface::operator=( const JsonValueInterface& other ) {

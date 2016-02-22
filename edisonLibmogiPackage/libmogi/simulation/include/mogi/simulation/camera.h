@@ -20,8 +20,8 @@
 #include "mogi/math/mmath.h"
 
 #include <vector>
-
-#include <assimp/scene.h>
+#include <string>
+//#include <assimp/scene.h>
 
 namespace Mogi {
 namespace Simulation {
@@ -75,8 +75,10 @@ public:
 	}
 	;
 
-	void set(aiCamera* camera);
+	//void set(aiCamera* camera);
 	void update();
+
+	void setName( std::string name );
 
 	void makeOrthographic(float width, float height, float clipNear,
 			float clipFar);

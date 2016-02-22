@@ -17,8 +17,6 @@
 static const char *const SOCKETCONTROL_C_Id = "$Id$";
 #endif
 
-#ifdef LIBJSONCPP_FOUND
-
 #include "mogi.h"
 #include "appcomm.h"
 #include "errno.h"
@@ -36,8 +34,6 @@ static const char *const SOCKETCONTROL_C_Id = "$Id$";
 
 #include <stdio.h>
 #include <stdlib.h>  // exit()
-
-#include <json/json.h>
 
 //#include <regex>
 
@@ -325,5 +321,3 @@ int AppInterface::sendState(std::string jsonData) {
 #ifdef _cplusplus
 }
 #endif
-
-#endif // LIBJSONCPP_FOUND

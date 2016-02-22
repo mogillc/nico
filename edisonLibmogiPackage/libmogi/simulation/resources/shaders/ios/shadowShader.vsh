@@ -1,8 +1,8 @@
 precision highp float;
 
-attribute vec3 position;
-attribute vec3 normal;
-attribute vec4 color;
+attribute highp vec3 position;
+attribute highp vec3 normal;
+attribute highp vec4 color;
 
 uniform mat4 modelViewProjectionMatrix;
 uniform mat4 lightModelViewProjectionMatrix;

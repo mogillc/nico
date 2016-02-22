@@ -28,7 +28,7 @@ public:
 	int count;
 	~TestValue() {
 	}
-	void update(const Json::Value& newValue) {
+	void update( JsonValueInterface& newValue) {
 		count++;
 	}
 };

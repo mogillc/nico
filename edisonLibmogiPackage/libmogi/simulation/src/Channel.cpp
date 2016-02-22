@@ -50,33 +50,33 @@ void Channel::clearKeys() {
 	rotationKeys.clear();
 }
 
-void Channel::set(aiNodeAnim *channel) {
-	name = channel->mNodeName.C_Str();
-	// std::cout << "Channel name: " << name << std::endl;
-
-	clearKeys();
-
-	KeyLocation *locationKey;
-	for (int i = 0; i < channel->mNumPositionKeys; i++) {
-		locationKey = new KeyLocation;
-
-		locationKeys.push_back(locationKey);
-	}
-
-	MBkeyRotation *rotationKey;
-	for (int i = 0; i < channel->mNumRotationKeys; i++) {
-		rotationKey = new MBkeyRotation;
-
-		rotationKeys.push_back(rotationKey);
-	}
-
-	KeyScale *scalingKey;
-	for (int i = 0; i < channel->mNumScalingKeys; i++) {
-		scalingKey = new KeyScale;
-
-		scalingKeys.push_back(scalingKey);
-	}
-}
+//void Channel::set(aiNodeAnim *channel) {
+//	name = channel->mNodeName.C_Str();
+//	// std::cout << "Channel name: " << name << std::endl;
+//
+//	clearKeys();
+//
+//	KeyLocation *locationKey;
+//	for (int i = 0; i < channel->mNumPositionKeys; i++) {
+//		locationKey = new KeyLocation;
+//
+//		locationKeys.push_back(locationKey);
+//	}
+//
+//	MBkeyRotation *rotationKey;
+//	for (int i = 0; i < channel->mNumRotationKeys; i++) {
+//		rotationKey = new MBkeyRotation;
+//
+//		rotationKeys.push_back(rotationKey);
+//	}
+//
+//	KeyScale *scalingKey;
+//	for (int i = 0; i < channel->mNumScalingKeys; i++) {
+//		scalingKey = new KeyScale;
+//
+//		scalingKeys.push_back(scalingKey);
+//	}
+//}
 
 void Channel::findNode(Node *rootNode) {
 	if ((parentNode = rootNode->findChildByName(name)) == NULL) {
