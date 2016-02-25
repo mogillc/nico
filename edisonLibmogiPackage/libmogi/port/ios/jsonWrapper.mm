@@ -27,14 +27,21 @@ namespace _JsonWrapperIOS {
 
 	// This will set the value, and if the parent is an array/object, the value will be swapped to maintain structure:
 	void setNSObjectForParent(void** value, NSObject* val, void** parentValue) {
+		NSObject* storageLocation = (NSObject*)*value;//CFBridgingRelease(*value);	// transfer to ARC
+
 		if(parentValue == NULL ||
 		   *parentValue == NULL) {
-			*value = val;	// No parent, so safe to set:
+//			storageLocation = val;	// No parent, so safe to set:
+			*value = (void*)(val);
 			return;
-		} else if (isObjectValue(*parentValue) ) {
+		}
+		if (isObjectValue(*parentValue) ) {
 			for(id key in (NSMutableDictionary*)*parentValue) {
 				if([(NSMutableDictionary*)*parentValue objectForKey:key] == *value) {
-					*value = val;
+//					*value = (void*)CFBridgingRelease(val);
+//					storageLocation = val;
+//					*value = (void*)CFBridgingRetain(storageLocation);
+					*value = (void*)(val);	// Will not be deleted by CF, so no transfer to CF
 					[(NSMutableDictionary*)*parentValue removeObjectForKey:key];
 					[(NSMutableDictionary*)*parentValue setObject:val forKey:key];
 					return;
@@ -43,12 +50,16 @@ namespace _JsonWrapperIOS {
 			NSLog(@" ERROR!!! should not be reached in objec!");
 			return;
 		} else if (isConstArrayValue(*parentValue) && !isArrayValue(*parentValue)) {
-			*parentValue = [NSMutableArray arrayWithArray:(NSArray*)*parentValue];
+			NSLog(@"Const array!");
+//			CFBridgingRelease(*parentValue);	// need to release it?
+			*parentValue = (void*)([NSMutableArray arrayWithArray:(NSArray*)*parentValue]);
 		}
 		if (isArrayValue(*parentValue) ) {
 			for(int i = 0; i < [(NSMutableArray*)*parentValue count]; i++) {
 				if([(NSMutableArray*)*parentValue objectAtIndex:i] == *value) {
-					*value = val;
+//					storageLocation = val;
+					//					*value = (void*)CFBridgingRetain(storageLocation);
+					*value = (void*)(val);	// Will not be deleted by CF, so no transfer to CF
 					[(NSMutableArray*)*parentValue replaceObjectAtIndex:i withObject:val];
 					return;
 				}
@@ -56,11 +67,18 @@ namespace _JsonWrapperIOS {
 			NSLog(@" ERROR!!! should not be reached in array!");
 		}
 
+		*value = (void*)(storageLocation);
+
 	}
 
 	int parseJson( void** value, const std::string& jsonString) {
 		NSError *error;
-		*value = (NSMutableDictionary*)[NSJSONSerialization JSONObjectWithData:[NSData dataWithBytes:jsonString.data() length:jsonString.length()] options:NSJSONReadingMutableContainers|NSJSONReadingMutableLeaves error:&error];
+//		CFBridgingRelease(*value);
+		*value = (void*)([NSJSONSerialization
+										  JSONObjectWithData:[NSData dataWithBytes:jsonString.data()
+																			length:jsonString.length()]
+										  options:NSJSONReadingMutableContainers|NSJSONReadingMutableLeaves
+										  error:&error]);
 
 		if (*value == nil) {
 			NSLog(@"Error serializing response data %@ with user info %@.", error, error.userInfo);
@@ -72,12 +90,47 @@ namespace _JsonWrapperIOS {
 	}
 
 	void* getNewJsonValue() {
-		return (void*)[NSNull new];
+//		@autoreleasepool {
+		NSObject* newObject = [[NSMutableDictionary new] retain];
+//		NSLog(@"[newObject retainCount] = %lu", [newObject retainCount]);
+//		{
+//			NSObject* newObject2 = newObject;
+//			NSLog(@"[newObject retainCount] cpy = %lu, newObject retainCount] = %lu", [newObject retainCount], [newObject2 retainCount]);
+//		}
+
+//		NSLog(@"[newObject retainCount] after = %lu", [newObject retainCount]);
+		void* returnValue = (void*)(newObject);
+//		NSLog(@"[newObject retainCount] after CFretain= %lu", [newObject retainCount]);
+//		NSLog(@"[(NSObject*)returnValue retainCount] = %lu", [(NSObject*)returnValue retainCount]);
+//		newObject = CFBridgingRelease(returnValue);
+//		NSLog(@"[newObject retainCount] after CFretain= %lu", [newObject retainCount]);
+//		NSLog(@"[(NSObject*)returnValue retainCount] = %lu", [(NSObject*)returnValue retainCount]);
+			return returnValue ;
+//		}
 	}
 
 	void deleteJsonValue( void** value ) {
-		*(NSObject**)value = nil;
-//		[(NSObject*)*value release];
+//		*(NSObject**)value = nil;
+
+//		NSObject* tobereleased = CFBridgingRelease(*value);
+//		NSLog(@" - desc: %@", NSStringFromClass ([(NSObject*)(*value) class])  );
+//		while([(NSObject*)*value retainCount] > 0)
+//		NSUInteger count = [(NSObject*)*value retainCount];
+//		while(count > 0) {
+//			NSLog(@"REtain count = %ld", (long)[(NSObject*)*value retainCount]);
+//			[(NSObject*)(*value) release];
+//			count--;
+//		}
+
+//		for(int i = 0; i < (long)[tobereleased retainCount]; )
+//		{
+//			NSLog(@"REtain count = %ld", (long)[(NSObject*)*value retainCount]);
+//			tobereleased = CFBridgingRelease(tobereleased);
+//		}
+//		NSLog(@" - desc: %@", NSStringFromClass ([tobereleased class])  );
+		//[tobereleased release];
+////		(NSObject*)*value = nil;
+//		*(NSObject**)value = nil;
 	}
 
 	bool isBoolValue(void* value) {
@@ -112,18 +165,25 @@ namespace _JsonWrapperIOS {
 		{
 			NSMutableArray* tempArray;
 			if(isConstArrayValue(*value) ) {	// Let's convert it to be mutable:
+//				CFBridgingRelease(*value);
 				tempArray = [NSMutableArray arrayWithArray:(NSArray*)*value];
 			} else {
 				tempArray = [NSMutableArray new];
 			}
-			setNSObjectForParent(value, [NSMutableArray new], parentValue);// create the array for the parent
+//			if(parentValue != NULL)
+//			NSLog(@"gatValueFromIndex parent       = %lu", (long)*parentValue);
+			setNSObjectForParent(value, tempArray, parentValue);// create the array for the parent
+//			if(parentValue != NULL)
+//			NSLog(@"gatValueFromIndex parent after = %lu", (long)*parentValue);
+
 		}
 		if ([(NSMutableArray*)*value count] < index+1) {	// Allocate proper size:
 			for(NSUInteger i = [(NSMutableArray*)*value count]; i < index+1; i++) {
 				[(NSMutableArray*)*value addObject:[NSNumber numberWithInt:0]];
 			}
 		}
-		*storage = [(NSMutableArray*)*value objectAtIndex:index];
+//		CFBridgingRelease(*storage);
+		*storage = (void*)([(NSMutableArray*)*value objectAtIndex:index]);
 		setNSObjectForParent(storage, [(NSMutableArray*)*value objectAtIndex:index], value);
 	}
 	void getValueFromKey(void** storage, void** value, const std::string& key, void** parentValue) {
@@ -132,18 +192,20 @@ namespace _JsonWrapperIOS {
 			setNSObjectForParent(value, [NSMutableDictionary new], parentValue);
 		}
 
-		*storage = [(NSMutableDictionary *)*value objectForKey:[NSString stringWithCString:key.c_str() encoding:NSUTF8StringEncoding]];
+		*storage = (NSObject*)[(NSMutableDictionary *)*value objectForKey:[NSString stringWithCString:key.c_str() encoding:NSUTF8StringEncoding]];
 		if(*storage == nil) {	// Need to create a key:
-			[(NSMutableDictionary *)*value setObject:[[NSNumber alloc] initWithDouble:0] forKey:[NSString stringWithCString:key.c_str() encoding:NSUTF8StringEncoding]];
-			*storage = [(NSMutableDictionary *)*value objectForKey:[NSString stringWithCString:key.c_str() encoding:NSUTF8StringEncoding]];
+			[(NSMutableDictionary *)*value setObject:[NSMutableDictionary new] forKey:[NSString stringWithCString:key.c_str() encoding:NSUTF8StringEncoding]];
+			*storage = (NSObject*)[(NSMutableDictionary *)*value objectForKey:[NSString stringWithCString:key.c_str() encoding:NSUTF8StringEncoding]];
 		}
-		setNSObjectForParent(storage, [(NSMutableDictionary *)*value objectForKey:[NSString stringWithCString:key.c_str() encoding:NSUTF8StringEncoding]], parentValue);
+		NSObject* newValue = [(NSMutableDictionary *)*value objectForKey:[NSString stringWithCString:key.c_str() encoding:NSUTF8StringEncoding]];
+		setNSObjectForParent(storage, newValue, parentValue);
 	}
 
 	std::vector<std::string> getKeys( void* value ) {
 		std::vector<std::string> result;
+		NSMutableDictionary* mValue = (NSMutableDictionary*)value;
 
-		for (id key in [(NSMutableDictionary*)value allKeys]) {
+		for (id key in [mValue allKeys]) {
 			if([key isKindOfClass:[NSString class]]) {
 				result.push_back(std::string([(NSString*)key UTF8String]));
 			}
@@ -197,14 +259,35 @@ namespace _JsonWrapperIOS {
 		} else if([(NSObject*)*val isKindOfClass:[NSNull class]]) {
 			*value = (NSNull*)*val;
 		} else {
+			temp = (NSObject*)*val;
 			std::cerr << "ERROR: setValueValue() unrecognized class!" << std::endl;
 		}
-		*value = temp;
+		*value = (NSObject*)*val;//temp;
+//		NSObject* valueToCopy = (NSObject*)*val;
+//		setNSObjectForParent(value, valueToCopy, parentValue);
 	}
 
 	std::string createJsonString(void* value) {
-		NSData *jsonData = [NSJSONSerialization dataWithJSONObject:(NSMutableDictionary*)value options:kNilOptions error:nil];
-		NSString* result = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+		NSString* result = nil;
+		NSObject* mValue = (NSObject*)value;
+		if([mValue isKindOfClass:[NSNumber class]]) {
+			result = [(NSNumber*)mValue stringValue];
+		} else if([mValue isKindOfClass:[NSString class]]) {
+			result = (NSString*)mValue;
+		} else if(isArrayValue(value) || isConstArrayValue(value) || isObjectValue(value)) {
+//			NSLog(@" class is %@", NSStringFromClass ([mValue class]));
+			if([NSJSONSerialization isValidJSONObject:mValue]) {
+				NSData *jsonData = [NSJSONSerialization dataWithJSONObject:mValue options:kNilOptions error:nil];
+				result = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+			} else {
+				NSLog(@"Woah!  not a valid object in createJsonString(void* value)");
+			}
+		} else if([mValue isKindOfClass:[NSNull class]]) {
+			result = @"NULL";
+		} else {
+			std::cerr << "ERROR: setValueValue() unrecognized class!" << std::endl;
+		}
+
 		return std::string([result UTF8String]);
 	}
 }

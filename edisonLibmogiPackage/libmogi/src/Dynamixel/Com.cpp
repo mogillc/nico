@@ -51,6 +51,15 @@ extern "C" {
 			return DISCONNECTED;
 		}
 
+		if (verbose) {
+			std::cerr << "Outgoing Buffer:";
+			for(int i = 0; i < data.size(); i++)
+			{
+				std::cerr << " " << (int)data.at(i);
+			}
+			std::cerr << std::endl;
+		}
+
 		// std::cerr << " In Com::writeInterface()" << std::endl;
 		// tcflush(fid, TCSAFLUSH);
 		// tcflush(fid, TCSANOW);

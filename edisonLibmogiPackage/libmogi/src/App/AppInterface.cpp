@@ -190,8 +190,8 @@ void AppInterface::exitAction() {
 
 void AppInterface::entryAction() {
 	pthread_t _thread;
-#define BUFFER_SIZE 10
-	unsigned char buf[10];
+#define BUFFER_SIZE 1000
+	unsigned char buf[BUFFER_SIZE];
 	int rc;
 	// int bytes;
 	// int numberOfTransacitons = 0;
@@ -296,8 +296,7 @@ void AppInterface::entryAction() {
 				std::cerr << "error starting multicast thread :(" << std::endl;
 			}
 
-			std::cout << "Exiting the connection loop, rc = " << rc
-					<< std::endl;
+			std::cout << "Exiting the connection loop, rc = " << rc << std::endl;
 		}
 	}
 	//		std::cout << "Socket Thread complete." << std::endl;

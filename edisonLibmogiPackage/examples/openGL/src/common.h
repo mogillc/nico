@@ -21,9 +21,37 @@
 #include <mogi/simulation/shader.h>
 #include <mogi/simulation/light.h>
 #include <mogi/simulation/importer/importer.h>
+#include <mogi/simulation/dynamicShader.h>
 
 #include <mogi/robot/hexapod.h>
 #include <mogi/statechart/statechart.h>
+
+class PerformanceMeasure {
+private:
+	Mogi::Math::Time timer;
+	std::map<std::string, double> times;
+
+public:
+	PerformanceMeasure() {
+		timer.initialize();
+	}
+	void reset() {
+		times.erase(times.begin(), times.end());
+		timer.reset();
+	}
+	void print() {
+		std::cout << "Times total:" << timer.runningTime() << std::endl;
+		for (std::map<std::string,double>::iterator it = times.begin(); it != times.end(); it++) {
+			std::cout << " - " << it->first << ", dTime: " << it->second << ",\t" << it->second/timer.runningTime()*100 << "%" << std::endl;
+		}
+	}
+
+	void takeMeasurement(const std::string& label) {
+		timer.update();
+		times[label] = timer.dTime();
+	}
+
+};
 
 typedef struct {
 	float r;
@@ -33,6 +61,8 @@ typedef struct {
 
 class UIhandler {
 private:
+	PerformanceMeasure mPerformanceMeasure;
+
 	GLuint _vertexArray; // why?
 	Mogi::Math::Time keyboardTimer;
 	Mogi::Simulation::Keyboard keyboard;
@@ -60,9 +90,7 @@ private:
 	float fDepth;	//m
 	float fLength; //mm
 	bool autofocus;
-	GLfloat centerDepth;
-	GLfloat farClip;
-	GLfloat nearClip;
+	bool vignetteEnable;
 
 	Mogi::Simulation::MBbokeh *bokehPost;
 	Mogi::Simulation::MBpostprocess *testFinal;
@@ -70,16 +98,16 @@ private:
 
 	Mogi::Simulation::FrameBuffer *frameBuffer;
 
-	//Mogi::Simulation::MBshader shader;
-	//Mogi::Simulation::MBshader simpleShader;
-	Mogi::Simulation::MBshader shadowShader;
-	//Mogi::Simulation::MBshader bokehShader;
-	Mogi::Simulation::MBshader shaderForES;
+	Mogi::Simulation::ShadowShader mShadowShader;
+	Mogi::Simulation::MBshader *gShader;
+	Mogi::Simulation::MBGBuffer* gBuffer;
 
 #ifdef SDL2_FOUND
 	SDL_Window *sdlWindow;
 	SDL_GLContext glcontext;
 #endif
+
+	Mogi::Math::Vector cameraOffsetLocation;
 
 	// Methods called by initialize()
 	void initSDL();
@@ -113,6 +141,19 @@ public:
 	// Blocking call, runs continuously until the excape key is pressed in the window.
 	// This loop repeatedly calls displayCB.
 	void mainLoop();
+
+	// Set's the camera location offset to be added to the model:
+	void setCameraOffsetLocation(Mogi::Math::Vector& locationOffset);
+	// Set's the camera location to be added to the model:
+	void setCameraLocation(Mogi::Math::Vector& location);
+	// Set's the camera Euler angles
+	void setCameraOrientation(Mogi::Math::Vector& orientation);
+
+	// Should resize necessary framebuffers and camera reoslutions for a new screen size
+	void resize(int xres, int yres);
+
+	// Set focus parameters
+	void setFocus( float fstop, float fDepth, float fLength );
 };
 
 

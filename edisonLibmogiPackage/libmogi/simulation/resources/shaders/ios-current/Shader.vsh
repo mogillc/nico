@@ -19,7 +19,7 @@ uniform vec3 lightPosition;
 uniform highp mat4 modelViewProjectionMatrix;
 uniform highp mat3 normalMatrix;
 
-uniform mat4 lightModelViewProjectionMatrix;
+uniform mat4 lightModelViewProjectionMatrix[2];
 uniform mat4 modelViewMatrix;
 
 //varying highp vec4 lightVertexPosition;

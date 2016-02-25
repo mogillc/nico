@@ -64,7 +64,7 @@ InverseKinematics::~InverseKinematics() {
 			delete links[i]->link;
 			delete links[i]->orientation;
 			delete links[i]->location;
-			free(links[i]);
+			delete links[i];
 		}
 		delete[] links;
 	}
@@ -221,9 +221,17 @@ void InverseKinematics::setType(ConfigurationType configurationType) {
 		motorAngles->setLength(numLinks > 0 ? numLinks - 1 : 0);
 		motorScratch->setLength(motorAngles->size());
 
+		#ifdef UNIX
+		links = new Link* [numLinks];
+#else
 		links = (Link**) malloc(numLinks * sizeof(Link*));
+#endif
 		for (unsigned int i = 0; i < numLinks; i++) {
+			#ifdef UNIX
+			links[i] = new Link;
+#else
 			links[i] = (Link*) malloc(sizeof(Link));
+#endif
 			links[i]->link = Vector::create();
 			links[i]->link->setLength(3);
 			links[i]->orientation = Quaternion::create();

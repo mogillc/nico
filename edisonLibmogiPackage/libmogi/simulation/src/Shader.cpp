@@ -17,6 +17,8 @@
 
 #include "mogi.h"
 #include <iostream>
+#include <cstring>
+
 #ifdef _cplusplus
 extern "C" {
 #endif
@@ -25,38 +27,22 @@ using namespace Mogi;
 using namespace Simulation;
 
 MBshader::MBshader() {
-	g_program = -1;
 	textureTracker = 0;
 }
 
 MBshader::~MBshader() {
-	for (int i = 0; i < uniforms.size(); i++) {
-		delete uniforms[i];
+//	for (int i = 0; i < uniforms.size(); i++) {
+//		delete uniforms[i];
+//	}
+	for (std::map<std::string, GLint*>::iterator it = uniforms.begin(); it != uniforms.end(); it++) {
+		delete it->second;
 	}
 	for (int i = 0; i < textureUniforms.size(); i++) {
 		delete textureUniforms[i];
 	}
 }
 
-GLuint MBshader::program() {
-	return g_program;
-}
 
-int MBshader::initialize(const char *vertShaderPath,
-		const char *fragShaderPath) {
-	int ret = 0;
-	bool everythingIsCool;
-	everythingIsCool = loadShaders(&g_program, vertShaderPath, fragShaderPath);
-	if (everythingIsCool) {
-		everythingIsCool = validateProgram(g_program);
-		if (everythingIsCool == false) {
-			ret = -2;
-		}
-	} else {
-		ret = -1;
-	}
-	return ret;
-}
 
 void MBshader::enableAttributes() {
 	hasAttributes = true;
@@ -67,17 +53,17 @@ void MBshader::disableAttributes() {
 }
 
 void MBshader::useProgram() {
-	glUseProgram(g_program);
+	glUseProgram(this->program());
 
 	if (hasAttributes) {
-		glEnableVertexAttribArray(glGetAttribLocation(g_program, "position"));
-		glVertexAttribPointer(glGetAttribLocation(g_program, "position"), 3, GL_FLOAT, GL_FALSE, 40, BUFFER_OFFSET(0));
-		glEnableVertexAttribArray(glGetAttribLocation(g_program, "normal"));
-		glVertexAttribPointer(glGetAttribLocation(g_program, "normal"), 3, GL_FLOAT, GL_FALSE, 40, BUFFER_OFFSET(12));
-		glEnableVertexAttribArray(glGetAttribLocation(g_program, "color"));
-		glVertexAttribPointer(glGetAttribLocation(g_program, "color"), 4, GL_FLOAT, GL_FALSE, 40, BUFFER_OFFSET(24));
+		glEnableVertexAttribArray(glGetAttribLocation(this->program(), "position"));
+		glVertexAttribPointer(glGetAttribLocation(this->program(), "position"), 3, GL_FLOAT, GL_FALSE, 40, BUFFER_OFFSET(0));
+		glEnableVertexAttribArray(glGetAttribLocation(this->program(), "normal"));
+		glVertexAttribPointer(glGetAttribLocation(this->program(), "normal"), 3, GL_FLOAT, GL_FALSE, 40, BUFFER_OFFSET(12));
+		glEnableVertexAttribArray(glGetAttribLocation(this->program(), "color"));
+		glVertexAttribPointer(glGetAttribLocation(this->program(), "color"), 4, GL_FLOAT, GL_FALSE, 40, BUFFER_OFFSET(24));
 	} else {
-		int vertex = glGetAttribLocation(g_program, "vertex");
+		int vertex = glGetAttribLocation(this->program(), "vertex");
 		glEnableVertexAttribArray(vertex);
 		glVertexAttribPointer(vertex, 3, GL_FLOAT, GL_FALSE, 40, BUFFER_OFFSET(0));
 	}
@@ -85,35 +71,46 @@ void MBshader::useProgram() {
 
 void MBshader::stopProgram() {
 	if (hasAttributes) {
-		glDisableVertexAttribArray(glGetAttribLocation(g_program, "position"));
-		glDisableVertexAttribArray(glGetAttribLocation(g_program, "normal"));
-		glDisableVertexAttribArray(glGetAttribLocation(g_program, "color"));
+		glDisableVertexAttribArray(glGetAttribLocation(this->program(), "position"));
+		glDisableVertexAttribArray(glGetAttribLocation(this->program(), "normal"));
+		glDisableVertexAttribArray(glGetAttribLocation(this->program(), "color"));
 	}
 	glUseProgram(0);
 }
 
 GLint MBshader::getUniformLocation(std::string name) {
 	// Find the uniform, if it exists:
-	for (int i = 0; i < uniforms.size(); i++) {
-		if (name == uniforms[i]->name) {
-			return uniforms[i]->location;
+//	for (int i = 0; i < uniforms.size(); i++) {
+//		if (name == uniforms[i]->name) {
+//			return uniforms[i]->location;
+//		}
+//	}
+	GLint* result = uniforms[name];
+	if (result == NULL) {
+		result = new GLint;
+		//std::cerr << "Finding uniform location " << name << " for shader " << label;
+		*result = glGetUniformLocation(this->program(), name.c_str());
+		if (*result < 0) {
+			std::cerr << " - Warning: MBshader::getUniformLocation(): Unable to find uniform: " << name << " for shader " << label << std::endl;
 		}
+		uniforms[name] = result;
 	}
 
-	// Doesn't exist yet, so find and add it:
-	MBuniform *uniform = new MBuniform;
-	if ((uniform->location = glGetUniformLocation(g_program, name.c_str()))
-			>= 0) {
-		uniform->name = name;
-		uniforms.push_back(uniform);
-
-		return uniform->location;
-	}
-
-	return -1;
+	return *result;
+//	// Doesn't exist yet, so find and add it:
+//	MBuniform *uniform = new MBuniform;
+//	if ((uniform->location = glGetUniformLocation(g_program, name.c_str())) >= 0) {
+//		uniform->name = name;
+//		uniforms.push_back(uniform);
+//
+//		return uniform->location;
+//	}
+//	delete uniform;
+//
+//	return -1;
 }
 
-TextureUniform *MBshader::getTextureUniform(std::string name) {
+TextureUniform* MBshader::getTextureUniform(std::string name) {
 	// Find the uniform, if it exists:
 	for (int i = 0; i < textureUniforms.size(); i++) {
 		if (name == textureUniforms[i]->name) {
@@ -123,17 +120,28 @@ TextureUniform *MBshader::getTextureUniform(std::string name) {
 
 	// Doesn't exist yet, so find and add it:
 	TextureUniform *uniform = new TextureUniform;
-	if ((uniform->location = glGetUniformLocation(g_program, name.c_str()))
-			>= 0) {
+	if ((uniform->location = glGetUniformLocation(this->program(), name.c_str())) >= 0) {	// not good, we will keep calling this method.
 		uniform->name = name;
 		uniform->value = textureTracker++;
 		textureUniforms.push_back(uniform);
 
 		return uniform;
 	}
-
+	delete uniform;
 	return NULL;
 }
+
+//	int MBshader::initializeFromSource(const std::string& vertexSource, const std::string& fragmentSource) {
+//		if (loadShaders(&g_program, vertexSource, fragmentSource)) {
+//			if (validateProgram(g_program) == false) {
+//				return -2;	// TODO: make enums for this
+//			}
+//		} else {
+//			return -1;
+//		}
+//		return 0;
+//
+//	}
 
 int MBshader::sendInteger(std::string name, int value) {
 	GLint location = getUniformLocation(name);
@@ -160,6 +168,10 @@ int MBshader::sendMatrix(std::string name, Math::Matrix &matrix) {
 
 	if (matrix.numColumns() == matrix.numRows()) {
 		switch (matrix.numRows()) {
+		case 2:
+			glUniformMatrix2fv(location, 1, GL_FALSE, matrix.dataAsFloat());
+			break;
+
 		case 3:
 			glUniformMatrix3fv(location, 1, GL_FALSE, matrix.dataAsFloat());
 			break;
@@ -173,6 +185,10 @@ int MBshader::sendMatrix(std::string name, Math::Matrix &matrix) {
 		}
 	} else if (matrix.numColumns() == 1) {
 		switch (matrix.numRows()) {
+		case 2:
+			glUniform2fv(location, 1, matrix.dataAsFloat());
+			break;
+
 		case 3:
 			glUniform3fv(location, 1, matrix.dataAsFloat());
 			break;
@@ -204,6 +220,14 @@ int MBshader::sendTexture(std::string name, GLuint texture) {
 	return -1;
 }
 
+	const std::string& MBshader::getName() {
+		return label;
+	}
+
+	void MBshader::setName(const std::string& newName) {
+		label = newName;
+	}
+
 //////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////
@@ -218,10 +242,8 @@ int MBshader::sendTexture(std::string name, GLuint texture) {
 //"Shaders/Shader.fsh");
 //}
 
-bool Simulation::loadShaders(GLuint *g_program, const char *vertShaderPath,
-		const char *fragShaderPath) {
+	bool Simulation::loadShaders(GLuint *g_program, const std::string& vertexSource, const std::string& fragmentSource) {
 	GLuint vertShader, fragShader;
-	std::string vertShaderPathname, fragShaderPathname;
 
 	// Create shader program.
 	// printf("creating program...");
@@ -229,35 +251,26 @@ bool Simulation::loadShaders(GLuint *g_program, const char *vertShaderPath,
 
 	// printf("Done.\ncreating vertex shader...");
 	vertShader = glCreateShader(GL_VERTEX_SHADER);
-#ifdef BUILD_FOR_IOS
-	vertShaderPathname = Mogi::getResourceDirectory();
-	vertShaderPathname.append("/");
-	vertShaderPathname.append( vertShaderPath );
-	fragShaderPathname = Mogi::getResourceDirectory();
-	fragShaderPathname.append("/");
-	fragShaderPathname.append( fragShaderPath );
-#else
-	vertShaderPathname = vertShaderPath;
-	fragShaderPathname = fragShaderPath;
-#endif
 	// vertShader = setShaderSource( vertShaderPathname, GL_VERTEX_SHADER );
 	// printf("Done.\ncreating frag shader...");
 
 	fragShader = glCreateShader(GL_FRAGMENT_SHADER);
 	// fragShader = setShaderSource( fragShaderPathname, GL_FRAGMENT_SHADER );
 
+
 	// Create and compile vertex shader.
 	// printf("Done.\nSetting up vertex shader:\n");
-	if (!compileShader(&vertShader, GL_VERTEX_SHADER, vertShaderPathname)) {
+
+	if (!compileShader(&vertShader, GL_VERTEX_SHADER, vertexSource)) {
 		// glCompileShader( vertShader );
-		printf("Failed to compile vertex shader\n");
+		std::cerr << "Failed to compile vertex shader, source: " << vertexSource << std::endl;
 		return false;
 	}
 
 	// Create and compile fragment shader.
-	if (!compileShader(&fragShader, GL_FRAGMENT_SHADER, fragShaderPathname)) {
+	if (!compileShader(&fragShader, GL_FRAGMENT_SHADER, fragmentSource)) {
 		// glCompileShader( fragShader );
-		printf("Failed to compile fragment shader\n");
+		std::cerr << "Failed to compile fragment shader, source: " << fragmentSource << std::endl;
 		return false;
 	}
 
@@ -276,6 +289,9 @@ bool Simulation::loadShaders(GLuint *g_program, const char *vertShaderPath,
 	// Link program.
 	if (!linkProgram(*g_program)) {
 		printf("Failed to link program: %d\n", *g_program);
+
+		std::cerr << "Failed to compile vertex shader, source: " << vertexSource << std::endl;
+		std::cerr << "Failed to compile fragment shader, source: " << fragmentSource << std::endl;
 
 		if (vertShader) {
 			glDeleteShader(vertShader);
@@ -307,24 +323,15 @@ bool Simulation::loadShaders(GLuint *g_program, const char *vertShaderPath,
 	return true;
 }
 
-bool Simulation::compileShader(GLuint *shader, GLenum type, std::string file) {
+bool Simulation::compileShader(GLuint *shader, GLenum type, const std::string& source) {
 	GLint status;
-	GLchar *source;
-	GLint length;
-
-	// printf("Compiling %s!\n", file.c_str());
-
-	source = read_text_file(file.c_str());
-	if (!source) {
-		printf("Failed to load vertex shader\n");
-		return false;
-	}
-	// printf("Read file conents:\n%s\n", source);
 
 	*shader = glCreateShader(type);
 
-	length = strlen(source);
-	glShaderSource(*shader, 1, (const GLchar **) &source, &length);
+	GLint length = (GLint)source.length();
+	const GLchar* sourceString = (const GLchar *)source.c_str(); // Need to be const to compile on linux
+
+	glShaderSource(*shader, 1, &sourceString, &length);
 
 	glCompileShader(*shader);
 
@@ -349,8 +356,7 @@ bool Simulation::compileShader(GLuint *shader, GLenum type, std::string file) {
 		glGetShaderInfoLog(*shader, length, &status, log);
 
 		/* print an error message and the info log */
-		fprintf(stderr, "shaderCompileFromFile(): Unable to compile %s: %s\n",
-				file.c_str(), log);
+		fprintf(stderr, "shaderCompileFromFile(): Unable to compile: %s\n", log);
 		free(log);
 
 		glDeleteShader(*shader);
@@ -358,9 +364,9 @@ bool Simulation::compileShader(GLuint *shader, GLenum type, std::string file) {
 	}
 
 	// printf("Woohoo compiled!\n");
-	if (source > 0) {
-		free(source);
-	}
+//	if (source > 0) {
+//		free(source);
+//	}
 	return true;
 }
 
@@ -421,14 +427,14 @@ GLchar *Simulation::read_text_file(const char *name) {
 		if (fp != NULL) {
 			// Determine its length
 			fseek(fp, 0, SEEK_END);
-			count = ftell(fp);
+			count = (int)ftell(fp);
 			rewind(fp);
 
 			if (count > 0) {
 				// Allocate the string buffer
 				content = (GLchar *) malloc(sizeof(char) * (count + 1));
 				// Read the file into the buffer
-				count = fread(content, sizeof(char), count, fp);
+				count = (int)fread(content, sizeof(char), count, fp);
 				// Add a NUL terminator
 				content[count] = '\0';
 			}

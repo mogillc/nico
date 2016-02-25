@@ -23,11 +23,6 @@
 
 #include "mogi/math/mmath.h"
 
-#define GLKVector3 Vector
-#define GLKVector4 Vector
-#define GLKMatrix3 MBmatrix
-#define GLKMatrix4 MBmatrix
-
 #ifdef __APPLE__
 #include <malloc/malloc.h>
 #else
@@ -35,10 +30,6 @@
 #include <string.h>
 #endif
 
-#define UInt32 uint32_t
-#define Float32 float
-
-//#include <png.h>
 #include <fstream>
 #include <iostream>
 #include <vector>
@@ -49,11 +40,6 @@
 #include "mogi/math/node.h"
 #include "shader.h"
 #include "texture.h"
-
-//#define MM_PER_METER (1000.0)
-
-// extern GLfloat gCubeVertexDataColor[];
-// extern GLfloat gridLineVertexData[];
 
 namespace Mogi {
 namespace Simulation {
@@ -87,11 +73,9 @@ private:
 	std::vector<VertexData> data;
 	std::vector<unsigned int> indices;
 
-	// New stuff:
 	std::vector<Bone*> bones;  // Loaded from mBones
 
 	unsigned int materialIndex;
-//	int totalTriangles;
 
 	std::string objectLocation;
 
@@ -99,9 +83,6 @@ public:
 	std::string name;
 	std::string fileName;
 
-	// New methods/attributes:
-//	int set(aiMesh* mesh, aiMaterial** materials, std::string fileLocation,
-//			int materialIDOffset);
 	void setObjectLocation(const std::string& path);
 	void setBones( const std::vector<Bone*>& bones);
 	void setMaterialIndex( const int& index );
@@ -147,7 +128,6 @@ public:
 	// This was used to generate code for the post processing mesh in Postprocess.cpp.
 	void generateCodeFromMesh();
 
-	//MBmesh& operator=(const MBmesh& param);
 };
 }
 }

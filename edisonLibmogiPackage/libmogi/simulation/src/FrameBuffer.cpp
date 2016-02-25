@@ -23,17 +23,14 @@ extern "C" {
 using namespace Mogi;
 using namespace Simulation;
 
-_FrameBuffer::_FrameBuffer() {
+_FrameBuffer::_FrameBuffer( int xRes, int yRes ) {
 	//	setup();
 }
 
-void _FrameBuffer::initialize(int numberOfRenderTextures) {
-	glGenFramebuffers(1, &frameBuffer);
+void _FrameBuffer::initialize(int numberOfRenderTextures, int xRes, int yRes) {
 
-	glBindFramebuffer( GL_FRAMEBUFFER, frameBuffer);
-
-	xResolution = 1280;
-	yResolution = 720;
+	xResolution = xRes;
+	yResolution = yRes;
 
 	// std::cout << "Creating depthTexture: " << std::endl;
 	depthTexture.create(xResolution, yResolution, true);
@@ -57,9 +54,11 @@ void _FrameBuffer::initialize(int numberOfRenderTextures) {
 	//	std::cout << "Done." << std::endl;
 	}
 
+	glGenFramebuffers(1, &frameBuffer);
+
 	xResolution = 0;
 	yResolution = 0;
-	resize(1280, 720);
+	resize(xRes, yRes);
 }
 
 _FrameBuffer::~_FrameBuffer() {
@@ -91,6 +90,7 @@ _FrameBuffer::~_FrameBuffer() {
 int _FrameBuffer::resize(int width, int height) {
 	int result = 0;
 	if ((width != xResolution) || (height != yResolution)) {
+		glGetIntegerv(GL_FRAMEBUFFER_BINDING, &priorFrameBuffer);
 		glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
 
 		if (depthTexture.resize(width, height)) {
@@ -101,28 +101,61 @@ int _FrameBuffer::resize(int width, int height) {
 			if (renderTextures[i]->resize(width, height)) {
 				return -1;
 			}
-			glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER,
-					GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D,
-					renderTextures[i]->getTexture(), 0);
+#ifdef GL_ES_VERSION_3_0
+			if (MogiGLInfo::getInstance()->getVersion() >= 300) {
+				glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, renderTextures[i]->getTexture(), 0);
+			} else {
+				glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, renderTextures[i]->getTexture(), 0);
+			}
+#else
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, renderTextures[i]->getTexture(), 0);
+
+#endif
 		}
 
-		glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
-				GL_TEXTURE_2D, depthTexture.getTexture(), 0);
+#ifdef GL_ES_VERSION_3_0
+		if (MogiGLInfo::getInstance()->getVersion() >= 300) {
 
+			glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthTexture.getTexture(), 0);
+		} else {
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthTexture.getTexture(), 0);
+		}
+#else
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthTexture.getTexture(), 0);
+
+#endif
 		//			result = resizeOther(width, height);
+//#ifdef GL_ES_VERSION_3_0
+		if (MogiGLInfo::getInstance()->getVersion() >= 300) {
+			GLenum DrawBuffers[renderTextures.size()];
+			for (int i = 0; i < renderTextures.size(); i++) {
+				DrawBuffers[i] = GL_COLOR_ATTACHMENT0 + i;
+			}
 
-		GLenum DrawBuffers[renderTextures.size()];
-		for (int i = 0; i < renderTextures.size(); i++) {
-			DrawBuffers[i] = GL_COLOR_ATTACHMENT0 + i;
+			glDrawBuffers((int)renderTextures.size(), DrawBuffers);
+
+		} else {
+			
+//			glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, renderTextures[0]->getTexture());
 		}
-		glDrawBuffers(renderTextures.size(), DrawBuffers);
+//	#else
+		//glDrawBuffers((int)renderTextures.size(), DrawBuffers);
+
+//#endif
 
 		GLenum Status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 		if (Status != GL_FRAMEBUFFER_COMPLETE) {
 			printCheckFramebufferStatus(Status);
 		}
 
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glBindFramebuffer(GL_FRAMEBUFFER, priorFrameBuffer);
+
+		Status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+		if (Status != GL_FRAMEBUFFER_COMPLETE) {
+			std::cerr << "Error: glBindFramebuffer(GL_FRAMEBUFFER, " << priorFrameBuffer << "): ";
+			printCheckFramebufferStatus(Status);
+		}
+
 
 		xResolution = width;
 		yResolution = height;
@@ -131,12 +164,25 @@ int _FrameBuffer::resize(int width, int height) {
 }
 
 void _FrameBuffer::attachFramebufferForReading() {
+#ifdef OPENGLES_FOUND
+	std::cerr << "_FrameBuffer::attachFramebufferForReading() is unsupported" << std::endl;
+#else
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, frameBuffer);
+#endif
 }
 
 void _FrameBuffer::attachFramebuffer() {
 #ifdef OPENGLES_FOUND
+	glGetIntegerv(GL_FRAMEBUFFER_BINDING, &priorFrameBuffer);
 	glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);	// TODO: test this
+	if (MogiGLInfo::getInstance()->getVersion() < 300) {
+		glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,renderTextures[0]->getTexture(),0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D, depthTexture.getTexture(), 0);
+
+//		glEnable( GL_DEPTH_TEST);
+//		glEnable(GL_CULL_FACE);
+//		glCullFace(GL_FRONT);
+	}
 #else
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, frameBuffer);
 #endif
@@ -144,7 +190,7 @@ void _FrameBuffer::attachFramebuffer() {
 
 void _FrameBuffer::removeFramebuffer() {
 #ifdef OPENGLES_FOUND
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);	// TODO: test this
+	glBindFramebuffer(GL_FRAMEBUFFER, priorFrameBuffer);	// TODO: test this
 #else
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 #endif
@@ -180,13 +226,23 @@ Texture &_FrameBuffer::getRenderTexture(int index) {
 	return *renderTextures[index];
 }
 
-FrameBuffer::FrameBuffer() {
-	setup();
+FrameBuffer::FrameBuffer(int xRes, int yRes)
+ :_FrameBuffer(xRes, yRes) {
+	setup(xRes, yRes);
 }
 
-MBGBuffer::MBGBuffer() {
-	setup();
+	void FrameBuffer::setup(int xRes, int yRes) {
+		initialize(NUM_TEXTURES, xRes, yRes);
+	}
+
+	MBGBuffer::MBGBuffer(int xRes, int yRes)
+ :_FrameBuffer(xRes, yRes) {
+	setup(xRes, yRes);
 }
+
+	void MBGBuffer::setup(int xRes, int yRes) {
+		initialize(NUM_G_TEXTURES, xRes, yRes);
+	}
 
 //	MBGBuffer::MBGBuffer() {
 //		std::cout << " MBGVUFFERBITSCHCES!!!" << std::endl;

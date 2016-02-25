@@ -62,7 +62,7 @@ if(NOT GLUT_FOUND)
     message(ERROR " GLUT not found!")
 else()
 	include_directories(  ${GLUT_INCLUDE_DIR}  )
-
+	set(LIBS ${LIBS} ${GLUT_LIBRARY})
 endif(NOT GLUT_FOUND)
  
 
@@ -97,7 +97,14 @@ else()
 endif()
 
 add_library(GLcommon src/Arm6DOF.h src/Arm6DOF.cpp src/calibration.h src/common.h src/common.cpp)
+
+if (NOT APPLE) # Added by Adrian. I'm surprised you don't have to do this for Apple.
+	target_link_libraries(GLcommon ${LIBS} ${GLEW_LIBRARY} )
+endif()
+
 set(LIBS ${LIBS} GLcommon)
+
+
 
 add_executable(hexapodGL src/hexapodGL.cpp )
 add_executable(armGL src/arm.cpp )

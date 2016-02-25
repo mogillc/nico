@@ -22,11 +22,11 @@ static const char* const JSONVALUEINTERFACE_C_Id = "$Id$";
 #include <iostream>
 
 #ifdef LIBJSONCPP_FOUND
-#include <json/json.h>
-#define VALUE_TYPE Json::Value
-#define VALUE_CASTED ((VALUE_TYPE*)value)
-#elif BUILD_FOR_IOS
-#include "jsonWrapperIOS.h"
+	#include <json/json.h>
+	#define VALUE_TYPE Json::Value
+	#define VALUE_CASTED ((VALUE_TYPE*)value)
+#elif defined(BUILD_FOR_IOS) || defined(ANDROID)
+	#include "jsonWrapperIOS.h"
 #endif // LIBJSONCPP_FOUND
 
 #ifdef _cplusplus
@@ -166,7 +166,7 @@ extern "C" {
 		*VALUE_CASTED = other;
 		return *this;
 	}
-	JsonValueInterface& JsonValueInterface::operator=( const JsonValueInterface& other ) {
+	JsonValueInterface& JsonValueInterface::operator=( JsonValueInterface& other ) {
 		*VALUE_CASTED = *(VALUE_TYPE*)(other.value);
 		return *this;
 	}
@@ -175,7 +175,7 @@ extern "C" {
 		return VALUE_CASTED->toStyledString();
 	}
 
-#elif BUILD_FOR_IOS // LIBJSONCPP_FOUND
+#elif defined(BUILD_FOR_IOS) || defined(ANDROID) // LIBJSONCPP_FOUND
 
 	using namespace _JsonWrapperIOS;
 
@@ -192,19 +192,36 @@ extern "C" {
 		value = getNewJsonValue();
 	}
 	JsonValueInterface::JsonValueInterface(const JsonValueInterface& other) {
+//		std::cout << "In copy constructor , other.parent = " << (long)other.psarent << "this->parent =" << (long)parent << std::endl;
+//		parent = other.parent;
 		parent = NULL;
 		child = NULL;
+		value = getNewJsonValue();
 		setValueValue( &value, &other.value, parent == NULL ? NULL : &parent->value );
 
 	}
 
 	JsonValueInterface::~JsonValueInterface() {
-		deleteJsonValue(&value);
+//		std::cout << "In ~JsonValueInterface()" << std::endl;
 		if (child != NULL) {
-			child->parent = NULL;
+//			child->parent = NULL;
+//			std::cout << "Deleting child:" << child->toStyledString() << std::endl;
 			delete child;
 			child = NULL;
 		}
+
+
+//		std::cout << "Considering to delete:" << toStyledString() << std::endl;
+//		std::cout << "parent = " << (long)parent << std::endl;
+//		if (parent != NULL) {
+//			std::cout << "parent->isArray() = " << parent->isArray() << std::endl;
+//			std::cout << "parent->isObject() = " << parent->isObject() << std::endl;
+//		}
+		if (parent == NULL || ( !parent->isArray() && !parent->isObject() )) {
+//			std::cout << "Actually deleting: Deleting this:" << toStyledString() << std::endl;
+			deleteJsonValue(&value);
+		}
+
 	}
 
 	bool JsonValueInterface::isBool() const {
@@ -248,6 +265,7 @@ extern "C" {
 		}
 		getValueFromIndex( &(child->value), &value, index, parent == NULL ? NULL : &parent->value  );
 		child->parent = this;
+//		std::cout << "Setting parent to: " << (long)child->parent << std::endl;
 		return *child;
 	}
 	JsonValueInterface& JsonValueInterface::operator[](const std::string& key) {
@@ -283,8 +301,27 @@ extern "C" {
 		setStringValue( &value, other, parent == NULL ? NULL : &parent->value );
 		return *this;
 	}
-	JsonValueInterface& JsonValueInterface::operator=( const JsonValueInterface& other ) {
+	JsonValueInterface& JsonValueInterface::operator=( JsonValueInterface& other ) {
+//		std::cout << "In operator= , other.parent = " << (long)other.parent << ", this->parent =" << (long)parent << std::endl;
+//		std::cout << "other = " << other.toStyledString() << std::endl;
 		setValueValue( &value, &other.value, parent == NULL ? NULL : &parent->value );
+//		std::cout << "this = " << this->toStyledString() << std::endl;
+//		if (parent) {
+//			std::cout << "this->parent = " << this->parent->toStyledString() << std::endl;
+//		}
+//		std::cout << "NOW: In operator= , other.parent = " << (long)other.parent << ", this->parent =" << (long)parent << std::endl;
+
+
+//		if (other.child != NULL) {
+//			if (child == NULL) {
+//				child = new JsonValueInterface();
+//			}
+//			setValueValue( &child->value, &other.child->value, &value );
+//			child->parent = this;
+//		}
+
+//		parent = other.parent;
+
 		return *this;
 	}
 
@@ -379,7 +416,7 @@ extern "C" {
 	JsonValueInterface& JsonValueInterface::operator=( const std::string& other ) {
 		return *this;
 	}
-	JsonValueInterface& JsonValueInterface::operator=( const JsonValueInterface& other ) {
+	JsonValueInterface& JsonValueInterface::operator=( JsonValueInterface& other ) {
 		return *this;
 	}
 

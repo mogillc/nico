@@ -26,8 +26,6 @@
 
 #include <vector>
 
-//#include <assimp/scene.h>
-
 namespace Mogi {
 namespace Simulation {
 
@@ -43,15 +41,13 @@ protected:
 	Math::Node* parentNode;
 
 	FrameBuffer* frameBuffer;
-	// GLuint FBO;
-	// GLuint shadowMap;
-	// GLuint renderTexture;
+
 	int width, height;
 	bool shadowEnable;
 	Math::Vector location;
 	Math::Quaternion orientation;
 	Math::Vector color;
-	// Shader *shadowShader;
+
 	bool shadowsAllocated;
 
 	Math::Matrix shadowMapMatrix;
@@ -62,7 +58,6 @@ protected:
 	float intensity;
 
 public:
-	//static MBlight* create(aiLight* light);
 	// Attributes:
 
 	// Methods:
@@ -83,7 +78,6 @@ public:
 	}
 	;
 
-	// void setOrientation(double x, double y, double z);
 	void setOrientation(Math::Quaternion ori);
 	Math::Quaternion& getOrientation() {
 		return orientation;
@@ -145,19 +139,22 @@ public:
 
 class MBspotLight: public MBlight {
 private:
+	float attenuationQuadratic;
+	float attenuationLinear;
+	float attenuationConstant;
+
 	float innerCone;
 	float outerCone;
 
 public:
-	//void set(aiLight* light);
 	void sendToShader(MBshader* shader, const Math::Matrix& modelMatrix,
 			int index);
 	void setCone(float innerCone, float outerCone);
+	void setAttenuationFactors(float constant, float linear, float quadratic);
 };
 
 class MBpointLight: public MBlight {
 private:
-	//	Mesh *lightMesh;
 	float attenuationQuadratic;
 	float attenuationLinear;
 	float attenuationConstant;
@@ -167,7 +164,6 @@ private:
 	void updateSphere();
 
 public:
-	//void set(aiLight* light);
 	void sendToShader(MBshader* shader, const Math::Matrix& modelMatrix,
 			int index);
 
@@ -176,7 +172,6 @@ public:
 
 class MBdirectionalLight: public MBlight {
 public:
-	//void set(aiLight* light);
 	void sendToShader(MBshader* shader, const Math::Matrix& modelMatrix,
 			int index);
 };

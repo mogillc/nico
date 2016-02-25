@@ -21,7 +21,7 @@
 #include <SDL2/SDL_image.h>
 #endif
 
-#ifdef BUILD_FOR_IOS
+#if defined(BUILD_FOR_IOS) || defined(ANDROID)
 #include "resourceInterface.h"
 #endif
 
@@ -88,11 +88,16 @@ int Texture::create(int w, int h, bool isDepth) {
 #ifdef OPENGLES_FOUND
 		format = GL_DEPTH_COMPONENT;
 		type = GL_UNSIGNED_INT;
+		if (MogiGLInfo::getInstance()->getVersion() >= 300) {
 #ifdef GL_ES_VERSION_3_0
-		internalFormat = GL_DEPTH_COMPONENT24;	// in ES3, explicit sizes must be given to internal format
+			internalFormat = GL_DEPTH_COMPONENT24;	// in ES3, explicit sizes must be given to internal format
 #else
-		internalFormat = GL_DEPTH_COMPONENT;
+			internalFormat = GL_DEPTH_COMPONENT16;	// TODO: test this
 #endif
+		} else {
+			internalFormat = GL_DEPTH_COMPONENT;
+		}
+
 #else
 		format = GL_DEPTH_COMPONENT;
 		internalFormat = GL_DEPTH_COMPONENT32F;
@@ -100,11 +105,15 @@ int Texture::create(int w, int h, bool isDepth) {
 #endif
 	} else {
 #ifdef OPENGLES_FOUND
+		if (MogiGLInfo::getInstance()->getVersion() >= 300) {
 #ifdef GL_ES_VERSION_3_0
-		internalFormat = GL_RGBA8;	// in ES3, explicit sizes must be given to internal format
+			internalFormat = GL_RGBA8;	// in ES3, explicit sizes must be given to internal format
 #else
-		internalFormat = GL_RGBA;
+			internalFormat = GL_RGBA4;	// TODO: test this
 #endif
+		} else {
+			internalFormat = GL_RGBA;
+		}
 		format = GL_RGBA;
 		type = GL_UNSIGNED_BYTE;
 #else
@@ -118,6 +127,35 @@ int Texture::create(int w, int h, bool isDepth) {
 	}
 	return -1;
 }
+
+	void Texture::reconfigure() {
+		GLenum Status = glGetError();
+		if (Status != GL_NO_ERROR) {
+			std::cout << "Error: Texture::reconfigure(): Before binding: " << glGetErrorToString(Status) << std::endl;
+		}
+
+		glBindTexture(GL_TEXTURE_2D, textureID);
+		Status = glGetError();
+		if (Status != GL_NO_ERROR) {
+			std::cout << "Error: Texture::reconfigure(): Broke at glBindTexture(): " << glGetErrorToString(Status) << std::endl;
+		}
+
+		glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, type, NULL);
+		Status = glGetError();
+		if (Status != GL_NO_ERROR) {
+			std::cout << "Error: Texture::reconfigure(): Broke at glTexImage2D: " << glGetErrorToString(Status) << std::endl;
+		}
+	}
+
+	GLenum Texture::getType() {
+		return type;
+	}
+	GLenum Texture::getFormat() {
+		return format;
+	}
+	GLint Texture::getInternalFormat() {
+		return internalFormat;
+	}
 
 void Texture::setType(GLenum textureFormat, GLint textureInternalFormat) {
 	if ((textureInternalFormat != internalFormat)
@@ -139,11 +177,6 @@ int Texture::resize(int w, int h) {
 	return 0;
 }
 
-void Texture::reconfigure() {
-	glBindTexture(GL_TEXTURE_2D, textureID);
-	glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, type, NULL);
-}
-
 int Texture::loadFromImage(std::string file) {
 	if ((textureID = loadTexture(file.c_str())) != 0) {
 		return 0;
@@ -152,7 +185,9 @@ int Texture::loadFromImage(std::string file) {
 	return -1;
 }
 
-	std::string glGetErrorToString(GLenum Status) {
+
+
+	std::string Simulation::glGetErrorToString(GLenum Status) {
 		switch (Status) {
 			case GL_NO_ERROR:
 				return "glGetError() returned GL_NO_ERROR";
@@ -192,42 +227,47 @@ GLuint Texture::createTexture(int w, int h) {
 		std::cout << "Error: Texture::createTexture(): Broke at glGenTextures: " << glGetErrorToString(Status) << std::endl;
 	}
 
+//	glBindTexture(GL_TEXTURE_2D, textureID);
+//	Status = glGetError();
+//	if (Status != GL_NO_ERROR) {
+//		std::cout << "Error: Texture::createTexture(): Broke at glBindTexture() : " << glGetErrorToString(Status) << std::endl;
+//	}
+	// This will call glBindTexture and glTexImage2D
 	resize(w, h);
-	glBindTexture(GL_TEXTURE_2D, textureID);
-	Status = glGetError();
-	if (Status != GL_NO_ERROR) {
-		std::cout << "Error: Texture::createTexture(): Broke at glBindTexture() : " << glGetErrorToString(Status) << std::endl;
-	}
 
-	Status = glGetError();
-	if (Status != GL_NO_ERROR) {
-		std::cout << "Error: Texture::createTexture(): Broke at glTexImage2D: " << glGetErrorToString(Status) << std::endl;
-	}
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	if (Status != GL_NO_ERROR) {
+		std::cout << "Error: Texture::createTexture(): Error happened while cperforming glTexParameteri(): " << glGetErrorToString(Status) << std::endl;
+	}
+
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	
 #ifdef OPENGLES_FOUND
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT); // from working iOS
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+if (MogiGLInfo::getInstance()->getVersion() >= 300) {	// NOT SURE IF WE SHOULD BLANKET ALL OF THIS
+		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT); // from working iOS
+		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+} else {
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // prevents repeating edge...?
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+}
+
 #else
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER); // prevents repeating edge...?
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 #endif
 
-	if (Status != GL_NO_ERROR) {
-		// std::cout << "Error happened while creating the texture: " <<
-		// gluErrorString(i) << "(gluErrorString(i) is deprecated so it was
-		// removed)" << std::endl;
-		// return 0;
 
-		std::cout << "Error: Texture::createTexture(): Error happened while creating the texture: " << glGetErrorToString(Status) << std::endl
-				<< "\t";
+	if (Status != GL_NO_ERROR) {
+		std::cout << "Error: Texture::createTexture(): Error happened while cperforming glTexParameteri(): " << glGetErrorToString(Status) << std::endl;
 	}
+	
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	return textureID;
 }
+
+
 
 GLuint Simulation::loadTexture(const char* name) {
 	GLuint texture;
@@ -277,12 +317,17 @@ GLuint Simulation::loadTexture(const char* name) {
 	SDL_FreeSurface(img);
 	SDL_FreeSurface(img2);
 
-#else // SDL2_FOUND	// TODO: find another type of support for loading a texture with SDL?
-//	std::cerr << "Simulation::loadTexture() Error: attempting to load an image " << name << " but SDL is not supported in this build" << std::endl;
-//	return -1;
-	texture = _loadTexture(name);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// DEfaults testures to be tiled.
+#else // SDL2_FOUND
+
+	// Important!  By default we will wrap the textures.  On OpenGL ES 2, this ONLY works if the
+	// Textures are a power of 2!  The _loadTexture function will then resize a texture to the next
+	// Highest power of 2 on an ES 2 context.  For example, a 700x700 texture will be resized to 1024x1024
+	texture = _loadTexture(name, MogiGLInfo::getInstance()->getVersion());
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// wrap the textures
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
 #endif // SDL2_FOUND	// TODO: find another type of support for loading a texture with SDL?
 	return texture;
 }

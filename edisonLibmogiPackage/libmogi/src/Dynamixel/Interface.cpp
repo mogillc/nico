@@ -17,7 +17,7 @@
 #include <unistd.h>
 #include <sstream>
 
-//#define DEBUGMODE
+#define DEBUGMODE
 
 #include <iostream>
 
@@ -54,7 +54,10 @@ Interface* Interface::create(int type, int baud) {
 
 	return interface;
 }
-
+	Interface::Interface(int baudrate)
+	: verbose(false), currentlyOpen(false) {
+		baud = baudrate;
+	}
 Interface::~Interface() {
 }
 
@@ -265,7 +268,7 @@ Interface::Status Interface::syncRead(
 	if ((ret = writeInterface(buffer)) != buffer.size()) {
 		return BAD_LENGTH;
 	}
-
+//	usleep(2000000);
 	Interface::Status status = NOERROR;
 	for (std::map<unsigned char, Motor*>::iterator it = dynamixels->begin(); it != dynamixels->end(); it++) {
 		Motor* dynamixel = it->second;
@@ -432,29 +435,33 @@ Interface::Status Interface::getResponse(std::vector<unsigned char>* buffer) {
 
 	} else {
 #ifdef DEBUGMODE
+		if (verbose) {
 		// printf("Error: robotisRead(): length<1\n");
-		std::cerr << "!! could not read 4: Read " << length << " bytes:";
+		std::cerr << "Error: Interface::getResponse(): Read " << length << " bytes:";
 		for (int i = 0; i < buffer->size(); i++) {
-			// std::cerr << (int)buffer->at(i) << " ";
-			//				fprintf(stderr, "0x%02X ",(unsigned
-			//int)buffer->at(i));
+			std::cerr << (int)buffer->at(i) << " ";
+//			fprintf(stderr, "0x%02X ",(unsigned int)buffer->at(i));
 			std::cerr << " " << (int)buffer->at(i);
 		}
 		std::cerr << std::endl;
+		}
 #endif
 
 		return BAD_LENGTH;
 	}
 
-	//#ifdef DEBUGMODE
-	//		printf("Incoming Buffer:");
-	//		for(int i = 0; i < buffer->size(); i++)
-	//		{
-	////			printf("0x%02X ",(unsigned int)buffer->at(i));
-	//			std::cerr << " " << (int)buffer->at(i);
-	//		}
-	//		printf("\n");
-	//#endif
+	#ifdef DEBUGMODE
+	if (verbose) {
+
+	std::cerr << "Incoming Buffer:";
+			for(int i = 0; i < buffer->size(); i++)
+			{
+	//			printf("0x%02X ",(unsigned int)buffer->at(i));
+				std::cerr << " " << (int)buffer->at(i);
+			}
+	std::cerr << std::endl;
+	}
+	#endif
 
 	if (!packetHandler.checkPacket(*buffer)) {
 		// std::cout << "Checksum error?" << std::endl;
@@ -592,6 +599,10 @@ Interface::Status Interface::processInstruction(Instruction& instruction) {
 
 	return status;
 }
+
+	void Interface::setVerbose(bool verbose) {
+		this->verbose = verbose;
+	}
 
 std::string robotisError(int error, int ID) {
 	std::stringstream result;

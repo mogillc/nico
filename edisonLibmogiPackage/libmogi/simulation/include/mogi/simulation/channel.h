@@ -52,12 +52,7 @@ public:
 
 	// Updates the modelMatrix in the node given the time:
 	void update(double time);
-	/*
-	 Channel();
-	 ~Channel();
-	 Channel( const Channel& param );
-	 Channel & operator = (const Channel&);
-	 */
+	
 };
 }
 }

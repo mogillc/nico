@@ -43,39 +43,130 @@ namespace Mogi {
 			JsonValueInterface* parent;
 		public:
 
-			static int parse( std::string jsonString, JsonValueInterface& value );
-			static int parse( const char *beginDoc, const char *endDoc, JsonValueInterface& value );
-
 			JsonValueInterface();
 			JsonValueInterface(const JsonValueInterface&);
 			~JsonValueInterface();
 
+			/*! \brief Parses the string containing a JSON string into the value framework.
+			 \param jsonString The JSON string, must be well formed, and begin and end with '{' and '}'
+			 \param value The value to store the parsing result.
+			 \return 0 on success, -1 on a failure.
+			 */
+			static int parse( std::string jsonString, JsonValueInterface& value );
+
+			/*! \brief Parses the string containing a JSON string into the value framework.
+			 \param beginDoc The first character in the JSON string, should be a '{' character.
+			 \param endDoc The last character in the JSON string, should be a '}' character.
+			 \param value The value to store the parsing result.
+			 \return 0 on success, -1 on a failure.
+			 */
+			static int parse( const char *beginDoc, const char *endDoc, JsonValueInterface& value );
+
+			/*! \brief Checks if the value is a bool type.
+			\return true if a bool, false otherwise.
+			 */
 			bool isBool() const;
+
+			/*! \brief Checks if the value is an integer type.
+			 \return true if an int, false otherwise.
+			 */
 			bool isInt() const;
+
+			/*! \brief Checks if the value is a double type.
+			 \return true if a double, false otherwise.
+			 */
 			bool isDouble() const;
+
+			/*! \brief Checks if the value is a string type.
+			 \return true if a string, false otherwise.
+			 */
 			bool isString() const;
+
+			/*! \brief Checks if the value is an array type.
+			 \return true if an array, false otherwise.
+			 */
 			bool isArray() const;
+
+			/*! \brief Checks if the value is an object type.
+			 \return true if an object, false otherwise.
+			 */
 			bool isObject() const;
 
+			/*! \brief Returns the bool value if of the correct type.
+			 \return The current value.
+			 */
 			int asBool() const;
-			int asInt() const;
-			double asDouble() const;
-			std::string asString() const;
-			int size() const;	// array size, if array
-			JsonValueInterface& operator[](const unsigned int&);
-			//JsonValueInterface operator[](const char*) const;
-			JsonValueInterface& operator[](const std::string&);
 
+			/*! \brief Returns the integer value if of the correct type.
+			 \return The current value.
+			 */
+			int asInt() const;
+
+			/*! \brief Returns the double value if of the correct type.
+			 \return The current value.
+			 */
+			double asDouble() const;
+
+			/*! \brief Returns the string value if of the correct type.
+			 \return The current value.
+			 */
+			std::string asString() const;
+
+			/*! \brief Returns the size of the Array if the value is the correct type..
+			 \return The number of elements in the array.
+			 */
+			int size() const;	// array size, if array
+
+			/*! \brief Returns the reference to the value in the array.  If not an array, the value will become an array.
+			 \param index The element index in the array.
+			 \return The element value reference.
+			 */
+			JsonValueInterface& operator[](const unsigned int& index);
+
+			/*! \brief Returns the reference to the value in the object.  If not an object, the value will become an object.
+			 \param key The key of the element.
+			 \return The element value reference.
+			 */
+			JsonValueInterface& operator[](const std::string& key);
+
+			/*! \brief Returns all keys if this value is an object.
+			 \return All keys in the object.
+			 */
 			std::vector<std::string> getMemberNames() const;
 
+			/*! \brief Makes the value a bool.
+			 \param other The value to be set.
+			 */
 			JsonValueInterface& operator=( const bool& other );
-			JsonValueInterface& operator=( const int& other );
-			JsonValueInterface& operator=( const double& other );
-			JsonValueInterface& operator=( const std::string& other );
-			JsonValueInterface& operator=( const JsonValueInterface& other );
 
+			/*! \brief Makes the value an int.
+			 \param other The value to be set.
+			 */
+			JsonValueInterface& operator=( const int& other );
+
+			/*! \brief Makes the value a double.
+			 \param other The value to be set.
+			 */
+			JsonValueInterface& operator=( const double& other );
+
+			/*! \brief Makes the value a string.
+			 \param other The value to be set.
+			 */
+			JsonValueInterface& operator=( const std::string& other );
+
+			/*! \brief Copies the value.
+			 \param other The value to be set.
+			 */
+			JsonValueInterface& operator=( JsonValueInterface& other );
+
+			/*! \brief Converts the JSON value to a string, i.e. the opposite of parse().
+			 \return The JSON values in a string format.
+			 */
 			std::string toStyledString() const;
 
+			/*! \brief Returns the raw pointer to the true value handler.
+			 \return The location of the true JSON value handler.
+			 */
 			void* getRaw();
 		};
 

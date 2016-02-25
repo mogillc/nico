@@ -59,7 +59,13 @@ public:
 	GLuint getTexture() const;
 	int resize(int w, int h);
 	void setType(GLenum textureFormat, GLint textureInternalFormat);
+
+	GLenum getType();
+	GLenum getFormat();
+	GLint getInternalFormat();
 };
+
+	std::string glGetErrorToString(GLenum Status);
 
 GLuint loadTexture(const char *name);
 }

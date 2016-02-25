@@ -21,6 +21,23 @@ if(BUILD_FOR_IOS)
 	set( BUILD_TESTS OFF )
 	set( GCOV_ENABLED OFF )
 	set( BUILD_SHARED_LIBS OFF )
+elseif(ANDROID)
+	add_definitions(-DANDROID)
+	message("Android ABI (alias): " ${CMAKE_SYSTEM_PROCESSOR})
+
+	if (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "aarch64")
+		add_definitions(-DARM64_V8A)
+	elseif (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "armv7-a")
+		add_definitions(-DARMEABI_V7A)
+	else()
+		add_definitions(-DARMEABI_V7A)
+	endif()
+
+	set( BUILD_WITH_JSONCPP NO )
+	set( BUILD_WITH_FTDI OFF )
+	set( BUILD_TESTS OFF )
+	set( GCOV_ENABLED OFF )
+	set( BUILD_SHARED_LIBS OFF )
 else()
 	set( BUILD_WITH_JSONCPP YES )
 	option( BUILD_WITH_FTDI "Build with FTDI support library" ON)
@@ -87,7 +104,7 @@ include( MogiLibrary )
 
 # FIND PACKAGES:
 #	Threads:
-if( BUILD_FOR_IOS )
+if( BUILD_FOR_IOS OR ANDROID)
 	add_definitions(-DTHREADS_FOUND)
 else()
 	find_package (Threads REQUIRED)
@@ -199,9 +216,6 @@ if(BUILD_SIMULATION)
 	add_subdirectory( simulation )	
 	#set( DEPENDENCIES ${DEPENDENCIES} mogisimulation )
 endif(BUILD_SIMULATION)
-
-
-
 
 
 new_mogi_library( ${LIBNAME} ${DEPENDENCIES} )

@@ -57,6 +57,8 @@ namespace Mogi {
 
 		protected:
 
+			/*! \brief The velocity of the pivot computed fromt he previous perform() call.
+			 */
 			std::vector<Math::Vector> footPivotVelocity;
 
 			/*! \brief Used as an output for foot locations.

@@ -23,7 +23,7 @@ extern "C" {
 using namespace Mogi;
 
 std::string Mogi::getResourceDirectory() {
-#ifdef BUILD_FOR_IOS
+#if defined(BUILD_FOR_IOS) || defined(ANDROID)
 	return _getMogiResourceDirectory();
 #else // BUILD_FOR_IOS
 	#ifdef RESOURCES_DIRECTORY

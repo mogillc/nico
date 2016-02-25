@@ -25,6 +25,7 @@ class _FrameBuffer {
 private:
 protected:
 	GLuint frameBuffer;
+	GLint priorFrameBuffer;	// Mostly for ES 2 support
 
 	std::vector<Texture*> renderTextures;
 	Texture depthTexture;
@@ -32,11 +33,11 @@ protected:
 	int xResolution;
 	int yResolution;
 
-	virtual void setup() = 0;
-	void initialize(int numberOfRenderTextures);
+	virtual void setup(int xRes, int yRes) = 0;
+	void initialize(int numberOfRenderTextures, int xRes, int yRes);
 
 public:
-	_FrameBuffer();
+	_FrameBuffer( int xRes, int yRes );
 	virtual ~_FrameBuffer();
 
 	//! Attaches the frame buffer for rendering.  If it is not desired to render
@@ -138,16 +139,14 @@ private:
 	//	GLuint frameBuffer;
 
 protected:
-	void setup() {
-		initialize(NUM_TEXTURES);
-	}
+	void setup(int xRes, int yRes);
 
 public:
 	enum FBUFFER_TEXTURE_TYPE {
 		TEXTURE_TYPE_DIFFUSE, NUM_TEXTURES
 	};
 
-	FrameBuffer();
+	FrameBuffer(int xRes, int yRes);
 	//~FrameBuffer();
 };
 
@@ -173,12 +172,10 @@ public:
 	};
 
 protected:
-	void setup() {
-		initialize(NUM_G_TEXTURES);
-	}
+	void setup(int xRes, int yRes);
 
 public:
-	MBGBuffer();
+	MBGBuffer(int xRes, int yRes);
 	//	: FrameBuffer(NUM_TEXTURES) {}
 };
 }

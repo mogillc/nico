@@ -20,10 +20,8 @@
 #include <stdlib.h>
 #include <set>
 #include <string>
-
 #include <stdint.h>
 
-#include "mogi/math/mmath.h"
 
 #ifdef __APPLE__
 #include <malloc/malloc.h>
@@ -32,14 +30,12 @@
 #include <string.h>
 #endif
 
-typedef uint32_t UInt32;
-// typedef float Float32;
-
-//#include <png.h>
 #include <fstream>
 #include <iostream>
 #include <vector>
 #include <map>
+
+#include "mogi/math/mmath.h"
 
 #include "animation.h"
 #include "bone.h"
@@ -52,118 +48,98 @@ typedef uint32_t UInt32;
 
 namespace Mogi {
 
-/**
- * @namespace Mogi::Simulation
- * \brief Simulation handling and building using OpenGL.
- */
-namespace Simulation {
-
-/*!
- \struct NodeMatrixAndMeshID
- \brief Used for mesh indexing for simulation (Will be deprecated soon).
- */
-struct NodeMatrixAndMeshID {
-	/*! Mesh Identifier.
+	/**
+	 * @namespace Mogi::Simulation
+	 * \brief Simulation handling and building using OpenGL.
 	 */
-	unsigned int ID;
+	namespace Simulation {
 
-	/*! Transformation matrix specific to the mesh, with respect to the node.
-	 */
-	//	const Matrix *modelMatrix;
-	Math::Node* parentNode;
-};
+		/*!
+		 \struct NodeMatrixAndMeshID
+		 \brief Used for mesh indexing for simulation (Will be deprecated soon).
+		 */
+		struct NodeMatrixAndMeshID {
+			/*! Mesh Identifier.
+			 */
+			unsigned int ID;
 
-/** @file */
-class Scene {
-private:
-	MBshader shadowMapShader;
-	MBshader gShader;
+			/*! Transformation matrix specific to the mesh, with respect to the node.
+			 */
+			//	const Matrix *modelMatrix;
+			Math::Node* parentNode;
+		};
 
-	std::vector<Animation *> animations;
-	std::vector<MBmaterial *> materials; // This could be loaded, but may not be important.
-	std::vector<MBmesh *> meshes;
-	std::vector<Texture *> textures;
+		/** @file */
+		class Scene {
+		private:
+			MBshader* shadowMapShader;
+			MBshader* gShader;
 
-	std::vector<NodeMatrixAndMeshID*> meshesToDraw;
+			std::vector<Animation *> animations;
+			std::vector<MBmaterial *> materials; // This could be loaded, but may not be important.
+			std::vector<MBmesh *> meshes;
+			std::vector<Texture *> textures;
 
-	std::string objectLocation;
+			std::vector<NodeMatrixAndMeshID*> meshesToDraw;
 
-	// MBmatrix scaleM;
-	// MBmatrix locationM;
-	// MBmatrix orientationM;
+			std::string objectLocation;
 
+			int totalTriangles;
+			
+			void initialize();
 
-	int totalTriangles;
+		public:
+			// Attributes:
 
-//	int set(const aiScene *scene, const char *filename, bool createNode = true);
-	void initialize();
+			std::map<Math::Node*,std::vector<Simulation::MBmesh*> > nodeToMeshMap;
 
-public:
-	// Attributes:
+			Math::Node rootNode;
+			std::vector<Camera *> cameras;
+			std::vector<MBlight *> lights;
 
-	std::map<Math::Node*,std::vector<Simulation::MBmesh*> > nodeToMeshMap;
+			// Default constructors/destructor:
+			Scene();
+			~Scene();
 
-	Math::Node rootNode;
-	std::vector<Camera *> cameras;
-	std::vector<MBlight *> lights;
+			void clearVectors();
 
-	// Mostly for debugging:
-	bool colorMapUserEnable;
-	bool normalMapUserEnable;
-	bool heightMapUserEnable;
-	bool specularityMapUserEnable;
+			// Methods:
+			void update();
 
-	// Default constructors/destructor:
-	Scene();
-	~Scene();
-	//Scene(const Scene &param);
-	//Scene &operator=(const Scene &param);
+			int draw(Camera *cam, MBshader *shader);
 
-	void clearVectors();
+			void setLocation(const Math::Vector &loc);
+			void setLocation(double x, double y, double z);
 
-	// Methods:
-	void update();
+			void setScale(const Math::Vector &loc);
+			void setScale(double x, double y, double z);
+			void setScale(double s);
 
-//	Math::Node *loadObject(const char *filename, const char *location,
-//			bool createNode = true);
+			void setOrientation(Math::Quaternion &quat);
+			void setOrientation(double angle, Math::Vector &axis);
 
-	int draw(Camera *cam, MBshader *shader);
+			Math::Node *findNodeByName(std::string nodeName);
 
-	void setLocation(const Math::Vector &loc);
-	void setLocation(double x, double y, double z);
+			int buildShadowMaps();
 
-	void setScale(const Math::Vector &loc);
-	void setScale(double x, double y, double z);
-	void setScale(double s);
+			MBmesh *getMesh(std::string meshName);
 
-	void setOrientation(Math::Quaternion &quat);
-	void setOrientation(double angle, Math::Vector &axis);
+			std::vector<MBmesh*>& getMeshes();
+			std::vector<NodeMatrixAndMeshID*>& getMeshestoDraw();
+			std::vector<Animation*>& getAnimations();
+			std::vector<Texture*>& getTextures();
+			std::vector<MBmaterial*>& getMaterials();
 
-	Math::Node *findNodeByName(std::string nodeName);
+			void attachMeshToNode(Math::Node* node, int meshId);
 
-	int buildShadowMaps();
+			static std::string getResourceDirectory();
+		};
 
-	MBmesh *getMesh(std::string meshName);
-
-	std::vector<MBmesh*>& getMeshes();
-	std::vector<NodeMatrixAndMeshID*>& getMeshestoDraw();
-	std::vector<Animation*>& getAnimations();
-	std::vector<Texture*>& getTextures();
-	std::vector<MBmaterial*>& getMaterials();
-
-
-
-	void attachMeshToNode(Math::Node* node, int meshId);
-	//int addMesh(std::string filename, std::string directory);
-
-	static std::string getResourceDirectory();
-};
-
-void drawString(const char *str, int x, int y, float color[4], void *font);
-void drawString3D(const char *str, float pos[3], float color[4], void *font);
-
-}  // End Simulation namespace
-
+		void drawString(const char *str, int x, int y, float color[4], void *font);
+		void drawString3D(const char *str, float pos[3], float color[4], void *font);
+		
+	}  // End Simulation namespace
+	
 }  // End Mogi namespace
 
 #endif

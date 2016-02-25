@@ -33,6 +33,7 @@ LightColor lightColors[] = {
 	{255.0/255.0, 183.0/255.0,  76.0/255.0 }	// 17 High Pressure Sodium
 };
 
+
 #ifdef SDL2_FOUND
 void CheckSDLError(int line = -1)
 {
@@ -60,24 +61,22 @@ extern "C" {
 	UIhandler::UIhandler(int xres, int yres) {
 
 		colorMapEnable = true;
-		specularMapEnable = false;	// Changed this for ES testing
+		specularMapEnable = true;
 		normalMapEnable = true;
 		disparityMapEnable = false;	// Changed this for ES testing
 		useHexapodCamera = false;
 		gridEnable = true;
 		debugFocus = false;
-		useBokeh = false;	// Changed this for ES testing
-		useShadows = false;
+		useBokeh = true;
+		useShadows = true;
 
 		drawMode = 0;
 
-		fstop = 14;
+		fstop = 2.5;//14;
 		fDepth = 1;	//m
-		fLength = 10; //mm
-		autofocus = true;
-		centerDepth = 0;
-		farClip = 5;
-		nearClip = .001;
+		fLength = 12;//10; //mm
+		autofocus = false;
+		vignetteEnable = false;
 
 		screenWidth = xres;
 		screenHeight = yres;
@@ -86,7 +85,19 @@ extern "C" {
 		cameraLocation.setLength(3);
 		cameraLocation(2) = 1;
 
+		cameraOffsetLocation.setLength(3);
+
 		displayCB = ____doNothing;
+	}
+
+	void UIhandler::setCameraOffsetLocation(Mogi::Math::Vector& locationOffset) {
+		cameraOffsetLocation = locationOffset;
+	}
+	void UIhandler::setCameraLocation(Mogi::Math::Vector& location) {
+		cameraLocation = location;
+	}
+	void UIhandler::setCameraOrientation(Mogi::Math::Vector& orientation) {
+		cameraOrientation = orientation;
 	}
 
 	void UIhandler::initSDL() {
@@ -114,7 +125,7 @@ extern "C" {
 									 SDL_WINDOWPOS_UNDEFINED,
 									 SDL_WINDOWPOS_UNDEFINED,
 									 screenWidth, screenHeight,
-									 SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
+									 SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
 
 		// Create an OpenGL context associated with the window.
 		CheckSDLError(__LINE__);
@@ -136,34 +147,40 @@ extern "C" {
 		glGetError(); // Added by Adrian to clear error buffer... hmmm
 					  // See: http://stackoverflow.com/questions/10857335/opengl-glgeterror-returns-invalid-enum-after-call-to-glewinit
 #endif
+
+#ifndef OPENGLES_FOUND
 		// Some VAO needs to be bound before validating shaders in scene...
 		// This VAO is not used for anything else.
 		glGenVertexArrays(1, &_vertexArray);
 		glBindVertexArray(_vertexArray);
-
 		int i = glGetError();
 		if (i != 0) {
 			std::cout << " - Broke after VAO created: " << i << std::endl; // Adrian added printing of error value
 			exit(-1);
 		}
+#endif
 
 		std::cout << " - Allocating frame buffer." << std::endl;
-		frameBuffer = new FrameBuffer;
-		frameBuffer->resize(screenWidth, screenHeight);
-		frameBuffer->attachFramebuffer();
+		frameBuffer = new FrameBuffer(screenWidth, screenHeight);
+//		frameBuffer->resize(screenWidth, screenHeight);
+		//frameBuffer->attachFramebuffer();
 		std::cout << " - Allocating Bokeh post process." << std::endl;
-		bokehPost = new MBbokeh;
-		frameBuffer->attachFramebuffer();
+		bokehPost = new MBbokeh(screenWidth, screenHeight);
+		//frameBuffer->attachFramebuffer();
 		std::cout << " - Allocating final frame buffer." << std::endl;
-		testFinal = new MBpostprocess;
-		frameBuffer->attachFramebuffer();
+		testFinal = new MBpostprocess(screenWidth, screenHeight);
+		//frameBuffer->attachFramebuffer();
 		std::cout << " - Allocating camera." << std::endl;
 		camera = new Camera;
 		camera->setResolution(screenWidth, screenHeight);
-		frameBuffer->attachFramebuffer();
+		//frameBuffer->attachFramebuffer();
 		std::cout << " - Allocating main scene." << std::endl;
 		mainScene = new Scene;
-		
+
+		GeometryShaderParameters gParams;
+		gShader = ShaderFactory::getInstance(&gParams);
+		gBuffer = new MBGBuffer(screenWidth, screenHeight);
+
 		std::cout << "OpenGL Version info:" << std::endl << "\t" << glGetString(GL_VERSION) << std::endl;
 		std::cout << "OpenGL Renderer info:" << std::endl << "\t" << glGetString(GL_RENDERER) << std::endl;
 		std::cout << "OpenGL Vendor info:" << std::endl << "\t" << glGetString(GL_VENDOR) << std::endl;
@@ -186,15 +203,6 @@ extern "C" {
 		// frame buffers used by shaders:
 		bokehPost->setAsFinalRender(false);
 		testFinal->setAsFinalRender(true);
-
-		// most shaders are handled by Scene (bleh) except for the shadow shader:
-#ifdef BUILD_FOR_IOS
-		shadowShader.initialize( "shaders/ios/shadowShader.vsh", "shaders/ios/shadowShader.fsh");
-		shaderForES.initialize( "shaders/ios-current/Shader.vsh", "shaders/ios-current/Shader.fsh");
-		//shaderForES.initialize( "shaders/ios-current/shadowShader.vsh", "shaders/ios-current/shadowShader.fsh");
-#else
-		shadowShader.initialize( "Shaders/shadowShader.vsh", "Shaders/shadowShader.fsh");
-#endif
 	}
 
 	void UIhandler::initModels() {
@@ -215,7 +223,7 @@ extern "C" {
 		char newName[64];
 
 		for (int i = 0; i < N_LIGHTS; i++) {
-			node = Importer::loadObject(mainScene, "lightModel.dae", "Objects");
+			node = Importer::loadObject(mainScene, "lightModel.dae", "Objects");	// Spot light
 			if (node) {
 				node->setLocation(0, 0, -1);
 				node->setScale(25.4 / MM_PER_METER * 10.0);
@@ -227,6 +235,7 @@ extern "C" {
 		}
 		for (int i = 0; i < mainScene->lights.size(); i++) {
 			mainScene->lights[i]->setColor(cos(i*i*4)*cos(i*i*4), cos(i*i*i*8)*cos(i*i*i*8), cos(i*2)*cos(i*2));
+			mainScene->lights[i]->setFOV(60);
 		}
 
 		if (mainScene->lights.size() > 0) {
@@ -336,6 +345,9 @@ extern "C" {
 		if (keyboard.risingEdge('5')) {
 			autofocus ^= 1;
 		}
+		if (keyboard.risingEdge('2')) {
+			vignetteEnable ^= 1;
+		}
 		if (keyboard.risingEdge('v') || keyboard.risingEdge('V')) {
 			useBokeh ^= 1;
 		}
@@ -374,7 +386,7 @@ extern "C" {
 			normalMapEnable = true;
 			specularMapEnable = true;
 			gridEnable = false;
-			useBokeh = true;
+			useBokeh = false;
 			useShadows = true;
 		}
 	}
@@ -396,6 +408,7 @@ extern "C" {
 
 		printf("\n - Bokeh:\n");
 		printf("  - v\tEnable/Disable Bokeh\n");
+		printf("  - 2\tEnable/Disable Vignette\n");
 		printf("  - 3,e\tIncrease/Decrease F stop\n");
 		printf("  - 4,r\tIncrease/Decrease Focal Length\n");
 		printf("  - 5\tEnable/Disable Autofocus (center of screen)\n");
@@ -442,21 +455,36 @@ extern "C" {
 		tempO3.makeFromAngleAndAxis(cameraOrientation(2), Vector::zAxis);
 		tempOrientation =tempO3 * tempO2 * tempOrientation;
 		camera->setOrientation( tempOrientation );
-		camera->setLocation(cameraLocation);
+		camera->setLocation(cameraLocation + cameraOffsetLocation);
 		camera->setFOV(65);
 		camera->update();
 
-		mainScene->colorMapUserEnable = colorMapEnable;
-		mainScene->normalMapUserEnable = normalMapEnable;
-		mainScene->heightMapUserEnable = disparityMapEnable;
-		mainScene->specularityMapUserEnable = specularMapEnable;
+		mShadowShader.getParameters()->colorMapEnable = colorMapEnable;
+		mShadowShader.getParameters()->normalMapEnable = normalMapEnable;
+		mShadowShader.getParameters()->disparityMapEnable = disparityMapEnable;
+		mShadowShader.getParameters()->specularMapEnable = specularMapEnable;
 
 		mainScene->update();
 
 	}
 
-	void UIhandler::render() {
+	void UIhandler::resize(int xres, int yres) {
+		screenWidth = xres;
+		screenHeight = yres;
+		frameBuffer->resize(screenWidth, screenHeight);
+		camera->setResolution(screenWidth, screenHeight);
+		bokehPost->resize(screenWidth, screenHeight);
+		testFinal->resize(screenWidth, screenHeight);
+		gBuffer->resize(screenWidth, screenHeight);
+	}
 
+	void UIhandler::setFocus( float fstop, float fDepth, float fLength ) {
+		this->fstop = fstop;
+		this->fDepth = fDepth;
+		this->fLength = fLength;
+	}
+
+	void UIhandler::render() {
 		///////////////////////////////////////////////////////////////////////
 		// Shadow map rendering:
 		// Places the camera at each light to render shadow maps.
@@ -465,6 +493,8 @@ extern "C" {
 			mainScene->lights[i]->setEnabled(useShadows);
 		}
 		mainScene->buildShadowMaps();
+
+		mPerformanceMeasure.takeMeasurement("shadowMaps");
 
 		/////////////////////////////////////////////////////////////////////////
 		// Scene rendering:
@@ -504,18 +534,16 @@ extern "C" {
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+		mShadowShader.getParameters()->useShadows = useShadows;
+		mShadowShader.getParameters()->numberOfLights = 2;
 
-		shadowShader.useProgram();
-		{
-			for (int i = 0; i < mainScene->lights.size(); i++) {
-				mainScene->lights[i]->setShadowUniforms( &shadowShader, i );
-			}
-			mainScene->draw( camera, &shadowShader);
-		}
-		shadowShader.stopProgram();
+		// Main render call:
+		mainScene->draw( camera, &mShadowShader );
 
 		// Disable the frame buffer:
 		frameBuffer->removeFramebuffer();
+
+		mPerformanceMeasure.takeMeasurement("sceneRender");
 
 		///////////////////////////////////////////////////////////////////////
 		// Post processing:
@@ -525,6 +553,7 @@ extern "C" {
 		{
 			// Apply the parameters for the bokeh process:
 			bokehPost->setAutoFocus(autofocus);
+			bokehPost->setVignetteEnabled(vignetteEnable);
 			bokehPost->setDebugMode(debugFocus);
 			bokehPost->setFdepth(fDepth);
 			bokehPost->setFlength(fLength);
@@ -540,36 +569,72 @@ extern "C" {
 //		renderInterface( cameraLocation, cameraOrientation, NULL);
 
 		glEnable(GL_DEPTH_TEST);
+
+		mPerformanceMeasure.takeMeasurement("bokehPost");
+		mPerformanceMeasure.print();
+		mPerformanceMeasure.reset();
 	}
 
 	void UIhandler::renderES() {
+
+////		frameBuffer->attachFramebuffer();
+//
+//		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+//		glViewport( 0, 0, screenWidth, screenHeight);
+//		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+//
+//		mShadowShader.getParameters()->colorMapEnable = colorMapEnable;
+//		mShadowShader.getParameters()->normalMapEnable = normalMapEnable;
+//		mShadowShader.getParameters()->disparityMapEnable = disparityMapEnable;
+//		mShadowShader.getParameters()->specularMapEnable = specularMapEnable;
+//		mShadowShader.getParameters()->numberOfLights = N_LIGHTS;
+//		mShadowShader.getParameters()->useShadows = false;
+//
+//		mainScene->draw( camera, &mShadowShader );
+//
+////		frameBuffer->removeFramebuffer();
+////
+////		testFinal->process(frameBuffer->getRenderTexture(FrameBuffer::TEXTURE_TYPE_DIFFUSE), camera[0]);
+
+
+		gBuffer->attachFramebuffer();
+
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-
-		//glViewport( 0, 0, camera->getXresolution(), camera->getYresolution());
 		glViewport( 0, 0, screenWidth, screenHeight);
-		//shaderForES.enableAttributes();
-		shaderForES.useProgram();
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glCullFace(GL_BACK);
+		glEnable(GL_DEPTH_TEST);
+		glEnable(GL_CULL_FACE);
 
-		mainScene->draw( camera, &shaderForES );
+		mainScene->draw( camera, gShader );
 
-		shaderForES.stopProgram();
+		gBuffer->removeFramebuffer();
+		int type = ((int)keyboardTimer.runningTime()) % MBGBuffer::NUM_G_TEXTURES+1;
+		if (type == MBGBuffer::NUM_G_TEXTURES) {
+			testFinal->process(gBuffer->getDepthTexture(), camera[0]);
+		} else {
+			testFinal->process(gBuffer->getRenderTexture(type), camera[0]);
+		}
 	}
 
 	void UIhandler::mainLoop() {
 #ifdef BUILD_FOR_IOS
+		mPerformanceMeasure.takeMeasurement("mainLoopCall");
 		// TODO: set up the rendering loop.
 		keyboardTimer.update();
 		updateModels();
-		this->cameraOrientation(0) = MOGI_PI/3;
-		//this->cameraOrientation(1) = sin(camtime)/4;
-		this->cameraOrientation(2) = keyboardTimer.runningTime() * MOGI_PI/16;
-		this->cameraLocation(0) = 0.75 * sin(keyboardTimer.runningTime() * MOGI_PI/16);
-		this->cameraLocation(1) = -0.75 * cos(keyboardTimer.runningTime() * MOGI_PI/16);
-		this->cameraLocation(2) = 0.75;
-		renderES();
+
+		mPerformanceMeasure.takeMeasurement("updateModels");
+//		this->cameraOrientation(0) = MOGI_PI/3;
+//		//this->cameraOrientation(1) = sin(camtime)/4;
+//		this->cameraOrientation(2) = keyboardTimer.runningTime() * MOGI_PI/16;
+//		this->cameraLocation(0) = 0.75 * sin(keyboardTimer.runningTime() * MOGI_PI/16);
+//		this->cameraLocation(1) = -0.75 * cos(keyboardTimer.runningTime() * MOGI_PI/16);
+//		this->cameraLocation(2) = 0.75;
+
+		render();
 #else
-		Uint32 start;
+		unsigned int start;
 		SDL_Event event;
 		bool running=true;
 		while(running)
@@ -582,9 +647,23 @@ extern "C" {
 				mouse.handleEvent(event);
 				switch(event.type)
 				{
+						case SDL_WINDOWEVENT:
+						switch (event.window.event) {
+							case SDL_WINDOWEVENT_RESIZED:
+								resize(event.window.data1, event.window.data2);
+								break;
+
+							default:
+								break;
+						}
+						break;
+
 					case SDL_QUIT:
 						std::cout << " - SDL_QUIT event caught, shutting down..." << std::endl;
 						running&=false;
+						break;
+
+					default:
 						break;
 				}
 			}

@@ -34,40 +34,10 @@ Bone::~Bone() {
 	}
 }
 
-//Bone::Bone(const Bone& param) {
-//	init();
-//	set(&param);
-//}
-//Bone& Bone::operator=(const Bone& param) {
-//	if (this != &param)  // only run if it is not the same object
-//			{
-//		set(&param);
-//	}
-//	return *this;
-//}
-
 void Bone::init() {
 	name = "";
 	offsetMatrix.makeI(4);
 }
-
-//void Bone::set(aiBone* Bone) {
-//	name = Bone->mName.C_Str();
-//	for (int i = 0; i < 4; i++) {
-//		for (int j = 0; j < 4; j++) {
-//			offsetMatrix(i, j) = *(Bone->mOffsetMatrix[i * 4 + j]);
-//		}
-//	}
-//
-//	vertexWeight* tempVW;
-//	for (int i = 0; i < Bone->mNumWeights; i++) {
-//		tempVW = new vertexWeight;
-//		tempVW->weight = Bone->mWeights[i].mWeight;
-//		tempVW->vertexID = Bone->mWeights[i].mVertexId;
-//		weights.push_back(tempVW);
-//	}
-//	// std::cout << "Number of weights:" << Bone->mNumWeights << std::endl;
-//}
 
 void Bone::set(const Bone* Bone) {
 	name = Bone->name;

@@ -1,0 +1,77 @@
+Hex to App multicast:
+{"hostname" : "", "port": ##, "version": ""}
+
+App to Hex data:
+{"xLeft" : 0, "yRight" : -0, "protocolCount" : 498, "yLeft" : -0, "slider2Value" : 0, "xRight" : 0, "slider1Value" : 0} // Example raw
+{"protocolCount" : ##, "xLeft" : ##, "yLeft" : ##, "xRight" : ##, "yRight" : ##, "slider1Value" : ##, "slider2Value" : ##} // In order
+{"xLeft":0,"yRight":-0,"protocolCount":3516,"yLeft":-0,"optionAdded":"Switch","xRight":0,"slider2Value":0,"slider1Value":0} // uses the option's title (e.g., "Switch") to denote which one was added
+
+Hex to App state data:
+{
+   "body" : [ 2.9014688557138337e-14, 1.42874018357126e-14, 29.430074691772461 ],
+   "bodyOffset" : [ 2.9014688557138337e-14, 1.42874018357126e-14, 29.430074691772461 ],
+   "bodyOrientation" : [
+      1,
+      -9.2115598597083979e-18,
+      -5.3559396143757325e-18,
+      -5.2455396897380732e-17
+   ],
+   "bodyOrientationOffset" : [ 1, 0, 0, 0 ],
+   "coxa" : [
+      -2.8115190732575117e-17,
+      -0.020181963220238686,
+      0.02018197625875473,
+      1.6773395084293904e-16,
+      -0.02018197625875473,
+      0.020181963220238686
+   ],
+   "femur" : [
+      -1.3151406049728394,
+      -1.3323664665222168,
+      -1.3323664665222168,
+      -1.3151406049728394,
+      -1.3323664665222168,
+      -1.3323664665222168
+   ],
+   "headAngles" : [ 0, 0, 0 ],
+   "protocolCount" : 5478,
+   "tibia" : [
+      2.3069810589127284,
+      2.3340977450184566,
+      2.3340977450184566,
+      2.3069810589127284,
+      2.3340977450184566,
+      2.3340977450184566
+   ],
+   "specialCommands" : [
+      {
+         "addButton" : {
+            "buttonName" : "My Button",
+            "title" : "Button"
+         }
+      },
+      {
+         "addSegmentedControl" : {
+            "segments" : [ "Off", "A", "Option3" ],
+            "title" : "LED"
+         }
+      },
+      {
+         "addSlider" : {
+            "title" : "Slider"
+         }
+      },
+      {
+         "addSwitch" : {
+            "title" : "Switch"
+         }
+      },
+      {
+         "addTextField" : {
+            "title" : "Text"
+         }
+      }
+   ]
+}
+
+

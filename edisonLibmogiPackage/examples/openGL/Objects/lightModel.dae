@@ -16,8 +16,8 @@
         <spot>
           <color sid="color">1 1 1</color>
           <constant_attenuation>1</constant_attenuation>
-          <linear_attenuation>0</linear_attenuation>
-          <quadratic_attenuation>0.001599967</quadratic_attenuation>
+          <linear_attenuation>0.1</linear_attenuation>
+          <quadratic_attenuation>0.2</quadratic_attenuation>
           <falloff_angle sid="fall_off_angle">45</falloff_angle>
           <falloff_exponent sid="fall_off_exponent">0.15</falloff_exponent>
         </spot>

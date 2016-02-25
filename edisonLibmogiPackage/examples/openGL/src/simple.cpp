@@ -83,8 +83,8 @@ int triangles = 0;
 FrameBuffer *lightingBuffer;
 MBGBuffer *geometryBuffer;
 
-MBshader lightShader;
-MBshader gShader;
+StaticShader lightShader;
+StaticShader gShader;
 
 MBbokeh *bokehPost;
 MBpostprocess *testFinal;
@@ -127,21 +127,21 @@ void init(int argc, char *argv[])
 	std::cout << "Initializing main render shader...";
 	std::string vshader = Scene::getResourceDirectory().append("/shaders/lighting.vsh");
 	std::string fshader = Scene::getResourceDirectory().append("/shaders/lighting.fsh");
-	lightShader.initialize( vshader.c_str(), fshader.c_str());
+	lightShader.initializeFromPath( vshader.c_str(), fshader.c_str());
 	std::cout << "Done." << std::endl;
 
 	vshader = Scene::getResourceDirectory().append("/shaders/geometry.vsh");
 	fshader = Scene::getResourceDirectory().append("/shaders/geometry.fsh");
 
 	std::cout << "Initializing Geometry shader...";
-	gShader.initialize( vshader.c_str(), fshader.c_str());
+	gShader.initializeFromPath( vshader.c_str(), fshader.c_str());
 	std::cout << "Done." << std::endl;
 
-	geometryBuffer = new MBGBuffer;
-	lightingBuffer = new FrameBuffer;
-	deferredLighting = new MBdeferredLighting;
-	bokehPost = new MBbokeh;
-	testFinal = new MBpostprocess;
+	geometryBuffer = new MBGBuffer(SCREEN_WIDTH, SCREEN_HEIGHT);
+	lightingBuffer = new FrameBuffer(SCREEN_WIDTH, SCREEN_HEIGHT);
+	deferredLighting = new MBdeferredLighting(SCREEN_WIDTH, SCREEN_HEIGHT);
+	bokehPost = new MBbokeh(SCREEN_WIDTH, SCREEN_HEIGHT);
+	testFinal = new MBpostprocess(SCREEN_WIDTH, SCREEN_HEIGHT);
 	deferredLighting->setAsFinalRender(false);
 	bokehPost->setAsFinalRender(false);
 	testFinal->setAsFinalRender(true);
@@ -445,10 +445,10 @@ void displayCB()
 	}
 
 
-	paverStoneModel->colorMapUserEnable = colorMapEnable;
-	paverStoneModel->normalMapUserEnable = normalMapEnable;
-	paverStoneModel->heightMapUserEnable = disparityMapEnable;
-	paverStoneModel->specularityMapUserEnable = specularMapEnable;
+//	paverStoneModel->colorMapUserEnable = colorMapEnable;
+//	paverStoneModel->normalMapUserEnable = normalMapEnable;
+//	paverStoneModel->heightMapUserEnable = disparityMapEnable;
+//	paverStoneModel->specularityMapUserEnable = specularMapEnable;
 
 
 	for (int i = 0; i < N_LIGHTS; i++) {

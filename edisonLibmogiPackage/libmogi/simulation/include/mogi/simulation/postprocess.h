@@ -20,14 +20,14 @@
 #include "framebuffer.h"
 #include "mesh.h"
 #include "scene.h"
-#include "shader.h"
+#include "dynamicShader.h"
 
 namespace Mogi {
 namespace Simulation {
 
 class MBpostprocess {
 private:
-	MBshader basicShader;
+	MBshader* basicShader;
 
 protected:
 	Camera camera;  // this wil be set as an orthographic projection
@@ -39,7 +39,6 @@ protected:
 
 	MBmesh renderPlane;
 
-	// IO
 	FrameBuffer* frameBuffer;
 
 	bool isFinalRender;
@@ -47,10 +46,10 @@ protected:
 	void initBuffers();
 	void finishBuffers();
 
-	void drawPlane(MBshader& shader);
+	void drawPlane(MBshader* shader);
 
 public:
-	MBpostprocess();
+	MBpostprocess(int xRes, int yRes);
 	~MBpostprocess();
 
 	void setAsFinalRender(bool value);
@@ -63,6 +62,8 @@ public:
 		return *frameBuffer;
 	}
 	;
+
+	void resize(int xRes, int yRes);
 };
 
 class MBbokeh: public MBpostprocess {
@@ -74,17 +75,22 @@ private:
 	GLfloat fstop;
 	bool debugFocus;
 	bool autofocus;
+	bool vignetteEnable;
 
-	MBshader bokehShader;
+	BokehShader* bokehShader;
 
 public:
-	MBbokeh();
+	MBbokeh(int xRes, int yRes);
 
 	int process(Texture& renderTexture, Texture& depthTexture,
 			Camera& renderCamera);
 
 	void setAutoFocus(bool value) {
 		autofocus = value;
+	}
+	;
+	void setVignetteEnabled(bool value) {
+		vignetteEnable = value;
 	}
 	;
 	void setFstop(GLfloat value) {
@@ -124,10 +130,10 @@ public:
 
 class MBdeferredLighting: public MBpostprocess {
 private:
-	MBshader lightingShader;
+	MBshader* lightingShader;
 
 public:
-	MBdeferredLighting();
+	MBdeferredLighting(int xRes, int yRes);
 
 	int process(MBGBuffer* geometryBuffer, Camera& renderCamera,
 			std::vector<MBlight*>& lights);

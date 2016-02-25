@@ -16,95 +16,90 @@
 #ifndef MOGI_SHADER_H
 #define MOGI_SHADER_H
 
-#ifdef __APPLE__
-//#define __gl_h_
-//#define GL_DO_NOT_WARN_IF_MULTI_GL_VERSION_HEADERS_INCLUDED
-#endif
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string>
 #include <vector>
+#include <map>
 
-#ifdef __APPLE__
-	#ifdef OPENGLES_FOUND
-		#include <OpenGLES/ES3/gl.h>
-
-	#else // OPENGLES_FOUND
-		#define GL3_PROTOTYPES 1
-		#include <OpenGL/gl3.h>
-		#include <GLUT/glut.h>
-	#endif // OPENGLES_FOUND
-#else // __APPLE__
-
-	#include <GL/glew.h>
-//	#include <string.h>
-//	#include <GL/glut.h>
-	//#include <GL/gl.h>
-	//#include <GL/glu.h>
-	//#include <GL/glext.h>
-//	#include <SDL2/SDL.h>
-//	#include <SDL2/SDL_image.h>
-#endif // __APPLE__
-
+#include "mogi/simulation/mogiGL.h"
 #include "mogi/math/mmath.h"
 
 #define BUFFER_OFFSET(i) ((char *)NULL + (i))
 
 namespace Mogi {
-namespace Simulation {
+	namespace Simulation {
 
-extern GLint uniforms[];
+		extern GLint uniforms[];
 
-struct MBuniform {
-	std::string name;
-	GLint location;
-};
+		struct MBuniform {
+			std::string name;
+			GLint location;
+		};
 
-struct TextureUniform {
-	std::string name;
-	GLint location;
-	GLint value;
-};
+		struct TextureUniform {
+			std::string name;
+			GLint location;
+			GLint value;
+		};
 
-bool loadShaders(GLuint *g_program, const char *vertShaderPath,
-		const char *fragShaderPath);
-// bool loadShaders( GLuint *g_program );
-bool compileShader(GLuint *shader, GLenum type, std::string file);
-bool linkProgram(GLuint prog);
-bool validateProgram(GLuint prog);
-GLchar *read_text_file(const char *name);
+		bool loadShaders(GLuint *g_program, const std::string& vertShaderPath, const std::string& fragShaderPath);
+		// bool loadShaders( GLuint *g_program );
+		bool compileShader(GLuint *shader, GLenum type, const std::string& source);
+		bool linkProgram(GLuint prog);
+		bool validateProgram(GLuint prog);
+		GLchar *read_text_file(const char *name);
 
-class MBshader {
-private:
-	GLuint g_program;
-	bool hasAttributes;
+		class MBshader {
+		private:
+			bool hasAttributes;
+			//	std::vector<MBuniform *> uniforms;
+			std::map<std::string, GLint*> uniforms;
+			std::vector<TextureUniform *> textureUniforms;
+			int textureTracker;
 
-	std::vector<MBuniform *> uniforms;
-	std::vector<TextureUniform *> textureUniforms;
-	int textureTracker;
+			GLint getUniformLocation(std::string name);
+			TextureUniform *getTextureUniform(std::string name);
 
-	GLint getUniformLocation(std::string name);
-	TextureUniform *getTextureUniform(std::string name);
+		protected:
+			std::string label;
 
-public:
-	MBshader();
-	~MBshader();
+		public:
+			MBshader();
+			virtual ~MBshader() = 0;
 
-	GLuint program();
-	// int initialize();
-	int initialize(const char *vertShaderPath, const char *fragShaderPath);
-	void useProgram();
-	void stopProgram();
-	void enableAttributes();
-	void disableAttributes();
+			virtual GLuint program() = 0;
 
-	int sendInteger(std::string name, int value);
-	int sendFloat(std::string name, float value);
-	int sendMatrix(std::string name, Math::Matrix &matrix);
-	int sendTexture(std::string name, GLuint texture);
-};
-}
+			void useProgram();
+			void stopProgram();
+			void enableAttributes();
+			void disableAttributes();
+
+			virtual int sendInteger(std::string name, int value);
+			virtual int sendFloat(std::string name, float value);
+			virtual int sendMatrix(std::string name, Math::Matrix &matrix);
+			virtual int sendTexture(std::string name, GLuint texture);
+			
+			const std::string& getName();
+			void setName(const std::string& newName);
+		};
+
+		class StaticShader : public MBshader {
+		private:
+			GLuint g_program;
+
+		public:
+			StaticShader();
+			~StaticShader() {};
+
+			GLuint program();
+
+			int initializeFromPath(const char *vertShaderPath, const char *fragShaderPath);
+			int initializeFromSource(const std::string& vertexSource, const std::string& fragemntSource);
+
+		};
+
+	}
 }
 
 #endif

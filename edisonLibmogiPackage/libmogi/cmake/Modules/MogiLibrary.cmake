@@ -47,7 +47,6 @@ function( new_mogi_library LIBNAME )
 	# - tests       (optional)
 	
 	set( DEPENDENCIES ${ARGN} )
-	#message( " - creating library named ${LIBNAME} dependencies:${DEPENDENCIES}")
 	
 	# Versioning header generation
 	if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/include/mogi_version_i.h.in")
@@ -69,6 +68,8 @@ function( new_mogi_library LIBNAME )
 
 		if(BUILD_FOR_IOS)
 			set(PORT_HEADERS "\#include \"resourceInterface.h\"")
+		elseif( ANDROID )
+			set(PORT_HEADERS "\#include \"resourceInterface.h\"")
 		else()
 			set(PORT_HEADERS "")
 		endif()
@@ -89,6 +90,19 @@ function( new_mogi_library LIBNAME )
 								${CMAKE_SOURCE_DIR}/port/ios/jsonWrapper.h
 								${CMAKE_SOURCE_DIR}/port/ios/jsonWrapperIOS.h )
 		#message( "${LIBNAME}_SOURCES=${${LIBNAME}_SOURCES}")
+	elseif( ANDROID )
+		set( ${LIBNAME}_SOURCES	${${LIBNAME}_SOURCES}  
+								${CMAKE_SOURCE_DIR}/port/android/src/resourceObject.cpp 
+								${CMAKE_SOURCE_DIR}/port/android/src/jsonWrapper.cpp
+								${CMAKE_SOURCE_DIR}/port/android/src/JavaStaticClass.cpp 
+								${CMAKE_SOURCE_DIR}/port/android/src/JSONParser.cpp)
+		set( ${LIBNAME}_HEADERS	${${LIBNAME}_HEADERS} 
+								${CMAKE_SOURCE_DIR}/port/android/include/mogi/port/android/resourceInterface.h
+								${CMAKE_SOURCE_DIR}/port/android/include/mogi/port/android/jsonWrapperIOS.h
+								${CMAKE_SOURCE_DIR}/port/android/include/mogi/port/android/JavaStaticClass.h 
+								${CMAKE_SOURCE_DIR}/port/android/include/mogi/port/android/AndroidEnvironment.h
+								${CMAKE_SOURCE_DIR}/port/android/include/mogi/JSONParser.h )		
+		include_directories(${CMAKE_SOURCE_DIR}/port/android/include)
 	endif()
 	set(c_sources     ${${LIBNAME}_SOURCES} ${${LIBNAME}_HEADERS})
 	set(c_headers     ${${LIBNAME}_HEADERS})
@@ -110,7 +124,7 @@ function( new_mogi_library LIBNAME )
 	# Dependencies
 	target_link_libraries (${LIBNAME} ${DEPENDENCIES})
 	
-	if( NOT BUILD_FOR_IOS )
+	if( (NOT BUILD_FOR_IOS) AND (NOT ANDROID) )
 		# Resources
 		if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/resources")
 			file(GLOB ${LIBNAME}_RESOURCES resources/*)
@@ -127,7 +141,7 @@ function( new_mogi_library LIBNAME )
 		           		)
 				add_definitions(-DRESOURCES_DIRECTORY="${CMAKE_INSTALL_PREFIX}/${resources_subdirectory}")
 		endif()
-	endif( NOT BUILD_FOR_IOS )
+	endif( (NOT BUILD_FOR_IOS) AND (NOT ANDROID) )
 	
 
 
@@ -163,6 +177,7 @@ if (BUILD_FOR_IOS)	# hack since there is a discrepancy between the output to Deb
    install (FILES ${CMAKE_CURRENT_BINARY_DIR}/\$ENV{CONFIGURATION}\$ENV{EFFECTIVE_PLATFORM_NAME}/libmogi.1.1.1.dylib
 			DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/\$ENV{CONFIGURATION} )
 endif (BUILD_FOR_IOS)
+#TODO: Add install for ANDROID ???
 		
 		if(${WIN32})
 			if(BUILD_SHARED_LIBS)
@@ -186,7 +201,7 @@ endif (BUILD_FOR_IOS)
 		
 		endif(${WIN32})
 
-	if( NOT BUILD_FOR_IOS )
+	if( (NOT BUILD_FOR_IOS) AND (NOT ANDROID) )
 		# Tests
 		if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/tests")
 			if(BUILD_TESTS)
@@ -218,7 +233,7 @@ endif (BUILD_FOR_IOS)
 		
 		    source_group("${GROUP}" FILES "${FILE}")
 		endforeach()
-	endif( NOT BUILD_FOR_IOS )
+	endif( (NOT BUILD_FOR_IOS) AND (NOT ANDROID) )
 	
 endfunction()
 

@@ -42,10 +42,7 @@ private:
 public:
 	Bone();
 	~Bone();
-//	Bone(const Bone &param);
-//	Bone &operator=(const Bone &);
-//
-//	void set(aiBone *bone);
+	
 	void set(const Bone *bone);
 	const std::string &getName();
 	void findNode(Math::Node *rootNode);

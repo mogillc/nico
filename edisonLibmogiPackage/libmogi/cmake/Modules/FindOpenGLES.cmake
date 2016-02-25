@@ -30,17 +30,38 @@
 #  OPENGLES_LIBRARIES    - Link these to use OpenGLES
 
 if(ANDROID)
-    FIND_PATH( OPENGLES_INCLUDE_DIR
-        GLES2/gl2.h
-        "${ANDROID_STANDALONE_TOOLCHAIN}/usr/include"
-    )
+	# ABI arm64-v8a
+	if (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "aarch64")
+		FIND_PATH(OPENGLES_INCLUDE_DIR GLES3/gl3.h
+		  /usr/include
+		)
 
-    FIND_LIBRARY( OPENGLES_LIBRARIES
-        NAMES
-            GLESv2
-        PATHS
-            "${ANDROID_STANDALONE_TOOLCHAIN}/usr/lib"
-    )
+		FIND_LIBRARY(OPENGLES_LIBRARIES
+		  NAMES GLESv3
+		  PATHS /usr/lib
+		)
+
+		#FIND_PATH(EGL_INCLUDE_DIR EGL/egl.h
+		#  /usr/include
+		#)
+
+		#FIND_LIBRARY(EGL_LIBRARIES
+		#  NAMES EGL
+		#  PATHS /usr/lib
+		#)
+	endif()
+
+	# ABI armeabi-v7a
+	if (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "armv7-a")
+		FIND_PATH(OPENGLES_INCLUDE_DIR GLES2/gl2.h
+		  /usr/include
+		)
+
+		FIND_LIBRARY(OPENGLES_LIBRARIES
+		  NAMES GLESv2
+		  PATHS /usr/lib
+		)
+	endif()
 
 elseif(BUILD_FOR_IOS)
     FIND_PATH( OPENGLES_INCLUDE_DIR

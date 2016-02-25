@@ -22,8 +22,6 @@
 
 #include <vector>
 
-//#include <assimp/scene.h>
-
 namespace Mogi {
 namespace Simulation {
 
@@ -49,21 +47,13 @@ private:
 	GLfloat metallicLevel;
 
 public:
-	// Mostly for debugging:
-	bool colorMapUserEnable;
-	bool normalMapUserEnable;
-	bool heightMapUserEnable;
-	bool specularityMapUserEnable;
-
 	MBmaterial();
+	~MBmaterial();
 
 	void setName(const std::string& name);
 	const std::string& getName() { return name; }
 	void setDirectory(const std::string& path);
 	const std::string& getDirectory() { return directory; }
-
-//	void set(aiMaterial *material, std::string directoryOfObject);
-
 	void setColorDiffuse(float red, float green, float blue);
 	void setColorAmbient(float red, float green, float blue);
 	void setColorEmissive(float red, float green, float blue);
@@ -75,12 +65,10 @@ public:
 
 	void forceDisable(bool colorMap, bool normalMap, bool heightMap, bool specularityMap);
 
-//	void importTextures(aiMaterial *material);
-//	int loadTextures(aiMaterial *material, aiTextureType type, std::string uniformVariable);
-
 	void sendToShader(MBshader *shader);
 
 	void addTexture(Texture* texture);
+	std::vector<Texture*>& getTextures();
 };
 }
 }

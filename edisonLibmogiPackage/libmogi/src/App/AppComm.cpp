@@ -262,7 +262,7 @@ std::string AppOption::typeString() {
 std::string Communicator::generateTransmitBuffer() {
 	static int protocolCount = 0;
 	protocolCount++;
-	JsonValueInterface root;
+	static JsonValueInterface root;
 
 	root["protocolCount"] = protocolCount;
 
@@ -282,12 +282,10 @@ std::string Communicator::generateTransmitBuffer() {
 	}
 
 	int commandIndex = 0;
-	for (std::map<std::string, AppOption*>::iterator it = optionsToPush.begin();
-			it != optionsToPush.end(); it++) {
+	for (std::map<std::string, AppOption*>::iterator it = optionsToPush.begin(); it != optionsToPush.end(); it++) {
 		std::string command = it->second->typeString();
 
-		root["specialCommands"][commandIndex][command]["title"] =
-				it->second->title;
+		root["specialCommands"][commandIndex][command]["title"] = it->second->title;
 
 		switch (it->second->optionType) {
 		case APP_SEGMENTED_CONTROL: {
@@ -295,8 +293,7 @@ std::string Communicator::generateTransmitBuffer() {
 			for (std::vector<std::string>::iterator it2 =
 					it->second->segments.begin();
 					it2 != it->second->segments.end(); it2++) {
-				root["specialCommands"][commandIndex][command]["segments"][segmentIndex++] =
-						*it2;
+				root["specialCommands"][commandIndex][command]["segments"][segmentIndex++] = *it2;
 			}
 		}
 			break;
@@ -312,7 +309,7 @@ std::string Communicator::generateTransmitBuffer() {
 
 		commandIndex++;
 	}
-//	std::cout << "result : " << root.toStyledString() << std::endl; // ADRIAN: uncomment
+	std::cout << "result : " << root.toStyledString() << std::endl; // ADRIAN: uncomment
 
 	return root.toStyledString();
 }
@@ -429,7 +426,7 @@ int getGoodJsonString(std::string& string, std::string::iterator* begin,
 
 int Communicator::didReceiveData(std::string newData) {
 	buffer += newData;
-	//std::cout << "didReceiveData( \"" << newData << "\" )" << std::endl; // ADRIAN: uncomment 
+//	std::cout << "didReceiveData( \"" << newData << "\" )" << std::endl; // ADRIAN: uncomment 
 	// std::cout << "buffer =\"" << buffer << "\" )" << std::endl;
 	unsigned int bufferSize = -1;
 	// int ret = handlePossibleBuffer();
@@ -439,6 +436,8 @@ int Communicator::didReceiveData(std::string newData) {
 		ret = handlePossibleBuffer();
 	}
 
+//	generateTransmitBuffer();
+//	sendState(std::string("notempty"));
 	sendState(generateTransmitBuffer());
 	return ret;
 }
@@ -450,7 +449,7 @@ int Communicator::handlePossibleBuffer() {
 
 	int findJsonResult = getGoodJsonString(buffer, &begin, &end);
 
-	//  Goddammit I really want to use regex here but recursion and lookbehind is
+	//  I really want to use regex here but recursion and lookbehind is
 	//  not supported in STL
 	//  I may need to bite the bullet and compile with boost, but that means I'll
 	//  need to install boost on edison.
@@ -502,7 +501,7 @@ int Communicator::handlePossibleBuffer() {
 	}
 
 	bool parsingSuccessful = jsonSubject.parseJson(begin, end);
-	//std::cout << "received json : " << std::string(begin, end) << std::endl;
+	std::cout << "received json : " << std::string(begin, end) << std::endl;
 
 	buffer.erase(buffer.begin(), end); // erase the buffer from the begining up to the end of the JSON.
 

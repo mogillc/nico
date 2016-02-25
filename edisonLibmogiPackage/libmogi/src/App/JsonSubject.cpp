@@ -67,8 +67,7 @@ extern "C" {
 		}
 	}
 
-	bool JsonSubject::parseJson(const std::string::iterator& begin,
-								const std::string::iterator& end) {
+	bool JsonSubject::parseJson(const std::string::iterator& begin, const std::string::iterator& end) {
 		JsonValueInterface root; // will contains the root value after parsing.
 		
 		bool parsingSuccessful = !JsonValueInterface::parse(&*begin, &*end, root);

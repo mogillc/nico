@@ -35,6 +35,7 @@ private:
 public:
 	TimeDebug() {
 		timer.initialize();
+		timer.setMaxDeltaTime(1000);
 	}
 	void reset() {
 		times.erase(times.begin(), times.end());

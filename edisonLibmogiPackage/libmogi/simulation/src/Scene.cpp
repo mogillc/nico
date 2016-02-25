@@ -15,8 +15,12 @@
 
 #include "scene.h"
 #include "mogi.h"
+#include "dynamicShader.h"
+
 
 #include <sstream>
+#include <algorithm>
+#include <typeinfo> // Needed for typeid
 
 using namespace std;
 
@@ -40,41 +44,11 @@ void Scene::initialize() {
 	totalTriangles = 0;
 	rootNode.name = "Root Node";
 
-// locationM.makeI(4);
-// scaleM.makeI(4);
-// orientationM.makeI(4);
-#ifdef BUILD_FOR_IOS
-	std::string vertexSource = "shaders/ios";
-	std::string fragmentSource = "shaders/ios";
-#else
-#ifdef RESOURCES_DIRECTORY
-	std::string vertexSource = RESOURCES_DIRECTORY;
-	std::string fragmentSource = RESOURCES_DIRECTORY;
-	vertexSource.append("/shaders");
-	fragmentSource.append("/shaders");
-#else
-	std::string vertexSource = "Shaders";
-	std::string fragmentSource = "Shaders";
-#endif
-#endif
-	std::string sceneVertexSource = vertexSource;
-	sceneVertexSource.append("/simple.vsh");
-	std::string sceneFragmentSource = fragmentSource;
-	sceneFragmentSource.append("/simple.fsh");
+	ShadowMapShaderParameters parameters;
+	shadowMapShader = ShaderFactory::getInstance(&parameters);
 
-	//std::cout << "Initializing scene shader " << sceneVertexSource.c_str() << " ...";
-	shadowMapShader.initialize(sceneVertexSource.c_str(),
-			sceneFragmentSource.c_str());
-	//std::cout << "Done." << std::endl;
-
-	std::string geometryVertexSource = vertexSource;
-	geometryVertexSource.append("/geometry.vsh");
-	std::string geometryFragmentSource = fragmentSource;
-	geometryFragmentSource.append("/geometry.fsh");
-	//std::cout << "Initializing geometry shader...";
-	//shadowMapShader.initialize(geometryVertexSource.c_str(), geometryFragmentSource.c_str());	// TODO:  Why am I re-initializing this?  It's been too long
-	gShader.initialize(geometryVertexSource.c_str(), geometryFragmentSource.c_str()); // TODO: from the above, this should be a part of the gShader, currently unused
-	//std::cout << "Done." << std::endl;
+	GeometryShaderParameters parametersG;
+	gShader = ShaderFactory::getInstance(&parametersG);
 }
 
 char *readFileBytes(const char *name, long *len) {
@@ -102,20 +76,35 @@ void Scene::clearVectors() {
 	}
 	animations.clear();
 
+	for (int i = 0; i < materials.size(); i++) {
+		delete materials[i];
+	}
+	materials.clear();
+
 	for (int i = 0; i < textures.size(); i++) {
 		delete textures[i];
 	}
 	textures.clear();
+
+	for (std::vector<NodeMatrixAndMeshID*>::iterator it = meshesToDraw.begin(); it != meshesToDraw.end(); it++) {
+		delete *it;
+	}
+
+	for (int i = 0; i < lights.size(); i++) {
+		delete lights[i];
+	}
+	lights.clear();
+
+	for (int i = 0; i < cameras.size(); i++) {
+		delete cameras[i];
+	}
+	cameras.clear();
 
 	for (int i = 0; i < meshes.size(); i++) {
 		delete meshes[i];
 	}
 	meshes.clear();
 
-	for (int i = 0; i < lights.size(); i++) {
-		delete lights[i];
-	}
-	lights.clear();
 
 //	for (int i = 0; i < meshesToDraw.size(); i++) {
 //		delete meshesToDraw[i];
@@ -141,171 +130,13 @@ void Scene::attachMeshToNode(Math::Node* node, int meshId) {
 	std::sort(meshesToDraw.begin(), meshesToDraw.end(), cmp);
 }
 
-//int Scene::set(const aiScene *scene, const char *fileName, bool createNode) {
-//	std::string fileLocation(objectLocation);
-//	fileLocation.append("/");
-//	fileLocation.append(fileName);
-//
-//	// First process the nodes:
-//	// std::cout << "\tScanning Nodes, current Mesh size: " << meshes.size() << ":
-//	// " << std::endl;
-//
-//	// rootNode.set(scene->mRootNode, NULL, meshes.size());
-//	Node *currentNode = NULL;
-//	if (createNode) {
-//		currentNode = rootNode.addNode("dummy");
-//		// currentNode->set( scene->mRootNode, &rootNode, meshes.size());
-//		populateNode(&currentNode, scene->mRootNode, &rootNode, meshes.size(), &meshesToDraw);
-//	}
-//	// rootNode.findChildByName("dummy")->set( scene->mRootNode, &rootNode,
-//	// meshes.size());
-//
-//	// Now process the animations:
-//	// std::cout << "\tNumber of Animations : " << scene->mNumAnimations <<
-//	// std::endl;
-//	Animation *animation;
-//	for (int i = 0; i < scene->mNumAnimations; i++) {
-//		animation = new Animation;
-//		//animation->set(scene->mAnimations[i]);
-//		Simulation::Importer::set(scene->mAnimations[i], animation);
-//		
-//		// Now that we are here, process the channels (since nodes were solved
-//		// ABOVE)
-//		animation->matchChannelsToNodes(&rootNode);
-//		animations.push_back(animation);
-//	}
-//
-//	// Set the materials:
-//	// std::cout << "\tNumber of Textures   : " << scene->mNumTextures <<
-//	// std::endl;
-//	// std::cout << "\tNumber of Materials  : " << scene->mNumMaterials <<
-//	// std::endl;
-//	MBmaterial *material;
-//	int materialIDOffset = materials.size();
-//	for (int i = 0; i < scene->mNumMaterials; i++) {
-//		material = new MBmaterial;
-////		material->set(scene->mMaterials[i], objectLocation);
-//		Importer::set(scene->mMaterials[i], objectLocation, material);
-//		materials.push_back(material);
-//	}
-//
-//	// Set the textures:
-//	Texture *texture;
-//	for (int i = 0; i < scene->mNumTextures; i++) {
-//		texture = new Texture;
-////		texture->set(scene->mTextures[i]);
-//		Importer::set(scene->mTextures[i], texture);
-//		textures.push_back(texture);
-//	}
-//
-//	// Set the meshes:
-//	int triangles = 0;
-//	/// std::cout << "\tNumber of Meshes     : " << scene->mNumMeshes <<
-//	/// std::endl;
-//	MBmesh *mesh;
-//	for (int i = 0; i < scene->mNumMeshes; i++) {
-//		mesh = new MBmesh();
-////		triangles += mesh->set(scene->mMeshes[i], scene->mMaterials,
-////				objectLocation, materialIDOffset);
-//		triangles += Importer::set(scene->mMeshes[i], scene->mMaterials, objectLocation, materialIDOffset, mesh)/3;
-//		mesh->matchBonesToNodes(&rootNode);
-//		mesh->fileName = fileLocation;
-//		meshes.push_back(mesh);
-//
-//		nodeToMeshMap[currentNode].push_back(mesh);
-//	}
-//
-//	// Set the lights:
-//	// std::cout << "\tNumber of Lights     : " << scene->mNumLights << std::endl;
-//	MBlight *light;
-//	for (int i = 0; i < scene->mNumLights; i++) {
-////		light = MBlight::create(scene->mLights[i]);
-//		light = Importer::createAndSet(scene->mLights[i]);
-//		if (light == NULL) {
-//			std::cerr << "Error: Unable to create light: " << scene->mLights[i]->mName.C_Str() << std::endl;
-//			continue;
-//		}
-//		light->findNode(&rootNode);
-//		lights.push_back(light);
-//	}
-//
-//	// Set the cameras:
-//	// std::cout << "\tNumber of Cameras    : " << scene->mNumCameras <<
-//	// std::endl;
-//	Camera *camera;
-//	for (int i = 0; i < scene->mNumCameras; i++) {
-//		camera = new Camera;
-////		camera->set(scene->mCameras[i]);
-//		Importer::set(scene->mCameras[i], camera);
-//		// cameras.push_back(camera);
-//	}
-//	return triangles;
-//}
-
-//Node *Scene::loadObject(const char *filename, const char *location,
-//		bool createNode) {
-//	if (filename == NULL || location == NULL) {
-//		return NULL;
-//	}
-//#ifdef BUILD_FOR_IOS
-//	std::stringstream objectLocationss("");
-//	objectLocationss << Mogi::getResourceDirectory() << "/" << location;
-//	objectLocation = objectLocationss.str();
-//#else
-//	objectLocation = std::string(location);
-//#endif
-//
-//	Assimp::Importer importer;
-//	importer.SetPropertyInteger(AI_CONFIG_PP_LBW_MAX_WEIGHTS, 3);
-//
-//	std::string fileLocation(objectLocation);
-//	fileLocation.append("/");
-//	fileLocation.append(filename);
-//
-//	const aiScene *scene = importer.ReadFile(fileLocation,
-//			aiProcess_GenSmoothNormals | aiProcess_Triangulate
-//					| aiProcess_CalcTangentSpace | aiProcess_FlipUVs);
-//	if (scene == NULL) {
-//		std::cout << "The file wasn't successfuly opened: " << fileLocation
-//				<< std::endl;
-//		return NULL;
-//	}
-//
-//	if (scene->mFlags == AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
-//		std::cout
-//				<< "The file was opened but is incomplete or doesn't contain a "
-//						"root node: " << fileLocation << std::endl;
-//		return NULL;
-//	}
-//
-//	// std::cout << "Loading: " << fileLocation << "" << std::endl;
-//
-//	totalTriangles += set(scene, filename, createNode);
-//
-//	// std::cout << "File: " << fileLocation << " loaded!" << std::endl;
-//
-//	// set() appends the node to the end, so return the last node:
-//	return rootNode.child(rootNode.numberOfChildren() - 1);
-//}
-
 void Scene::update() {
 	// Matrix modelMatrix = locationM * orientationM * scaleM;
-
-	for (int i = 0; i < materials.size(); i++) {
-		materials[i]->colorMapUserEnable = colorMapUserEnable;
-		materials[i]->normalMapUserEnable = normalMapUserEnable;
-		materials[i]->heightMapUserEnable = heightMapUserEnable;
-		materials[i]->specularityMapUserEnable = specularityMapUserEnable;
-	}
 
 	for (int i = 0; i < animations.size(); i++) {
 		animations[i]->update();
 	}
 
-	//		rootNode.update( modelMatrix );
-	// rootNode.setLocation(locationM(0,3), locationM(1,3), locationM(2,3));
-	// rootNode.setScale(scaleM(0,0), scaleM(1,1), scaleM(2,2));
-	// rootNode.setOrientation(orientationM.quaternion());
 	rootNode.update();
 }
 
@@ -317,9 +148,6 @@ void Scene::setLocation(const Vector &loc) {
 }
 
 void Scene::setLocation(double x, double y, double z) {
-	// locationM(0,3) = x;
-	// locationM(1,3) = y;
-	// locationM(2,3) = z;
 	rootNode.setLocation(x, y, z);
 }
 
@@ -331,9 +159,6 @@ void Scene::setScale(const Vector &loc) {
 }
 
 void Scene::setScale(double x, double y, double z) {
-	// scaleM(0,0) = x;
-	// scaleM(1,1) = y;
-	// scaleM(2,2) = z;
 	rootNode.setScale(x, y, z);
 }
 
@@ -342,7 +167,6 @@ void Scene::setScale(double s) {
 }
 
 void Scene::setOrientation(Quaternion &quat) {
-	// orientationM = quat.makeRotationMatrix4();
 	rootNode.setOrientation(quat);
 }
 
@@ -366,15 +190,15 @@ int Scene::buildShadowMaps() {
 		// lights[i]->setEnabled(useShadows);
 		lights[i]->updateLightCamera();
 		{
-			shadowMapShader.useProgram();
+			shadowMapShader->useProgram();
 			{
 				// Texture::resetTextureLocation();
 				if (lights[i]->prepareShadowMap()) {
-					triangles += draw(lights[i]->getCamera(), &shadowMapShader);
+					triangles += draw(lights[i]->getCamera(), shadowMapShader);
 					lights[i]->finishShadowMap();
 				}
 			}
-			shadowMapShader.stopProgram();
+			shadowMapShader->stopProgram();
 		}
 	}
 	return triangles;
@@ -382,31 +206,108 @@ int Scene::buildShadowMaps() {
 
 int Scene::draw(Camera *cam, MBshader *shader) {
 	int triangles = 0;
-//	std::vector<NodeMatrixAndMeshID *> meshIds = meshesToDraw;// rootNode.getMeshIDs();
 
-	shader->sendInteger("nLights", lights.size());
-	shader->sendMatrix("viewMatrix", cam->getViewMatrix());
+	if( dynamic_cast<const DynamicShader*>(shader) ){//typeid(*shader) == typeid(DynamicShader)) {
+		std::map<MBshader*, std::vector<NodeMatrixAndMeshID*> > orderedShaders;
 
-	for (int i = 0; i < meshesToDraw.size(); i++) {
-		for (int j = 0; j < lights.size(); j++) {
-			lights[j]->sendToShader(shader, *(meshesToDraw[i]->parentNode->getModelMatrix()), j);
+		// "Static" shader properties that dictate dynamic shader construction:
+		// Materials -> all texture maps, specular amounts
+		// Lights -> quantity.    Dynamic: color, position, MVP matrix
+		// Mesh/Camera -> All dynamic: MVP, MV, V, and N matrices
+
+		// We only want to draw given meshes with lights.  Meshes may have materials.
+
+		shader->sendInteger("nLights", (int)lights.size());	// needed for all variants of the shader, will be compiled.
+
+//		std::cerr << "Beginning ordering" << std::endl;
+		for (std::vector<NodeMatrixAndMeshID*>::iterator it = meshesToDraw.begin(); it != meshesToDraw.end(); it++) {
+			int materialIndex = meshes[(*it)->ID]->getMaterialIndex();
+//			std::cout << "materialIndex = " << materialIndex << std::endl;
+			if (materialIndex > 0) {
+				materials[ materialIndex ]->sendToShader(shader);	// should set all texture maps, etc.
+			} else {
+				// no color maps, etc.?
+			}
+			orderedShaders[((DynamicShader*)shader)->getActualShader()].push_back(*it);
 		}
 
-		Matrix myModelViewMatrix = cam->getViewMatrix() * *meshesToDraw[i]->parentNode->getModelMatrix();//modelMatrix;
-		Matrix myModelViewProjectionMatrix = cam->getProjectionMatrix() * myModelViewMatrix;
-		Matrix myNormalMatrix = myModelViewMatrix.subMatrix(3, 3);
+//		std::cout << "Resulting order:" << std::endl;
+//		for (std::map<MBshader*, std::vector<NodeMatrixAndMeshID*> >::iterator it = orderedShaders.begin(); it != orderedShaders.end(); it++) {
+//			std::cout << "Shader: " << it->first->getName() << ":";
+//			for (std::vector<NodeMatrixAndMeshID*>::iterator it2 = it->second.begin(); it2 != it->second.end(); it2++) {
+//				std::cout << " " << (*it2)->ID;
+//			}
+//			std::cout << std::endl;
+//		}
 
-		//myNormalMatrix = GLKMatrix3InvertAndTranspose(myNormalMatrix, NULL);
-		myNormalMatrix = myNormalMatrix.inverse().transpose();
+		for (std::map<MBshader*, std::vector<NodeMatrixAndMeshID*> >::iterator it = orderedShaders.begin(); it != orderedShaders.end(); it++) {
+			MBshader* theShader = it->first;
+			std::vector<NodeMatrixAndMeshID*>& theMeshesToDraw = it->second;
+			theShader->useProgram();
 
-		shader->sendMatrix("modelViewProjectionMatrix", myModelViewProjectionMatrix);
-		shader->sendMatrix("normalMatrix", myNormalMatrix);
-		shader->sendMatrix("modelViewMatrix", myModelViewMatrix);
+			for (int i = 0; i < lights.size(); i++) {
+				lights[i]->setShadowUniforms( theShader, i );
+			}
 
-		// meshes[meshIds[i]->ID]->sendMatricesToShader(shader, cam,
-		// *meshIds[i]->modelMatrix);
-		triangles += meshes[meshesToDraw[i]->ID]->drawWithMaterials(shader,
-				materials);
+			theShader->sendMatrix("viewMatrix", cam->getViewMatrix());	// nmeeds to be send to each shader
+			for (int i = 0; i < theMeshesToDraw.size(); i++) {
+				for (int j = 0; j < lights.size(); j++) {
+					lights[j]->sendToShader(theShader, *(theMeshesToDraw[i]->parentNode->getModelMatrix()), j);
+				}
+
+				Matrix myModelViewMatrix = cam->getViewMatrix() * *theMeshesToDraw[i]->parentNode->getModelMatrix();//modelMatrix;
+				Matrix myModelViewProjectionMatrix = cam->getProjectionMatrix() * myModelViewMatrix;
+				Matrix myNormalMatrix = myModelViewMatrix.subMatrix(3, 3);
+
+				//myNormalMatrix = GLKMatrix3InvertAndTranspose(myNormalMatrix, NULL);
+				myNormalMatrix = myNormalMatrix.inverse().transpose();
+
+				theShader->sendMatrix("modelViewProjectionMatrix", myModelViewProjectionMatrix);
+				theShader->sendMatrix("normalMatrix", myNormalMatrix);
+				theShader->sendMatrix("modelViewMatrix", myModelViewMatrix);
+
+				// meshes[meshIds[i]->ID]->sendMatricesToShader(shader, cam,
+				// *meshIds[i]->modelMatrix);
+				triangles += meshes[theMeshesToDraw[i]->ID]->drawWithMaterials(theShader, materials);
+			}
+
+			theShader->stopProgram();
+		}
+	} else {
+
+		// Here the shader is static, so only use the program once for the entire draw.
+
+		shader->useProgram();
+
+		for (int i = 0; i < lights.size(); i++) {
+			lights[i]->setShadowUniforms( shader, i );
+		}
+
+		shader->sendInteger("nLights", (int)lights.size());
+		shader->sendMatrix("viewMatrix", cam->getViewMatrix());
+
+		for (int i = 0; i < meshesToDraw.size(); i++) {
+			for (int j = 0; j < lights.size(); j++) {
+				lights[j]->sendToShader(shader, *(meshesToDraw[i]->parentNode->getModelMatrix()), j);
+			}
+
+			Matrix myModelViewMatrix = cam->getViewMatrix() * *meshesToDraw[i]->parentNode->getModelMatrix();//modelMatrix;
+			Matrix myModelViewProjectionMatrix = cam->getProjectionMatrix() * myModelViewMatrix;
+			Matrix myNormalMatrix = myModelViewMatrix.subMatrix(3, 3);
+
+			//myNormalMatrix = GLKMatrix3InvertAndTranspose(myNormalMatrix, NULL);
+			myNormalMatrix = myNormalMatrix.inverse().transpose();
+
+			shader->sendMatrix("modelViewProjectionMatrix", myModelViewProjectionMatrix);
+			shader->sendMatrix("normalMatrix", myNormalMatrix);
+			shader->sendMatrix("modelViewMatrix", myModelViewMatrix);
+
+			// meshes[meshIds[i]->ID]->sendMatricesToShader(shader, cam,
+			// *meshIds[i]->modelMatrix);
+			triangles += meshes[meshesToDraw[i]->ID]->drawWithMaterials(shader, materials);
+		}
+		
+		shader->stopProgram();
 	}
 	return triangles;
 }
@@ -435,20 +336,6 @@ MBmesh* Scene::getMesh(std::string meshName) {
 	std::vector<Texture*>& Scene::getTextures() {
 		return textures;
 	}
-
-//int Scene::addMesh(std::string filename, std::string directory) {
-//	std::string fullPath = directory;
-//	fullPath.append("/");
-//	fullPath.append(filename);
-//	for (int i = 0; i < meshes.size(); i++) {
-//		if (meshes[i]->fileName.compare(fullPath) == 0) {
-//			return i;  // do not need to load a new mesh, it's already loaded
-//		}
-//	}
-//
-//	loadObject(filename.c_str(), directory.c_str(), false);  // load a new mesh
-//	return meshes.size() - 1;  // return the mesh index
-//}
 
 ///////////////////////////////////////////////////////////////////////////////
 // write 2d text using GLUT

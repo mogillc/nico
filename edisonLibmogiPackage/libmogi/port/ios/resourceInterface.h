@@ -19,14 +19,18 @@
 #include <string>
 #ifdef BUILD_FOR_IOS
 	#include <OpenGLES/gltypes.h>
-#else	// Android?
-
+#elif defined(ANDROID)	// Android?
+	#ifdef GL_ES_VERSION_3_0
+		#include <GLES3/gl3.h>
+	#else
+		#include <GLES2/gl2.h>
+	#endif
 #endif
 
 std::string _getMogiResourceDirectory();
 
-#ifdef BUILD_FOR_IOS
-GLuint _loadTexture(const char* name);
+#if defined(BUILD_FOR_IOS) || defined(ANDROID)
+GLuint _loadTexture(const char* name, int glslVersion);
 #endif
 
 

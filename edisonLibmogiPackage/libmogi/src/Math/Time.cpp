@@ -40,6 +40,7 @@ void Time::initialize() {
 	// tint = 0;
 	gettimeofday(&tv, NULL); // Grab the current time (simply an initialization)
 	timecycle = tv.tv_sec + tv.tv_usec * 1e-6; // Compute the current time, in seconds
+	runningtime = 0;
 	// usleep(10000);
 }
 
@@ -83,8 +84,9 @@ void Time::update() {
 }
 
 void Time::reset() {
-	gettimeofday(&tv, NULL);  // Grab the current time
-	timecycle = tv.tv_sec + tv.tv_usec * 1e-6; // Compute the current time, in seconds
+//	gettimeofday(&tv, NULL);  // Grab the current time
+//	timecycle = tv.tv_sec + tv.tv_usec * 1e-6; // Compute the current time, in seconds
+	initialize();
 }
 
 double Time::runningTime() {

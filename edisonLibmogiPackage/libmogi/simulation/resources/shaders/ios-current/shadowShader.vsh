@@ -1,8 +1,11 @@
+
 precision highp float;
 
-attribute vec3 position;
-attribute vec3 normal;
+attribute highp vec4 position;
+attribute highp vec3 normal;
 attribute vec4 color;
+attribute vec3 tangent;
+attribute vec2 UV;
 
 uniform mat4 modelViewProjectionMatrix;
 uniform mat4 lightModelViewProjectionMatrix;
@@ -17,17 +20,19 @@ varying highp vec4 lightVertexPosition;
 varying vec3 fposition;
 //varying vec3 fnormal;
 
-varying vec3 outNormal;
+varying vec2 texcoord;
+varying highp vec3 outNormal;
 varying lowp vec3 outColor;
 
 void main()
 {
-	gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);
-	lightVertexPosition = lightModelViewProjectionMatrix * vec4( position, 1.0);
-	vec4 tempvertPosition = modelViewMatrix * vec4(position, 1.0);
+	gl_Position = modelViewProjectionMatrix * position;
+	lightVertexPosition = lightModelViewProjectionMatrix * position;
+	vec4 tempvertPosition = modelViewMatrix * position;
 	fposition = tempvertPosition.xyz;
 	outColor = color.xyz ;
 	outNormal = normalMatrix * normal;
+	texcoord = UV;
 /*
 	vec3 eyeNormal = normalize(outNormal);
 

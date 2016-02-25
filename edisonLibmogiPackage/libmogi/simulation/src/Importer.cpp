@@ -35,7 +35,7 @@ extern "C" {
 			return NULL;
 		}
 		std::string objectLocation;
-#ifdef BUILD_FOR_IOS
+#if defined(BUILD_FOR_IOS) || defined(ANDROID)
 		std::stringstream objectLocationss("");
 		objectLocationss << Mogi::getResourceDirectory() << "/" << location;
 		objectLocation = objectLocationss.str();
@@ -94,7 +94,7 @@ extern "C" {
 		if(loadObject(mScene, filename.c_str(), directory.c_str(), false) == NULL) {  // load a new mesh
 			std::cerr << "Error: Mogi::Simulation::Importer::addMesh() failed." << std::endl;
 		}
-		return mScene->getMeshes().size() - 1;  // return the mesh index
+		return (int)mScene->getMeshes().size() - 1;  // return the mesh index
 	}
 
 #ifdef ASSIMP_FOUND
@@ -112,7 +112,7 @@ extern "C" {
 		if (createNode) {
 			currentNode = mScene->rootNode.addNode("dummy");
 			// currentNode->set( scene->mRootNode, &rootNode, meshes.size());
-			populateNode(&currentNode, scene->mRootNode, &mScene->rootNode, mScene->getMeshes().size(), &mScene->getMeshestoDraw());
+			populateNode(&currentNode, scene->mRootNode, &mScene->rootNode, (int)mScene->getMeshes().size(), &mScene->getMeshestoDraw());
 		}
 		// rootNode.findChildByName("dummy")->set( scene->mRootNode, &rootNode,
 		// meshes.size());
@@ -138,7 +138,7 @@ extern "C" {
 		// std::cout << "\tNumber of Materials  : " << scene->mNumMaterials <<
 		// std::endl;
 		MBmaterial *material;
-		int materialIDOffset = mScene->getMaterials().size();
+		int materialIDOffset = (int)mScene->getMaterials().size();
 		for (int i = 0; i < scene->mNumMaterials; i++) {
 			material = new MBmaterial;
 			//		material->set(scene->mMaterials[i], objectLocation);
@@ -383,11 +383,16 @@ extern "C" {
 		float shininess;
 		if (AI_SUCCESS != material->Get(AI_MATKEY_SHININESS, shininess)) {
 			shininess = 32;
+		} else {
+			// TODO: int eh future, assimp may not implement this wierd factor of 4 issue, so double check this in assimp 3.1
+			shininess /= 4.0;
 		}
+//		std::cout << "Specular Shine: " << shininess << std::endl;
 		float specularStrength;
 		if (AI_SUCCESS != material->Get(AI_MATKEY_SHININESS_STRENGTH, specularStrength)) {
 			specularStrength = 1;
 		}
+//		std::cout << "Specular Strength: " << specularStrength<< std::endl;
 		mMaterial->setShininess(shininess, specularStrength);
 
 		mMaterial->setMetallicLevel(1.0);	// why is this here?
@@ -417,8 +422,8 @@ extern "C" {
 
 			if (texture->loadFromImage(textureLocation) < 0) {
 				numberOfLoadedTextures--;
-				std::cout << "Error! Could not load texture: " << textureLocation
-				<< " for " << mMaterial->getName() << std::endl;
+				std::cout << "Error! Could not load texture: " << textureLocation << " for " << mMaterial->getName() << std::endl;
+				delete texture;
 			} else {
 				texture->setUniformName(uniformVariable);
 				texture->setUniformIndex(i);
@@ -439,6 +444,7 @@ extern "C" {
 		mLight->setAttenuationFactors(aLight->mAttenuationConstant,
 									  aLight->mAttenuationLinear,
 									  aLight->mAttenuationQuadratic);
+//		std::cout << "Set light constants: " << aLight->mAttenuationConstant << ", " << aLight->mAttenuationLinear << ", " <<aLight->mAttenuationQuadratic << std::endl;
 	}
 
 	void Importer::set(aiLight* aLight, MBspotLight* mLight) {
@@ -448,6 +454,11 @@ extern "C" {
 		mLight->setFOV(aLight->mAngleOuterCone * 180.0 / MOGI_PI);
 
 		mLight->setCone(aLight->mAngleInnerCone, aLight->mAngleOuterCone);
+
+		mLight->setAttenuationFactors(aLight->mAttenuationConstant,
+									  aLight->mAttenuationLinear,
+									  aLight->mAttenuationQuadratic);
+//		std::cout << "Set light constants: " << aLight->mAttenuationConstant << ", " << aLight->mAttenuationLinear << ", " <<aLight->mAttenuationQuadratic << std::endl;
 
 	}
 
@@ -470,6 +481,7 @@ extern "C" {
 				mLight = new MBspotLight;
 				set(aLight, (MBspotLight*)mLight);
 				break;
+//			case aiLightSource_AMBIENT:
 			case aiLightSource_UNDEFINED:
 			case _aiLightSource_Force32Bit:
 				break;

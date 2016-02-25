@@ -658,10 +658,13 @@ public:
 
 private:
 
-	StatusPacketError parseReadStatusPacket(Motor* dynamixel,
-			const std::vector<unsigned char>& buffer, const DataRange& range);
+	StatusPacketError parseReadStatusPacket(Motor* dynamixel, const std::vector<unsigned char>& buffer, const DataRange& range);
 
 protected:
+
+	/*! Designates if verbose mode is set.
+	 */
+	bool verbose;
 
 	/*! The baudrate.
 	 */
@@ -702,11 +705,7 @@ public:
 	/*! \brief The constructor with a specified baudrate.
 	 @param baudrate The desired baudrate.
 	 */
-	Interface(int baudrate) :
-			currentlyOpen(false) {
-		baud = baudrate;
-	}
-
+	Interface(int baudrate);
 	virtual ~Interface()=0;
 
 	/*! \brief Opens and configures the UART device.
@@ -858,6 +857,12 @@ public:
 	bool isOpen() {
 		return currentlyOpen;
 	}
+
+	/*!
+	 \brief Enables/disables verbosity for debugging.
+	 \param verbose True if verbose, false otherwise.
+	 */
+	void setVerbose(bool verbose);
 };
 
 	#ifdef LIBFTDI_FOUND

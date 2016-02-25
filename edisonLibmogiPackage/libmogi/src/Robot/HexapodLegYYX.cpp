@@ -28,7 +28,7 @@ extern "C" {
 
 
 			HexapodLegYYX::HexapodLegYYX() {
-				std::cout << "HexapodLeg::HexapodLeg() type:" << abi::__cxa_demangle(typeid(*this).name(), 0, 0, NULL) << std::endl;
+//				std::cout << "HexapodLeg::HexapodLeg() type:" << abi::__cxa_demangle(typeid(*this).name(), 0, 0, NULL) << std::endl;
 				ikSolver = InverseKinematics::create(InverseKinematics::YYX);
 			}
 			;

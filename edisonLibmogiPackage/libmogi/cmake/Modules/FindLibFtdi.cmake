@@ -26,3 +26,7 @@ find_package_handle_standard_args(LibFtdi  DEFAULT_MSG
                                   LIBFTDI_LIBRARY LIBFTDI_INCLUDE_DIR)
 
 mark_as_advanced(LIBFTDI_INCLUDE_DIR LIBFTDI_LIBRARY )
+
+if(LIBFTDI_FOUND)
+	add_definitions(-DLIBFTDI_FOUND)
+endif()

@@ -59,13 +59,9 @@ private:
 	GLfloat *tibiaRange;
 
 	GLfloat thickness;
-	// Walking dynamics:
 	GLfloat *legPhase;
 
 	int totalTriangles;
-
-	// NSArray *keyArray;
-	// BTime *selfTimer;
 
 public:
 	Scene *body;
@@ -80,20 +76,12 @@ public:
 	GLKVector3 headTheta;GLKVector3 bodyLocation;GLKVector3 bodyLocationDesired;GLKVector3 bodyVelocities;GLKVector3 bodyAngularVelocities;GLKVector3 bodyAngleDesired;GLKVector3 angles;GLKVector3 bodyLocationOffset;GLKVector3 anglesOffset;GLKVector3 *feetLocations;
 
 	std::string gaitLabel;
-	//@property Scene *Scene;
-	//@property NSMutableArray *myArray;
 
-	//- (void) generateGaitParameters:(int) gait;
-	//- (void) processVelocities;
-	//- (void) walkingDynamics;
-	//- (void) inverseKinematics;
-	//- (void) balanceGestures;
 	Simulation();
 	~Simulation();
 	void buildHexapod();
 	int generateVertexObjects();
 	int getNumberOfTriangles();
-	//- (void)update:(GLKMatrix4) bMVM: (GLKMatrix4) pM;
 	void update(Hexapod *hex);
 
 	const Vector &getCameraOrientation() {
@@ -104,10 +92,6 @@ public:
 		return cameraLocation;
 	}
 	;
-
-	//- (void) Traj:(GLfloat *) x outHeight:(GLfloat *) y upFlag:(int *) upflag
-	//xValue:(GLfloat *) input;
-	//- (unsigned char) computechecksum:(unsigned char *)buffer;
 };
 }
 }

@@ -46,14 +46,6 @@ private:
 public:
 	Animation();
 	~Animation();
-//	Animation(const Animation& param);
-//	Animation& operator=(const Animation&);
-
-	//! Defines the animation from Assimp
-	/*!
-	 \param animation The animation from Assimp.
-	 */
-	//void set(aiAnimation* animation);
 
 	//! Sets the animation's channel's parent node.
 	/*!

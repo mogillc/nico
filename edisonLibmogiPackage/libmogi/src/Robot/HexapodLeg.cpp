@@ -27,7 +27,7 @@ extern "C" {
 		namespace Robot {
 
 			HexapodLeg::HexapodLeg() {
-				std::cout << "HexapodLeg::HexapodLeg() type:" << abi::__cxa_demangle(typeid(*this).name(), 0, 0, NULL) << std::endl;
+//				std::cout << "HexapodLeg::HexapodLeg() type:" << abi::__cxa_demangle(typeid(*this).name(), 0, 0, NULL) << std::endl;
 			}
 
 			HexapodLeg::~HexapodLeg() {
@@ -122,8 +122,8 @@ extern "C" {
 					}
 				}
 
-				std::cout << "HexapodLeg::createFromJSON() loaded:" << abi::__cxa_demangle(typeid(*result).name(), 0, 0, NULL) << std::endl;
-				
+//				std::cout << "HexapodLeg::createFromJSON() loaded:" << abi::__cxa_demangle(typeid(*result).name(), 0, 0, NULL) << std::endl;
+
 				return result;
 			}
 

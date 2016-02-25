@@ -73,7 +73,7 @@ int main(int argc, char* argv[])
 	mAppInterface.setPort(10098);
 	mAppInterface.start();
 
-	// Customize the options menu:
+	/*// Customize the options menu:
 	// 1) Add a segmented control:
 	AppOption ledOptions;
 	std::string optionTitle = "LED";
@@ -126,7 +126,7 @@ int main(int argc, char* argv[])
 	mAppInterface.addOptionMenuOption(&buttonOption);
 	// 5.1) Create an observer to receive a change in value:
 	JsonStringObserver buttonObserver;
-	mAppInterface.addJsonValueListener(optionTitle, &buttonObserver);
+	mAppInterface.addJsonValueListener(optionTitle, &buttonObserver);*/
 
 	std::cout << "Ctrl-c to quit." << std::endl;
 	double time = 0;
