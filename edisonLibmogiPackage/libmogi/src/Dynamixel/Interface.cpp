@@ -269,6 +269,7 @@ Interface::Status Interface::syncRead(
 		return BAD_LENGTH;
 	}
 //	usleep(2000000);
+	usleep(20000);	// for yuneec's servo firmware
 	Interface::Status status = NOERROR;
 	for (std::map<unsigned char, Motor*>::iterator it = dynamixels->begin(); it != dynamixels->end(); it++) {
 		Motor* dynamixel = it->second;
