@@ -19,6 +19,7 @@
 #include <unistd.h>
 
 #include <iostream>
+#include <iomanip>	// std::setw(), std::setfill()
 
 #ifdef IDENT_C
 static const char* const Dynamixel_C_Id = "$Id$";
@@ -51,12 +52,20 @@ int Ftdi::writeInterface(std::vector<unsigned char> data) {
 		return DISCONNECTED;
 	}
 
+	if (verbose) {
+		std::cout << "Write Interface Buffer: " << std::endl;
+		for (int index=0; index<data.size(); index++) {
+			std::cout << std::hex << std::setfill('0') << std::setw(2) << data[index] << ' ';
+		}
+		std::cout << std::endl;
+	}
+
 	ftdi_usb_purge_buffers(ftdiContext);
 	//	int ret = ftdi_write_data(ftdiContext, data.data(), data.size());
 	//	ftdi_usb_purge_tx_buffer(ftdiContext);
 	// ftdi_transfer_data_done( ftdiContext);
 
-	ftdi_transfer_control* tc = ftdi_write_data_submit(ftdiContext, data.data(),
+	ftdi_transfer_control *tc = ftdi_write_data_submit(ftdiContext, data.data(),
 			data.size());
 	if (tc == NULL) {
 		return DISCONNECTED;
@@ -79,6 +88,13 @@ int Ftdi::readInterface(std::vector<unsigned char>* buffer, size_t maxSize) {
 		numSent = ftdi_read_data(ftdiContext, tempBuffer, maxSize);
 		for (int i = 0; i < numSent; i++) {
 			buffer->push_back(tempBuffer[i]);
+		}
+		if (verbose) {
+			std::cout << "Read Interface Buffer: [length=" << numSent << "]" << std::endl;
+			for (int i = 0; i < numSent; i++) {
+				std::cout << std::hex << std::setfill('0') << std::setw(2) << tempBuffer[i] << ' ';
+			}
+			std::cout << std::endl;
 		}
 	}
 
