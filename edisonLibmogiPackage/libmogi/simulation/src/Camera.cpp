@@ -41,6 +41,11 @@ extern "C" {
 		this->name = name;
 	}
 
+	void Camera::setClipBounds(float near, float far) {
+		nearClip = near;
+		farClip = far;
+	}
+
 	void Camera::makeProjection(int xRes, int yRes, float fov, float clipNear,
 								float clipFar) {
 		xResolution = xRes;

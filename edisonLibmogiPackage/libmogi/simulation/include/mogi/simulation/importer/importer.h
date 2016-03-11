@@ -51,33 +51,35 @@ namespace Mogi {
 			 \param directory The path to the file.  This is needed when assets like textures are in the same directory.
 			 \return The index of the last added mesh in the mesh vector, or the index of this mesh when previously loaded.
 			 */
-			static int addMesh( Scene* mScene, std::string filename, std::string directory);
+			static MBmesh* addMesh( Scene* mScene, std::string filename, std::string directory);
 
 #ifdef ASSIMP_FOUND
-			static int set(const aiScene *aScene, Scene* mScene, const char *fileName, const char *objectLocation, bool createNode = true);
-			static void populateNode(Mogi::Math::Node **theNode, aiNode *node, Mogi::Math::Node *nodeParent, int meshIDOffset, std::vector<NodeMatrixAndMeshID*>* meshesToDraw);
+			static int setScene(const aiScene *aScene, Scene* mScene, const char *fileName, const char *objectLocation, bool createNode = true);
+//			static void populateNode(Mogi::Math::Node **theNode, aiNode *node, Mogi::Math::Node *nodeParent, int meshIDOffset, std::vector<Renderable*>* meshesToDraw);
+			static void populateNode(Mogi::Math::Node **mNode, aiNode* aNode, aiMesh** aMeshes, Mogi::Math::Node *nodeParent, std::vector<Renderable*>* mRenderables, std::map<unsigned int, MBmesh*>& meshes, std::map<unsigned int, MBmaterial*>& materials);
 
-			static void set(aiTexture *aTexture, Texture* mTexture);
+			static void setTexture(aiTexture *aTexture, Texture* mTexture);
 
-			static int set(aiMesh* aMesh, aiMaterial** materials, std::string fileLocation, int materialIDOffset, MBmesh* mMesh);
+//			static int setMesh(aiMesh* aMesh, aiMaterial** materials, std::string fileLocation, int materialIDOffset, MBmesh* mMesh);
+			static int setMesh(aiMesh* aMesh, std::string fileLocation, MBmesh* mMesh);
 
-			static void set(aiMaterial *material, std::string directoryOfObject, MBmaterial* mMaterial);
-			static void importTextures(aiMaterial *material, MBmaterial* mMaterial);
-			static int loadTextures(aiMaterial *material, aiTextureType type, std::string uniformVariable, MBmaterial* mMaterial);
+			static void setMaterial(aiMaterial *material, std::string directoryOfObject, MBmaterial* mMaterial, Scene* textureStorage);
+			static void importTextures(aiMaterial *material, MBmaterial* mMaterial, Scene* textureStorage);
+			static int loadTextures(aiMaterial *material, aiTextureType type, MBmaterial* mMaterial, Scene* textureStorage);
 
 			static MBlight* createAndSet(aiLight* aLight);
-			static void set(aiLight* aLight, MBpointLight* mLight);
-			static void set(aiLight* aLight, MBspotLight* mLight);
-			static void set(aiLight* aLight, MBdirectionalLight* mLight);
+			static void setPointLight(aiLight* aLight, MBpointLight* mLight);
+			static void setSpotLight(aiLight* aLight, MBspotLight* mLight);
+			static void setDirectionalLight(aiLight* aLight, MBdirectionalLight* mLight);
 
-			static void set(aiVectorKey* aVectorKey, KeyLocation* mKeyLocation);
-			static void set(aiVectorKey* aVectorKey, KeyScale* mKeyScale);
-			static void set(aiQuatKey* aQuatKey, MBkeyRotation* mMBkeyRotation);
+			static void setKeyLocation(aiVectorKey* aVectorKey, KeyLocation* mKeyLocation);
+			static void setKeyScale(aiVectorKey* aVectorKey, KeyScale* mKeyScale);
+			static void setKeyRotation(aiQuatKey* aQuatKey, MBkeyRotation* mMBkeyRotation);
 			static void set(aiCamera* aCamera, Camera* mCamera);
 			static std::vector<Bone *> getBones(aiMesh *mesh);
-			static void set(aiBone* aBone, Bone* mBone);
-			static void set(aiAnimation* aAnimation, Animation* mAnimation);
-			static void set(aiNodeAnim *aNodeAnim, Channel* mChannel);
+			static void setBone(aiBone* aBone, Bone* mBone);
+			static void setAnimation(aiAnimation* aAnimation, Animation* mAnimation);
+			static void setChannel(aiNodeAnim *aNodeAnim, Channel* mChannel);
 #endif // ASSIMP_FOUND
 		};
 

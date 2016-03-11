@@ -33,8 +33,7 @@ namespace Math {
 
 Node::Node() {
 	parent = NULL;
-	//transformationMatrix.makeI(4);
-	//modelMatrix.makeI(4);
+
 	outputMatrix.makeI(4);
 	scaleM.makeI(4);
 	locationM.makeI(4);
@@ -47,7 +46,12 @@ Node::Node() {
 }
 
 Node::~Node() {
-	clearChildren();
+	for (std::vector<Node*>::iterator it = children.begin(); it != children.end(); ) {// no need to increment since we tell the parent to pop.
+		if (*it != NULL) {
+			delete ((Node*) (*it));
+		}
+	}
+	children.clear();
 
 	if (parent)
 		parent->popChild(this);
@@ -55,16 +59,6 @@ Node::~Node() {
 	pthread_mutex_destroy((pthread_mutex_t*) _mutex);
 	delete (pthread_mutex_t*) _mutex;
 #endif
-}
-
-void Node::clearChildren() {
-	for (std::vector<Node*>::iterator it = children.begin();
-			it != children.end();) {// no need to increment since we tell the parent to pop.
-		if (*it != NULL) {
-			delete ((Node*) (*it));
-		}
-	}
-	children.clear();
 }
 
 int Node::prettyPrintTracker = 0;
@@ -154,22 +148,15 @@ Node* Node::popChild(Node* child) {
 }
 
 void Node::setModelMatrix(Matrix& newModel) {
-	//modelMatrix = newModel;
-	// This should set the scale, location, and orientation instead...
-	//Matrix loc, sca, ori;
-	//std::cout << "Setting model matrix for node: " << name << std::endl;
-	transformationToScaleRotationTranslation(&newModel, &scaleM, &orientationM,
-			&locationM);
-
+	transformationToScaleRotationTranslation(&newModel, &scaleM, &orientationM, &locationM);
 }
 
 Node* Node::findChildByName(std::string childName) {
-	if (childName == name) {
+	if (childName.compare(name) == 0) {
 		return this;
 	}
 
-	for (std::vector<Node*>::iterator it = children.begin();
-			it != children.end(); it++) {
+	for (std::vector<Node*>::iterator it = children.begin(); it != children.end(); it++) {
 		Node *temp = (*it)->findChildByName(childName);
 		if (temp) {
 			return temp;
@@ -187,7 +174,7 @@ void Node::updateChildren() {
 	// Trickle to the result down the children:
 	for (std::vector<Node*>::iterator it = children.begin();
 			it != children.end(); it++) {
-		(*it)->update();			//( outputMatrix );
+		(*it)->update();
 	}
 }
 
@@ -211,8 +198,7 @@ void Node::update() {
 
 void Node::setLocation(const Vector& loc) {
 	if ((loc.numRows() == 3) && (loc.numColumns() == 1)) {
-		setLocation(loc.valueAsConst(0, 0), loc.valueAsConst(1, 0),
-				loc.valueAsConst(2, 0));
+		setLocation(loc.valueAsConst(0, 0), loc.valueAsConst(1, 0), loc.valueAsConst(2, 0));	// Dimensions do not match!
 	}
 }
 
@@ -224,8 +210,7 @@ void Node::setLocation(double x, double y, double z) {
 
 void Node::setScale(const Vector& loc) {
 	if ((loc.numRows() == 3) && (loc.numColumns() == 1)) {
-		setScale(loc.valueAsConst(0, 0), loc.valueAsConst(1, 0),
-				loc.valueAsConst(2, 0));
+		setScale(loc.valueAsConst(0, 0), loc.valueAsConst(1, 0), loc.valueAsConst(2, 0));	// Dimensions do not match!
 	}
 }
 

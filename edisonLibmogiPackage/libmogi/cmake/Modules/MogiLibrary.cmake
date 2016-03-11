@@ -101,6 +101,7 @@ function( new_mogi_library LIBNAME )
 								${CMAKE_SOURCE_DIR}/port/android/include/mogi/port/android/jsonWrapperIOS.h
 								${CMAKE_SOURCE_DIR}/port/android/include/mogi/port/android/JavaStaticClass.h 
 								${CMAKE_SOURCE_DIR}/port/android/include/mogi/port/android/AndroidEnvironment.h
+								${CMAKE_SOURCE_DIR}/port/android/include/mogi/port/android/StringBuffer.h
 								${CMAKE_SOURCE_DIR}/port/android/include/mogi/JSONParser.h )		
 		include_directories(${CMAKE_SOURCE_DIR}/port/android/include)
 	endif()
@@ -123,6 +124,10 @@ function( new_mogi_library LIBNAME )
 	
 	# Dependencies
 	target_link_libraries (${LIBNAME} ${DEPENDENCIES})
+
+	if ( ANDROID )
+		target_link_libraries (${LIBNAME} log)
+	endif()
 	
 	if( (NOT BUILD_FOR_IOS) AND (NOT ANDROID) )
 		# Resources

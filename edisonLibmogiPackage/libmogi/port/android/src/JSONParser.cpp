@@ -8,6 +8,7 @@
 #include <mogi/JSONParser.h>
 #include <cstring>
 #include <sstream>
+#include <fstream>
 //#include <iostream>
 
 namespace Mogi {
@@ -21,6 +22,15 @@ namespace Mogi {
 	void JSONParser::reset() {
 		strPos = 0; currentCompoundToken = 0;
 		tokenList = JSONTokenList();
+	}
+
+	int JSONParser::parseJSONFile(const std::string& filename, JSONValue& root) {
+		std::ifstream inputStream(filename.c_str());
+		std::stringstream buffer;
+
+		buffer << inputStream.rdbuf();
+
+		return this->parseJSONString(buffer.str(), root);
 	}
 
 	int JSONParser::parseJSONString(const std::string& jsonStr,
@@ -128,6 +138,9 @@ namespace Mogi {
 	}
 
 	int JSONParser::initJSONValue(JSONValue& root, JSONTokenList& tokenList, const std::string& jsonStr) {
+		// DEBUG
+		//std::cout << tokenList.toString() << std::endl;
+
 		JSONToken* token = 0;
 		std::istringstream iss;
 		std::string currKey = "";
@@ -154,7 +167,8 @@ namespace Mogi {
 			JSONTokenType tokenType = token->type;
 			bool isKey = token->isKey;
 
-			if (token->startIndex > parentEnd.back()) {
+			while (token->startIndex > parentEnd.back()) {
+				//std::cout << "popping parent that ends at " << parentEnd.back() << " for token starting at " << token->startIndex << std::endl;
 				parentQueue.pop_back();
 				parentEnd.pop_back();
 			}
@@ -168,6 +182,8 @@ namespace Mogi {
 			if (isKey && token->next) {
 				int keySize = token->endIndex - token->startIndex + 1;
 				currKey = jsonStr.substr(token->startIndex, keySize);
+
+				//std::cout << "key: " << currKey << std::endl;
 			}
 			else if (isKey && !token->next) {
 				return -2;
@@ -176,6 +192,9 @@ namespace Mogi {
 				int valSize = token->endIndex - token->startIndex + 1;
 				std::string valStr = jsonStr.substr(token->startIndex, valSize);
 				JSONValue value;
+
+				//std::cout << "value: " << valStr << std::endl;
+				//std::cout << "val type: " << tokenType << " parent type: " << parentType << " start: " << token->startIndex << " end: " << token->endIndex << std::endl;
 
 				if(tokenType == JSON_INT){
 					int intVal = 0;
@@ -654,6 +673,51 @@ namespace Mogi {
 				}
 			}
 			oss << "} ";
+			return oss.str();
+		default:
+			return "";
+		}
+	}
+
+	std::string JSONValue::toJSONStringPretty(const std::string& prefix) const {
+		std::ostringstream oss;
+		std::map<std::string,JSONValue>::iterator it;
+		unsigned int i = 0;
+
+
+		switch(mType)  {
+		case JSON_NULL:
+			return "null";
+		case JSON_BOOL:
+			return mValue.boolVal ? ("true") : ("false");
+		case JSON_INT:
+			oss << mValue.intVal;
+			return oss.str();
+		case JSON_DOUBLE:
+			oss << mValue.doubleVal;
+			return oss.str();
+		case JSON_STRING:
+			oss << "\"" << mValue.stringVal << "\"";
+			return oss.str();
+		case JSON_ARRAY:
+			oss << "[";
+			for(i=0; i < size(); i++) {
+				oss << "\n" << prefix << "\t" << (*mValue.arrayVal)[i].toJSONStringPretty(prefix + "\t");
+				if (i != size() - 1) {
+					oss << ", ";
+				}
+			}
+			oss << "\n" << prefix << "]";
+			return oss.str();
+		case JSON_OBJECT:
+			oss << "{";
+			for(it = (*mValue.objectVal).begin(), i=0; it != (*mValue.objectVal).end(); it++, i++) {
+				oss << "\n" << prefix << "\t" << "\"" << (it->first) << "\" : " <<(it->second).toJSONStringPretty(prefix + "\t");
+				if (i != size() - 1) {
+					oss << ", ";
+				}
+			}
+			oss << "\n" << prefix << "}";
 			return oss.str();
 		default:
 			return "";

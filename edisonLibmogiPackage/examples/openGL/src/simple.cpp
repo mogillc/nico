@@ -149,7 +149,7 @@ void init(int argc, char *argv[])
 	camera = new Camera;
 
 	paverStoneModel = new Scene;
-	paverStoneModel->cameras.push_back(camera);
+	paverStoneModel->getCameras().push_back(camera);
 
 	Importer::loadObject(paverStoneModel,"paverStones.obj","Objects");
 	//paverStoneModel->attachObject("tyke.dae", "Objects");
@@ -175,7 +175,7 @@ void init(int argc, char *argv[])
 			node->findChildByName("bulbulb")->name = newName;
 		}
 	}
-	for (int i = 0; i < paverStoneModel->lights.size(); i++) {
+	for (int i = 0; i < paverStoneModel->getLights().size(); i++) {
 		//paverStoneModel->lights[i]->setColor(cos(i*2)*cos(i*2), cos(i*i*4)*cos(i*i*4), cos(i*i*i*8)*cos(i*i*i*8));
 	}
 
@@ -439,7 +439,7 @@ void displayCB()
 {
 	btime.update();
 
-	Node* node = paverStoneModel->findNodeByName("Form38");
+	Node* node = paverStoneModel->rootNode.findChildByName("Form38");
 	if (node) {
 		node->setOrientation(sin(btime.runningTime()), Vector::yAxis);
 	}
@@ -454,7 +454,7 @@ void displayCB()
 	for (int i = 0; i < N_LIGHTS; i++) {
 		char modelName[64];
 		sprintf(modelName, "lightModel %d", i);
-		node = paverStoneModel->findNodeByName(modelName);
+		node = paverStoneModel->rootNode.findChildByName(modelName);
 		if (node == NULL) {
 			std::cout << ":(" << std::endl;
 			continue;
@@ -504,8 +504,8 @@ void displayCB()
 	// Shadow map rendering:
 	// Place the camera at the light, but save the current camera location:
 	///////////////////////////////////////////////////////////////////////
-	for (int i = 0; i < paverStoneModel->lights.size(); i++) {
-		paverStoneModel->lights[i]->setEnabled(useShadows);
+	for (int i = 0; i < paverStoneModel->getLights().size(); i++) {
+		paverStoneModel->getLights()[i]->setEnabled(useShadows);
 	}
 	paverStoneModel->buildShadowMaps();
 

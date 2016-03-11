@@ -72,11 +72,7 @@ private:
 	/*! The transformation rotation component R, where the transformation matrix is computed as T*R*S.
 	 */
 	Matrix orientationM;
-
-	/*! \brief Removes all children from this node.
-	 */
-	void clearChildren();
-
+	
 	/*! \brief Called to update each children matrix outputMatrix, recursively performed.
 	 */
 	void updateChildren();

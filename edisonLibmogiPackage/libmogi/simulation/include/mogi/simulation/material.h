@@ -19,6 +19,7 @@
 #include "mogi/math/mmath.h"
 #include "shader.h"
 #include "texture.h"
+#include "dynamicShader.h"
 
 #include <vector>
 
@@ -29,12 +30,20 @@ class MBmaterial {
 private:
 	std::string name;
 	std::string directory;
-	std::vector<Texture *> textures;
+//	std::vector<Texture *> textures;
 
-	bool colorMapEnable;
-	bool normalMapEnable;
-	bool heightMapEnable;
-	bool specularityMapEnable;
+//	bool colorMapEnable;
+
+	ShadowShaderParameters::ColorSource colorSource;
+
+	Texture* colorMap;
+	Texture* normalMap;
+	Texture* specularMap;
+	Texture* heightMap;
+
+//	bool normalMapEnable;
+//	bool heightMapEnable;
+//	bool specularityMapEnable;
 
 	Math::Vector colorDiffuse;
 	Math::Vector colorSpecular;
@@ -42,11 +51,19 @@ private:
 	Math::Vector colorEmissive;
 	Math::Vector colorTransparent;
 
-	GLfloat shininess;
+	GLfloat specularExponent;
 	GLfloat specularStrength;
 	GLfloat metallicLevel;
 
 public:
+
+	enum TextureType {
+		COLOR,
+		NORMAL,
+		SPECULAR,
+		HEIGHT
+	};
+
 	MBmaterial();
 	~MBmaterial();
 
@@ -54,21 +71,25 @@ public:
 	const std::string& getName() { return name; }
 	void setDirectory(const std::string& path);
 	const std::string& getDirectory() { return directory; }
+	void setColorSource(ShadowShaderParameters::ColorSource source);
 	void setColorDiffuse(float red, float green, float blue);
 	void setColorAmbient(float red, float green, float blue);
 	void setColorEmissive(float red, float green, float blue);
 	void setColorSpecular(float red, float green, float blue);
 	void setColorTransparent(float red, float green, float blue);
 
-	void setShininess(float level, float strength);
+	const Math::Vector& getColorDiffuse();
+
+	void setShininess(float exponent, float strength);
 	void setMetallicLevel(float level);
 
-	void forceDisable(bool colorMap, bool normalMap, bool heightMap, bool specularityMap);
+//	void forceDisable(bool colorMap, bool normalMap, bool heightMap, bool specularityMap);
 
 	void sendToShader(MBshader *shader);
 
-	void addTexture(Texture* texture);
-	std::vector<Texture*>& getTextures();
+//	void addTexture(Texture* texture);
+//	std::vector<Texture*>& getTextures();
+	void setTexture(Texture* texture, TextureType type);
 };
 }
 }

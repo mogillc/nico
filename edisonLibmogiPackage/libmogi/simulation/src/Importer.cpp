@@ -53,7 +53,7 @@ extern "C" {
 
 		const aiScene *scene = importer.ReadFile(fileLocation,
 												 aiProcess_GenSmoothNormals | aiProcess_Triangulate
-												 | aiProcess_CalcTangentSpace | aiProcess_FlipUVs);
+												 | aiProcess_CalcTangentSpace | aiProcess_FlipUVs );
 		if (scene == NULL) {
 			std::cout << "The file wasn't successfuly opened: " << fileLocation
 			<< std::endl;
@@ -69,7 +69,7 @@ extern "C" {
 
 		// std::cout << "Loading: " << fileLocation << "" << std::endl;
 
-		set(scene, mScene, filename, objectLocation.c_str(), createNode);
+		setScene(scene, mScene, filename, objectLocation.c_str(), createNode);
 
 		// std::cout << "File: " << fileLocation << " loaded!" << std::endl;
 
@@ -81,182 +81,128 @@ extern "C" {
 #endif // ASSIMP_FOUND
 	}
 
-	int Importer::addMesh( Scene* mScene, std::string filename, std::string directory) {
+	MBmesh* Importer::addMesh( Scene* mScene, std::string filename, std::string directory) {
 		std::string fullPath = directory;
 		fullPath.append("/");
 		fullPath.append(filename);
 		for (int i = 0; i < mScene->getMeshes().size(); i++) {
 			if (mScene->getMeshes()[i]->fileName.compare(fullPath) == 0) {
-				return i;  // do not need to load a new mesh, it's already loaded
+				std::cout << "This mesh is already loaded: " << fullPath << std::endl;
+				return mScene->getMeshes()[i];  // do not need to load a new mesh, it's already loaded
 			}
 		}
 
 		if(loadObject(mScene, filename.c_str(), directory.c_str(), false) == NULL) {  // load a new mesh
 			std::cerr << "Error: Mogi::Simulation::Importer::addMesh() failed." << std::endl;
 		}
-		return (int)mScene->getMeshes().size() - 1;  // return the mesh index
+		return *mScene->getMeshes().rbegin();  // return the mesh index
 	}
 
 #ifdef ASSIMP_FOUND
-	int Importer::set(const aiScene *scene, Scene* mScene, const char *fileName, const char *objectLocation, bool createNode) {
+	int Importer::setScene(const aiScene *scene, Scene* mScene, const char *fileName, const char *objectLocation, bool createNode) {
 		std::string fileLocation(objectLocation);
 		fileLocation.append("/");
 		fileLocation.append(fileName);
-
-		// First process the nodes:
-		// std::cout << "\tScanning Nodes, current Mesh size: " << meshes.size() << ":
-		// " << std::endl;
-
-		// rootNode.set(scene->mRootNode, NULL, meshes.size());
-		Node *currentNode = NULL;
-		if (createNode) {
-			currentNode = mScene->rootNode.addNode("dummy");
-			// currentNode->set( scene->mRootNode, &rootNode, meshes.size());
-			populateNode(&currentNode, scene->mRootNode, &mScene->rootNode, (int)mScene->getMeshes().size(), &mScene->getMeshestoDraw());
-		}
-		// rootNode.findChildByName("dummy")->set( scene->mRootNode, &rootNode,
-		// meshes.size());
+		std::cout << "Importing: " << fileLocation << std::endl;
 
 		// Now process the animations:
-		// std::cout << "\tNumber of Animations : " << scene->mNumAnimations <<
-		// std::endl;
-		Animation *animation;
 		for (int i = 0; i < scene->mNumAnimations; i++) {
-			animation = new Animation;
-			//animation->set(scene->mAnimations[i]);
-			Simulation::Importer::set(scene->mAnimations[i], animation);
+			Animation *animation = new Animation;
+			Simulation::Importer::setAnimation(scene->mAnimations[i], animation);
 
-			// Now that we are here, process the channels (since nodes were solved
-			// ABOVE)
+			// Now that we are here, process the channels (since nodes were solved ABOVE)
 			animation->matchChannelsToNodes(&mScene->rootNode);
 			mScene->getAnimations().push_back(animation);
 		}
 
 		// Set the materials:
-		// std::cout << "\tNumber of Textures   : " << scene->mNumTextures <<
-		// std::endl;
-		// std::cout << "\tNumber of Materials  : " << scene->mNumMaterials <<
-		// std::endl;
-		MBmaterial *material;
-		int materialIDOffset = (int)mScene->getMaterials().size();
+		std::map<unsigned int, MBmaterial*> materialIndexTranslation;
 		for (int i = 0; i < scene->mNumMaterials; i++) {
-			material = new MBmaterial;
-			//		material->set(scene->mMaterials[i], objectLocation);
-			Importer::set(scene->mMaterials[i], objectLocation, material);
-			mScene->getMaterials().push_back(material);
+			MBmaterial *material = new MBmaterial;
+			Importer::setMaterial(scene->mMaterials[i], objectLocation, material, mScene);
+			mScene->addMaterial(material);
+			materialIndexTranslation[i] = material;
 		}
 
 		// Set the textures:
-		Texture *texture;
 		for (int i = 0; i < scene->mNumTextures; i++) {
-			texture = new Texture;
-			//		texture->set(scene->mTextures[i]);
-			Importer::set(scene->mTextures[i], texture);
+			Texture *texture = new Texture;
+			Importer::setTexture(scene->mTextures[i], texture);
 			mScene->getTextures().push_back(texture);
 		}
 
 		// Set the meshes:
 		int triangles = 0;
-		/// std::cout << "\tNumber of Meshes     : " << scene->mNumMeshes <<
-		/// std::endl;
-		MBmesh *mesh;
+		std::map<unsigned int, MBmesh*> meshIndexTranslation;
 		for (int i = 0; i < scene->mNumMeshes; i++) {
-			mesh = new MBmesh();
-			//		triangles += mesh->set(scene->mMeshes[i], scene->mMaterials,
-			//				objectLocation, materialIDOffset);
-			triangles += Importer::set(scene->mMeshes[i], scene->mMaterials, objectLocation, materialIDOffset, mesh)/3;
+			MBmesh *mesh = new MBmesh();
+			triangles += Importer::setMesh(scene->mMeshes[i], objectLocation, mesh)/3;
+
 			mesh->matchBonesToNodes(&mScene->rootNode);
 			mesh->fileName = fileLocation;
-			mScene->getMeshes().push_back(mesh);
-
-			mScene->nodeToMeshMap[currentNode].push_back(mesh);
+			mScene->addMesh(mesh);
+			meshIndexTranslation[i] = mesh;
 		}
 
+		// Populate the node(s):
+		if (createNode) {
+			Node *currentNode = mScene->rootNode.addNode("dummy");
+			populateNode(&currentNode, scene->mRootNode, scene->mMeshes, &mScene->rootNode, &mScene->getRenderables(), meshIndexTranslation, materialIndexTranslation);
+		}
+		
 		// Set the lights:
-		// std::cout << "\tNumber of Lights     : " << scene->mNumLights << std::endl;
-		MBlight *light;
 		for (int i = 0; i < scene->mNumLights; i++) {
-			//		light = MBlight::create(scene->mLights[i]);
-			light = Importer::createAndSet(scene->mLights[i]);
+			MBlight *light = Importer::createAndSet(scene->mLights[i]);
 			if (light == NULL) {
 				std::cerr << "Error: Unable to create light: " << scene->mLights[i]->mName.C_Str() << std::endl;
 				continue;
 			}
 			light->findNode(&mScene->rootNode);
-			mScene->lights.push_back(light);
+			mScene->getLights().push_back(light);
 		}
 
 		// Set the cameras:
-		// std::cout << "\tNumber of Cameras    : " << scene->mNumCameras <<
-		// std::endl;
-		Camera *camera;
 		for (int i = 0; i < scene->mNumCameras; i++) {
-			camera = new Camera;
-			//		camera->set(scene->mCameras[i]);
+			Camera *camera = new Camera;
 			Importer::set(scene->mCameras[i], camera);
-			// cameras.push_back(camera);
+			mScene->getCameras().push_back(camera);
 		}
 		return triangles;
 	}
 
-	void Importer::populateNode(Node **theNode, aiNode *node, Node *nodeParent, int meshIDOffset, std::vector<NodeMatrixAndMeshID*>* meshesToDraw) {
-		(*theNode)->name = node->mName.C_Str();
-		// std::cout << "\t\t";
-		// for (int i = 0; i < prettyPrintTracker; i++) {
-		//	std::cout << "|--";
-		//}
-		// std::cout << "Node name: " << name << ", Mesh Ids: ";
-		// theNode->parent = nodeParent;
-		//(*theNode)->moveToUnderParent(nodeParent);
-		*theNode = nodeParent->adoptChild(theNode);
+	void Importer::populateNode(Mogi::Math::Node **mNode, aiNode* aNode, aiMesh** aMeshes, Mogi::Math::Node *nodeParent, std::vector<Renderable*>* mRenderables, std::map<unsigned int, MBmesh*>& meshes, std::map<unsigned int, MBmaterial*>& materials) {
+		(*mNode)->name = aNode->mName.C_Str();
+		*mNode = nodeParent->adoptChild(mNode);
 
-		// nodeParent->adoptChild(&theNode);
-
-		for (int i = 0; i < node->mNumMeshes; i++) {
-			NodeMatrixAndMeshID *nodeMatrixAndID = new NodeMatrixAndMeshID;
-			nodeMatrixAndID->ID = node->mMeshes[i] + meshIDOffset;
-			//		nodeMatrixAndID->modelMatrix = (*theNode)->getModelMatrix(); // &outputMatrix;	// NodeMatrixAndMeshID refactoring
-			nodeMatrixAndID->parentNode = *theNode;	// NodeMatrixAndMeshID refactoring
-			// std::cout << nodeMatrixAndID->ID << " ";
-			// meshIDs.push_back(nodeMatrixAndID);
-			//		(*theNode)->pushMatrixAndMeshID(nodeMatrixAndID);
-			meshesToDraw->push_back(nodeMatrixAndID);
+		for (int i = 0; i < aNode->mNumMeshes; i++) {
+			Renderable *renderable = new Renderable;
+			renderable->mesh = meshes[aNode->mMeshes[i]];
+			renderable->node = *mNode;
+			renderable->material = materials[aMeshes[aNode->mMeshes[i]]->mMaterialIndex];
+			mRenderables->push_back(renderable);
 		}
 
-		// std::cout << std::endl;
-
 		Node *child;
-		for (int i = 0; i < node->mNumChildren; i++) {
-			// prettyPrintTracker++;
+		for (int i = 0; i < aNode->mNumChildren; i++) {
 			child = new Node;
-			// child->set(node->mChildren[i], this, meshIDOffset);
-			populateNode(&child, node->mChildren[i], *theNode, meshIDOffset,
-						 meshesToDraw);
-			//(*theNode)->pushChild(child);
-			//(*theNode)->adoptChild(&child);
-			// prettyPrintTracker--;
+			populateNode(&child, aNode->mChildren[i], aMeshes, *mNode, mRenderables, meshes, materials);
 		}
 
 		Matrix transformationMatrix(4, 4);
 		for (int i = 0; i < 4; i++) {
 			for (int j = 0; j < 4; j++) {
-				transformationMatrix(i, j) = node->mTransformation[i][j]; //*(node->mTransformation[i*4 + j]);
+				transformationMatrix(i, j) = aNode->mTransformation[i][j]; //*(node->mTransformation[i*4 + j]);
 			}
 		}
-		// resetModelMatrix();
-		// transformationMatrix.name(theNode->name.c_str());
-		// transformationMatrix.print_stats();
-		(*theNode)->setModelMatrix(transformationMatrix);
+
+		(*mNode)->setModelMatrix(transformationMatrix);
 	}
 
-
-
-
-	void Importer::set(aiTexture *aTexture, Texture* mTexture) {
+	void Importer::setTexture(aiTexture *aTexture, Texture* mTexture) {
 		std::cout << "Warning: aiTexture -> Mogi Texture Unsupported" << std::endl;
 	}
 
-	int Importer::set(aiMesh* aMesh, aiMaterial** materials, std::string fileLocation, int materialIDOffset, MBmesh* mMesh) {
+	int Importer::setMesh(aiMesh* aMesh, std::string fileLocation, MBmesh* mMesh) {
 		// Name:
 		if (aMesh->mName.length <= 1) {
 			mMesh->name = fileLocation;
@@ -264,6 +210,9 @@ extern "C" {
 			mMesh->name = aMesh->mName.C_Str();
 		}
 		std::cout << "\t\tAdding mesh: " << mMesh->name << std::endl;
+
+//		bool shouldGenerateTangents = !aMesh->HasTangentsAndBitangents();
+		Vector v1(3), v2(3), normal(3), tangent(3);	/// used for tangent generation, if needed.
 
 		// Bitangents: (not needed...?)
 		mMesh->setObjectLocation(fileLocation);
@@ -282,72 +231,83 @@ extern "C" {
 		}
 		mMesh->setIndices(indices);
 
-		// Material Index:
-		mMesh->setMaterialIndex( aMesh->mMaterialIndex + materialIDOffset );
+		// Material:
+//		if (materials != NULL) {
+//			mMesh->setMaterial( materials->at(aMesh->mMaterialIndex + materialIDOffset));
+//		}
 
 		// Vertex Colors:
 		// Normals:
 		// Tangents:
 		// Texture Coordinates:
 		// Vertices:
-		aiColor4D col;
-		aiMaterial* mat = materials[aMesh->mMaterialIndex];
-		aiGetMaterialColor(mat, AI_MATKEY_COLOR_DIFFUSE, &col);
+//		aiColor4D col;
+		Vector col(3);
+//		if (mMesh->getMaterial() != NULL) {
+//			col = mMesh->getMaterial()->getColorDiffuse();
+//		}
 		Vector3d defaultColor;
-		defaultColor.x = col.r;
-		defaultColor.y = col.g;
-		defaultColor.z = col.b;
+		defaultColor.x = 1.0;
+		defaultColor.y = 1.0;// col(1);
+		defaultColor.z = 1.0;//col(2);
 		// data.clear();
 		// importTextures(mat);
-		std::vector<VertexData> vertexData;
-		for (int i = 0; i < aMesh->mNumVertices; i++) {
-			VertexData tmp;
-			Vector3d tmpVec;
+		std::vector<VertexData> vertexData(aMesh->mNumVertices);
+
+		int i = 0;
+		for (std::vector<VertexData>::iterator it = vertexData.begin(); it != vertexData.end(); it++, i++) {
 
 			// position
-			tmpVec.x = aMesh->mVertices[i].x;
-			tmpVec.y = aMesh->mVertices[i].y;
-			tmpVec.z = aMesh->mVertices[i].z;
-			tmp.position = tmpVec;
+			it->position.x = aMesh->mVertices[i].x;
+			it->position.y = aMesh->mVertices[i].y;
+			it->position.z = aMesh->mVertices[i].z;
 
 			// normals
-			tmpVec.x = aMesh->mNormals[i].x;
-			tmpVec.y = aMesh->mNormals[i].y;
-			tmpVec.z = aMesh->mNormals[i].z;
-			tmp.normal = tmpVec;
+			it->normal.x = aMesh->mNormals[i].x;
+			it->normal.y = aMesh->mNormals[i].y;
+			it->normal.z = aMesh->mNormals[i].z;
 
 			// tangent
 			if (aMesh->mTangents) {
-				tmpVec.x = aMesh->mTangents[i].x;
-				tmpVec.y = aMesh->mTangents[i].y;
-				tmpVec.z = aMesh->mTangents[i].z;
+				it->tangent.x = aMesh->mTangents[i].x;
+				it->tangent.y = aMesh->mTangents[i].y;
+				it->tangent.z = aMesh->mTangents[i].z;
 			} else {
-				tmpVec.x = 1.0;
-				tmpVec.y = tmpVec.z = 0;
+				// This is a VERY slow method:
+				normal(0) = it->normal.x;
+				normal(1) = it->normal.y;
+				normal(2) = it->normal.z;
+				v1 = normal.cross(Vector::xAxis);
+				v2 = normal.cross(Vector::yAxis);
+				if (v1.magnitude() > v2.magnitude()) {
+					v1.normalize();
+					tangent = v1;
+				} else {
+					v2.normalize();
+					tangent = v2;
+				}
+				it->tangent.x = tangent(0);
+				it->tangent.y = tangent(1);
+				it->tangent.z = tangent(2);
 			}
-			tmp.tangent = tmpVec;
 
 			// colors
 			if (aMesh->mColors[0]) {
 				//!= material color
-				tmpVec.x = aMesh->mColors[0][i].r;
-				tmpVec.y = aMesh->mColors[0][i].g;
-				tmpVec.z = aMesh->mColors[0][i].b;
+				it->color.x = aMesh->mColors[0][i].r;
+				it->color.y = aMesh->mColors[0][i].g;
+				it->color.z = aMesh->mColors[0][i].b;
 			} else {
-				tmpVec = defaultColor;
+				it->color = defaultColor;
 			}
-			tmp.color = tmpVec;
 
 			// color
 			if (aMesh->mTextureCoords[0]) {
-				tmpVec.x = aMesh->mTextureCoords[0][i].x;
-				tmpVec.y = aMesh->mTextureCoords[0][i].y;
+				it->U = aMesh->mTextureCoords[0][i].x;
+				it->V = aMesh->mTextureCoords[0][i].y;
 			} else {
-				tmpVec.x = tmpVec.y = tmpVec.z = 0.0;
+				it->U = it->V = 0.0;
 			}
-			tmp.U = tmpVec.x;
-			tmp.V = tmpVec.y;
-			vertexData.push_back(tmp);
 		}
 		mMesh->setVertexData(vertexData);
 
@@ -356,11 +316,11 @@ extern "C" {
 		return mMesh->getNumberOfVertices();
 	}
 
-	void Importer::set(aiMaterial *material, std::string directoryOfObject, MBmaterial* mMaterial) {
+	void Importer::setMaterial(aiMaterial *material, std::string directoryOfObject, MBmaterial* mMaterial, Scene* textureStorage) {
 		aiString tempName;
 		aiGetMaterialString(material, AI_MATKEY_NAME, &tempName);
 		mMaterial->setName( tempName.C_Str() );
-		// std::cout << "\t\tAdding material: " << name <<std::endl;
+		std::cout << "\t\tAdding material: " << tempName.C_Str() <<std::endl;
 
 		mMaterial->setDirectory(directoryOfObject);
 
@@ -397,18 +357,24 @@ extern "C" {
 
 		mMaterial->setMetallicLevel(1.0);	// why is this here?
 		
-		importTextures(material, mMaterial);
+		importTextures(material, mMaterial, textureStorage);
 
 	}
 
-	void Importer::importTextures(aiMaterial *material, MBmaterial* mMaterial) {
-		mMaterial->forceDisable(0 >= loadTextures(material, aiTextureType_DIFFUSE, "colorMap", mMaterial),
-								(0 >= loadTextures(material, aiTextureType_NORMALS, "normalMap", mMaterial)) && (0 >= loadTextures(material, aiTextureType_HEIGHT, "normalMap", mMaterial)),
-								0 >= loadTextures(material, aiTextureType_DISPLACEMENT, "heightMap", mMaterial),
-								0 >= loadTextures(material, aiTextureType_SPECULAR, "specularityMap", mMaterial));
+	void Importer::importTextures(aiMaterial *material, MBmaterial* mMaterial, Scene* textureStorage) {
+//		mMaterial->forceDisable(0 >= loadTextures(material, aiTextureType_DIFFUSE, "colorMap", mMaterial),
+//								(0 >= loadTextures(material, aiTextureType_NORMALS, "normalMap", mMaterial)) && (0 >= loadTextures(material, aiTextureType_HEIGHT, "normalMap", mMaterial)),
+//								0 >= loadTextures(material, aiTextureType_DISPLACEMENT, "heightMap", mMaterial),
+//								0 >= loadTextures(material, aiTextureType_SPECULAR, "specularityMap", mMaterial));
+		loadTextures(material, aiTextureType_DIFFUSE, mMaterial, textureStorage);
+		if(0 >= loadTextures(material, aiTextureType_NORMALS, mMaterial, textureStorage)) {
+			loadTextures(material, aiTextureType_HEIGHT, mMaterial, textureStorage);
+		}
+		loadTextures(material, aiTextureType_DISPLACEMENT, mMaterial, textureStorage);
+		loadTextures(material, aiTextureType_SPECULAR, mMaterial, textureStorage);
 	}
 
-	int Importer::loadTextures(aiMaterial *material, aiTextureType type, std::string uniformVariable, MBmaterial* mMaterial) {
+	int Importer::loadTextures(aiMaterial *material, aiTextureType type, MBmaterial* mMaterial, Scene* textureStorage) {
 		Texture *texture;
 		int numberOfLoadedTextures = 0;
 		for (int i = 0; i < material->GetTextureCount(type); i++) {
@@ -425,9 +391,31 @@ extern "C" {
 				std::cout << "Error! Could not load texture: " << textureLocation << " for " << mMaterial->getName() << std::endl;
 				delete texture;
 			} else {
-				texture->setUniformName(uniformVariable);
-				texture->setUniformIndex(i);
-				mMaterial->addTexture(texture);// textures.push_back(texture);
+//				texture->setUniformName(uniformVariable);
+//				texture->setUniformIndex(i);
+				textureStorage->addTexture(texture);
+				switch (type) {
+					case aiTextureType_DIFFUSE:
+						mMaterial->setTexture(texture, Mogi::Simulation::MBmaterial::COLOR);
+						break;
+					case aiTextureType_NORMALS:
+						mMaterial->setTexture(texture, Mogi::Simulation::MBmaterial::NORMAL);
+						break;
+					case aiTextureType_HEIGHT:
+						mMaterial->setTexture(texture, Mogi::Simulation::MBmaterial::NORMAL);
+						break;
+					case aiTextureType_DISPLACEMENT:
+						mMaterial->setTexture(texture, Mogi::Simulation::MBmaterial::HEIGHT);
+						break;
+					case aiTextureType_SPECULAR:
+						mMaterial->setTexture(texture, Mogi::Simulation::MBmaterial::SPECULAR);
+						break;
+					default:
+						std::cerr << "Error: Importer::loadTextures() unrecognized texture type: " << type << std::endl;
+//						delete texture;
+						break;
+				}
+//				mMaterial->addTexture(texture);// textures.push_back(texture);
 			}
 		}
 
@@ -435,7 +423,7 @@ extern "C" {
 	}
 
 
-	void Importer::set(aiLight* aLight, MBpointLight* mLight) {
+	void Importer::setPointLight(aiLight* aLight, MBpointLight* mLight) {
 		std::cout << "\t\tAdding point light: " << aLight->mName.C_Str() << std::endl;
 
 		mLight->setName(aLight->mName.C_Str());
@@ -447,7 +435,7 @@ extern "C" {
 //		std::cout << "Set light constants: " << aLight->mAttenuationConstant << ", " << aLight->mAttenuationLinear << ", " <<aLight->mAttenuationQuadratic << std::endl;
 	}
 
-	void Importer::set(aiLight* aLight, MBspotLight* mLight) {
+	void Importer::setSpotLight(aiLight* aLight, MBspotLight* mLight) {
 		std::cout << "\t\tAdding spot light: " << aLight->mName.C_Str() << std::endl;
 
 		mLight->setName(aLight->mName.C_Str());
@@ -462,7 +450,7 @@ extern "C" {
 
 	}
 
-	void Importer::set(aiLight* aLight, MBdirectionalLight* mLight) {
+	void Importer::setDirectionalLight(aiLight* aLight, MBdirectionalLight* mLight) {
 
 	}
 
@@ -471,15 +459,15 @@ extern "C" {
 		switch (aLight->mType) {
 			case aiLightSource_DIRECTIONAL:
 				mLight = new MBdirectionalLight;
-				set(aLight, (MBdirectionalLight*)mLight);
+				setDirectionalLight(aLight, (MBdirectionalLight*)mLight);
 				break;
 			case aiLightSource_POINT:
 				mLight = new MBpointLight;
-				set(aLight, (MBpointLight*)mLight);
+				setPointLight(aLight, (MBpointLight*)mLight);
 				break;
 			case aiLightSource_SPOT:
 				mLight = new MBspotLight;
-				set(aLight, (MBspotLight*)mLight);
+				setSpotLight(aLight, (MBspotLight*)mLight);
 				break;
 //			case aiLightSource_AMBIENT:
 			case aiLightSource_UNDEFINED:
@@ -491,21 +479,21 @@ extern "C" {
 
 
 
-	void Importer::set(aiVectorKey* aVectorKey, KeyLocation* mKeyLocation) {
+	void Importer::setKeyLocation(aiVectorKey* aVectorKey, KeyLocation* mKeyLocation) {
 		mKeyLocation->time = aVectorKey->mTime;
 		mKeyLocation->value(0) = aVectorKey->mValue.x;
 		mKeyLocation->value(1) = aVectorKey->mValue.y;
 		mKeyLocation->value(2) = aVectorKey->mValue.z;
 	}
 
-	void Importer::set(aiVectorKey* aVectorKey, KeyScale* mKeyScale) {
+	void Importer::setKeyScale(aiVectorKey* aVectorKey, KeyScale* mKeyScale) {
 		mKeyScale->time = aVectorKey->mTime;
 		mKeyScale->value(0) = aVectorKey->mValue.x;
 		mKeyScale->value(1) = aVectorKey->mValue.y;
 		mKeyScale->value(2) = aVectorKey->mValue.z;
 	}
 
-	void Importer::set(aiQuatKey* aQuatKey, MBkeyRotation* mMBkeyRotation) {
+	void Importer::setKeyRotation(aiQuatKey* aQuatKey, MBkeyRotation* mMBkeyRotation) {
 		mMBkeyRotation->time = aQuatKey->mTime;
 		mMBkeyRotation->value(0) = aQuatKey->mValue.w;
 		mMBkeyRotation->value(1) = aQuatKey->mValue.x;
@@ -532,7 +520,7 @@ extern "C" {
 			for (int i = 0; i < mesh->mNumBones; i++) {
 				temp = new Bone;
 				//temp->set(mesh->mBones[i]);
-				set(mesh->mBones[i], temp);
+				setBone(mesh->mBones[i], temp);
 				// std::cout << "Bone name: " << mesh->mBones[i]->mName.C_Str() <<
 				// std::endl;
 				BoneSet.push_back(temp);
@@ -542,7 +530,7 @@ extern "C" {
 		return BoneSet;
 	}
 
-	void Importer::set(aiBone* aBone, Bone* mBone) {
+	void Importer::setBone(aiBone* aBone, Bone* mBone) {
 		//mBone->name = aBone->mName.C_Str();	// TODO:
 		for (int i = 0; i < 4; i++) {
 			for (int j = 0; j < 4; j++) {
@@ -562,7 +550,7 @@ extern "C" {
 		// std::cout << "Number of weights:" << Bone->mNumWeights << std::endl;
 	}
 
-	void Importer::set(aiAnimation* aAnimation, Animation* mAnimation) {
+	void Importer::setAnimation(aiAnimation* aAnimation, Animation* mAnimation) {
 		//mAnimation->name = aAnimation->mName.C_Str();	// TODO:
 		//mAnimation->duration = aAnimation->mDuration;	// TODO:
 		//mAnimation->ticksPerSecond = aAnimation->mTicksPerSecond;	// TODO:
@@ -572,13 +560,13 @@ extern "C" {
 		for (int i = 0; i < aAnimation->mNumChannels; i++) {
 			tempChannel = new Channel;	// TODO:
 			//			tempChannel->set(animation->mChannels[i]);
-			set(aAnimation->mChannels[i], tempChannel);
+			setChannel(aAnimation->mChannels[i], tempChannel);
 			//mAnimation->channels.push_back(tempChannel);	// TODO:
 			delete tempChannel;	// TODO: remove this line when the above is filled in.
 		}
 	}
 
-	void Importer::set(aiNodeAnim *aNodeAnim, Channel* mChannel) {
+	void Importer::setChannel(aiNodeAnim *aNodeAnim, Channel* mChannel) {
 		mChannel->name = aNodeAnim->mNodeName.C_Str();
 		// std::cout << "Channel name: " << name << std::endl;
 

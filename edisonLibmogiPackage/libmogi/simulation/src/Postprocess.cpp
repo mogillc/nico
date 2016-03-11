@@ -24,7 +24,7 @@ extern "C" {
 	using namespace Mogi;
 	using namespace Simulation;
 
-	void generatedPostProcessMeshCode(MBmesh* meshToSet);
+//	void generatedPostProcessMeshCode(MBmesh* meshToSet);
 
 	MBpostprocess::MBpostprocess(int xRes, int yRes) {
 		frameBuffer = new FrameBuffer(xRes, yRes);
@@ -51,7 +51,8 @@ extern "C" {
 		basicShader = ShaderFactory::getInstance(&parameters);
 		std::cout << "Done." << std::endl;
 
-		generatedPostProcessMeshCode(&renderPlane);
+//		generatedPostProcessMeshCode(&renderPlane);
+		renderPlane.makePlane(2, 2);
 
 		// The below commented code was used just to generate the code for the
 		// function: void generatedPostProcessMeshCode(MBmesh* meshToSet);
@@ -74,6 +75,7 @@ extern "C" {
 		//				<< "/postProcess.dae, POST PROCESSING WILL NOT WORK!"
 		//				<< std::endl;
 		//	}
+		frameBuffer->removeFramebuffer();
 	}
 
 	MBpostprocess::~MBpostprocess() {
@@ -123,7 +125,9 @@ extern "C" {
 		shader->sendMatrix("modelViewProjectionMatrix", modelViewProjectionMatrix);
 		shader->sendMatrix("biasedModelViewProjectionMatrix", biasedModelViewProjectionMatrix);
 
+		renderPlane.bindForDrawing(shader);
 		renderPlane.draw(shader);
+		renderPlane.unbindFromDrawing();
 	}
 
 	int MBpostprocess::process(Texture& renderTexture, Camera& renderCamera) {
@@ -279,118 +283,136 @@ extern "C" {
 	}
 
 
-	void generatedPostProcessMeshCode(MBmesh* meshToSet) {
-		VertexData data;
-		std::vector<VertexData> vertexData;
-		data.normal.x = 0;
-		data.normal.y = 0;
-		data.normal.z = 1;
-		data.position.x = -1;
-		data.position.y = -1;
-		data.position.z = 0;
-		data.color.x = 0.6;
-		data.color.y = 0.6;
-		data.color.z = 0.6;
-		data.tangent.x = 1;
-		data.tangent.y = 0;
-		data.tangent.z = 0;
-		data.U = 0;
-		data.V = 0;
-		vertexData.push_back(data);
-		data.normal.x = 0;
-		data.normal.y = 0;
-		data.normal.z = 1;
-		data.position.x = 1;
-		data.position.y = -1;
-		data.position.z = 0;
-		data.color.x = 0.6;
-		data.color.y = 0.6;
-		data.color.z = 0.6;
-		data.tangent.x = 1;
-		data.tangent.y = 0;
-		data.tangent.z = 0;
-		data.U = 0;
-		data.V = 0;
-		vertexData.push_back(data);
-		data.normal.x = 0;
-		data.normal.y = 0;
-		data.normal.z = 1;
-		data.position.x = 1;
-		data.position.y = 1;
-		data.position.z = 0;
-		data.color.x = 0.6;
-		data.color.y = 0.6;
-		data.color.z = 0.6;
-		data.tangent.x = 1;
-		data.tangent.y = 0;
-		data.tangent.z = 0;
-		data.U = 0;
-		data.V = 0;
-		vertexData.push_back(data);
-		data.normal.x = 0;
-		data.normal.y = 0;
-		data.normal.z = 1;
-		data.position.x = -1;
-		data.position.y = 1;
-		data.position.z = 0;
-		data.color.x = 0.6;
-		data.color.y = 0.6;
-		data.color.z = 0.6;
-		data.tangent.x = 1;
-		data.tangent.y = 0;
-		data.tangent.z = 0;
-		data.U = 0;
-		data.V = 0;
-		vertexData.push_back(data);
-		data.normal.x = 0;
-		data.normal.y = 0;
-		data.normal.z = 1;
-		data.position.x = -1;
-		data.position.y = -1;
-		data.position.z = 0;
-		data.color.x = 0.6;
-		data.color.y = 0.6;
-		data.color.z = 0.6;
-		data.tangent.x = 1;
-		data.tangent.y = 0;
-		data.tangent.z = 0;
-		data.U = 0;
-		data.V = 0;
-		vertexData.push_back(data);
-		data.normal.x = 0;
-		data.normal.y = 0;
-		data.normal.z = 1;
-		data.position.x = 1;
-		data.position.y = 1;
-		data.position.z = 0;
-		data.color.x = 0.6;
-		data.color.y = 0.6;
-		data.color.z = 0.6;
-		data.tangent.x = 1;
-		data.tangent.y = 0;
-		data.tangent.z = 0;
-		data.U = 0;
-		data.V = 0;
-		vertexData.push_back(data);
-		unsigned int index;
-		std::vector<unsigned int> indices;
-		index = 0;
-		indices.push_back(index);
-		index = 1;
-		indices.push_back(index);
-		index = 2;
-		indices.push_back(index);
-		index = 3;
-		indices.push_back(index);
-		index = 4;
-		indices.push_back(index);
-		index = 5;
-		indices.push_back(index);
-		meshToSet->setVertexData(vertexData);
-		meshToSet->setIndices(indices);
-		meshToSet->loadVerticesToVertexBufferObject();
-	}
-	
+//	void generatedPostProcessMeshCode(MBmesh* meshToSet) {
+//		VertexData data;
+//		std::vector<VertexData> vertexData;
+//		data.normal.x = 0;
+//		data.normal.y = 0;
+//		data.normal.z = 1;
+//		data.position.x = -1;
+//		data.position.y = -1;
+//		data.position.z = 0;
+//		data.color.x = 0.6;
+//		data.color.y = 0.6;
+//		data.color.z = 0.6;
+//		data.tangent.x = 1;
+//		data.tangent.y = 0;
+//		data.tangent.z = 0;
+////		data.bitangent.x = 0;
+////		data.bitangent.y = 1;
+////		data.bitangent.z = 0;
+//		data.U = 0;
+//		data.V = 0;
+//		vertexData.push_back(data);
+//		data.normal.x = 0;
+//		data.normal.y = 0;
+//		data.normal.z = 1;
+//		data.position.x = 1;
+//		data.position.y = -1;
+//		data.position.z = 0;
+//		data.color.x = 0.6;
+//		data.color.y = 0.6;
+//		data.color.z = 0.6;
+//		data.tangent.x = 1;
+//		data.tangent.y = 0;
+//		data.tangent.z = 0;
+////		data.bitangent.x = 0;
+////		data.bitangent.y = 1;
+////		data.bitangent.z = 0;
+//		data.U = 0;
+//		data.V = 0;
+//		vertexData.push_back(data);
+//		data.normal.x = 0;
+//		data.normal.y = 0;
+//		data.normal.z = 1;
+//		data.position.x = 1;
+//		data.position.y = 1;
+//		data.position.z = 0;
+//		data.color.x = 0.6;
+//		data.color.y = 0.6;
+//		data.color.z = 0.6;
+//		data.tangent.x = 1;
+//		data.tangent.y = 0;
+//		data.tangent.z = 0;
+////		data.bitangent.x = 0;
+////		data.bitangent.y = 1;
+////		data.bitangent.z = 0;
+//		data.U = 0;
+//		data.V = 0;
+//		vertexData.push_back(data);
+//		data.normal.x = 0;
+//		data.normal.y = 0;
+//		data.normal.z = 1;
+//		data.position.x = -1;
+//		data.position.y = 1;
+//		data.position.z = 0;
+//		data.color.x = 0.6;
+//		data.color.y = 0.6;
+//		data.color.z = 0.6;
+//		data.tangent.x = 1;
+//		data.tangent.y = 0;
+//		data.tangent.z = 0;
+////		data.bitangent.x = 0;
+////		data.bitangent.y = 1;
+////		data.bitangent.z = 0;
+//		data.U = 0;
+//		data.V = 0;
+//		vertexData.push_back(data);
+//		data.normal.x = 0;
+//		data.normal.y = 0;
+//		data.normal.z = 1;
+//		data.position.x = -1;
+//		data.position.y = -1;
+//		data.position.z = 0;
+//		data.color.x = 0.6;
+//		data.color.y = 0.6;
+//		data.color.z = 0.6;
+//		data.tangent.x = 1;
+//		data.tangent.y = 0;
+//		data.tangent.z = 0;
+////		data.bitangent.x = 0;
+////		data.bitangent.y = 1;
+////		data.bitangent.z = 0;
+//		data.U = 0;
+//		data.V = 0;
+//		vertexData.push_back(data);
+//		data.normal.x = 0;
+//		data.normal.y = 0;
+//		data.normal.z = 1;
+//		data.position.x = 1;
+//		data.position.y = 1;
+//		data.position.z = 0;
+//		data.color.x = 0.6;
+//		data.color.y = 0.6;
+//		data.color.z = 0.6;
+//		data.tangent.x = 1;
+//		data.tangent.y = 0;
+//		data.tangent.z = 0;
+////		data.bitangent.x = 0;
+////		data.bitangent.y = 1;
+////		data.bitangent.z = 0;
+//		data.U = 0;
+//		data.V = 0;
+//		vertexData.push_back(data);
+//		unsigned int index;
+//		std::vector<unsigned int> indices;
+//		index = 0;
+//		indices.push_back(index);
+//		index = 1;
+//		indices.push_back(index);
+//		index = 2;
+//		indices.push_back(index);
+//		index = 3;
+//		indices.push_back(index);
+//		index = 4;
+//		indices.push_back(index);
+//		index = 5;
+//		indices.push_back(index);
+//		meshToSet->setVertexData(vertexData);
+//		meshToSet->setIndices(indices);
+//		meshToSet->loadVerticesToVertexBufferObject();
+//	}
+
 #ifdef _cplusplus
 }
 #endif

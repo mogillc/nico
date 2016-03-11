@@ -62,6 +62,7 @@ extern "C" {
  :value(NULL), child(NULL) {
 		value = new VALUE_TYPE;
 		child = NULL;
+		parent = NULL;
 	}
 	JsonValueInterface::JsonValueInterface(const JsonValueInterface& other) {
 		value = new VALUE_TYPE;
@@ -75,11 +76,13 @@ extern "C" {
 	}
 
 	JsonValueInterface::~JsonValueInterface() {
+		if(parent == NULL) {	// children are purely references to the parent
+			delete VALUE_CASTED;
+		}
 		if (child != NULL) {
 			delete child;
 			child = NULL;
 		}
-		delete VALUE_CASTED;
 		value = NULL;
 	}
 
@@ -124,7 +127,9 @@ extern "C" {
 		if (child == NULL) {
 			child = new JsonValueInterface();
 		}
-		*((VALUE_TYPE*)(child->value)) = (*VALUE_CASTED)[index];
+//		*((VALUE_TYPE*)(child->value)) = (*VALUE_CASTED)[index];
+		child->value = &((*VALUE_CASTED)[index]);
+		child->parent = this;
 		return *child;
 	}
 
@@ -138,7 +143,9 @@ extern "C" {
 		if (child == NULL) {
 			child = new JsonValueInterface();
 		}
-		*((VALUE_TYPE*)(child->value)) = (*VALUE_CASTED)[key];
+//		*((VALUE_TYPE*)(child->value)) = (*VALUE_CASTED)[key];
+		child->value = &((*VALUE_CASTED)[key]);
+		child->parent = this;
 		return *child;
 	}
 

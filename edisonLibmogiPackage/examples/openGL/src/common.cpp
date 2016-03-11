@@ -87,6 +87,9 @@ extern "C" {
 
 		cameraOffsetLocation.setLength(3);
 
+		paverStoneNode = NULL;
+		dynamicTexture = NULL;
+
 		displayCB = ____doNothing;
 	}
 
@@ -101,7 +104,7 @@ extern "C" {
 	}
 
 	void UIhandler::initSDL() {
-		#ifdef SDL2_FOUND
+#ifdef SDL2_FOUND
 		if(SDL_Init(SDL_INIT_VIDEO) < 0) /* Initialize SDL's Video subsystem */
 			exit(1); /* Or die on error */
 
@@ -140,12 +143,12 @@ extern "C" {
 	///////////////////////////////////////////////////////////////////////////////
 	void UIhandler::initGL()
 	{
-// Adrian moved this conditional code for non-Apple OS here
-#ifndef __APPLE__
+		// Adrian moved this conditional code for non-Apple OS here
+#if !defined(__APPLE__) && !defined(ANDROID)
 		glewExperimental = GL_TRUE;
 		glewInit();
 		glGetError(); // Added by Adrian to clear error buffer... hmmm
-					  // See: http://stackoverflow.com/questions/10857335/opengl-glgeterror-returns-invalid-enum-after-call-to-glewinit
+		// See: http://stackoverflow.com/questions/10857335/opengl-glgeterror-returns-invalid-enum-after-call-to-glewinit
 #endif
 
 #ifndef OPENGLES_FOUND
@@ -162,7 +165,7 @@ extern "C" {
 
 		std::cout << " - Allocating frame buffer." << std::endl;
 		frameBuffer = new FrameBuffer(screenWidth, screenHeight);
-//		frameBuffer->resize(screenWidth, screenHeight);
+		//		frameBuffer->resize(screenWidth, screenHeight);
 		//frameBuffer->attachFramebuffer();
 		std::cout << " - Allocating Bokeh post process." << std::endl;
 		bokehPost = new MBbokeh(screenWidth, screenHeight);
@@ -186,10 +189,7 @@ extern "C" {
 		std::cout << "OpenGL Vendor info:" << std::endl << "\t" << glGetString(GL_VENDOR) << std::endl;
 		std::cout << "OpenGL Shading info:" << std::endl << "\t" << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
 		//std::cout << "OpenGL Extensions info:" << std::endl << "\t" << glGetString(GL_EXTENSIONS) << std::endl;
-//#ifndef __APPLE__
-//		glewExperimental = GL_TRUE;
-//		glewInit();
-//#endif
+
 		//glClearDepth(1.0f);                         // 0 is near, 1 is far
 		glEnable(GL_DEPTH_TEST);
 		// Accept fragment if it closer to the camera than the former one
@@ -207,56 +207,201 @@ extern "C" {
 
 	void UIhandler::initModels() {
 
-		mainScene->cameras.push_back(camera);
-		Importer::loadObject(mainScene, "paverStones.obj","Objects");	// floor
-		//mainScene->loadObject("paverStones.obj","Objects");				// floor
+		mainScene->getCameras().push_back(camera);
+		paverStoneNode = Importer::loadObject(mainScene, "paverStones.obj","Objects");	// floor
 		Importer::loadObject(mainScene, "brickWall.obj", "Objects/brickWall");	// walls
 
-		// simple object for testing:
-		Node* node = Importer::loadObject(mainScene, "testCube.ply", "Objects");
-		if(node) {
-			node->name = "testCube";
-		} else {
-			std::cout << "Could not load testCube.ply :(" << std::endl;
-		}
-
 		char newName[64];
-
 		for (int i = 0; i < N_LIGHTS; i++) {
-			node = Importer::loadObject(mainScene, "lightModel.dae", "Objects");	// Spot light
+			Node* node = Importer::loadObject(mainScene, "lightModel.dae", "Objects");	// Spot light
 			if (node) {
 				node->setLocation(0, 0, -1);
 				node->setScale(25.4 / MM_PER_METER * 10.0);
 				sprintf(newName, "lightModel %d", i);
 				node->name = newName;
-				sprintf(newName, "bulbulb %d", i);
+				sprintf(newName, "bulb %d", i);
 				node->findChildByName("bulbulb")->name = newName;
 			}
 		}
-		for (int i = 0; i < mainScene->lights.size(); i++) {
-			mainScene->lights[i]->setColor(cos(i*i*4)*cos(i*i*4), cos(i*i*i*8)*cos(i*i*i*8), cos(i*2)*cos(i*2));
-			mainScene->lights[i]->setFOV(60);
+		for (int i = 0; i < mainScene->getLights().size(); i++) {
+			mainScene->getLights()[i]->setColor(cos(i*i*4)*cos(i*i*4), cos(i*i*i*8)*cos(i*i*i*8), cos(i*2)*cos(i*2));
+			mainScene->getLights()[i]->setFOV(60);
 		}
 
-		if (mainScene->lights.size() > 0) {
+		if (mainScene->getLights().size() > 0) {
 			int lightIndex = 2; // 100W Tungsten
-			mainScene->lights[0]->setColor(lightColors[lightIndex].r, lightColors[lightIndex].g, lightColors[lightIndex].b);
+			mainScene->getLights()[0]->setColor(lightColors[lightIndex].r, lightColors[lightIndex].g, lightColors[lightIndex].b);
 		}
-		if (mainScene->lights.size() > 1) {
+		if (mainScene->getLights().size() > 1) {
 			int lightIndex = 14; // Mercury Vapor
-			mainScene->lights[1]->setColor(lightColors[lightIndex].r, lightColors[lightIndex].g, lightColors[lightIndex].b);
+			mainScene->getLights()[1]->setColor(lightColors[lightIndex].r, lightColors[lightIndex].g, lightColors[lightIndex].b);
+		}
+
+	}
+
+	void UIhandler::initTestMeshesAndMaterials() {
+		// simple object for testing:
+		Node* node = Importer::loadObject(mainScene, "testCube.ply", "Objects");
+		if(node) {
+			node->setScale(100/MM_PER_METER);
+			node->setLocation(0.5, 0.5, 0);
+			node->name = "testCube";
+		} else {
+			std::cout << "Could not load testCube.ply :(" << std::endl;
+		}
+		// The importer imports a default material when it's preferred to just have it missing.
+		// Instead, just remove any associationg by setting the material ID to an invalid value (<0)
+		//mainScene->getMeshesFromNode(node)->at(0)->setMaterial(NULL);
+		std::vector<Renderable*> renderablesFromNode = mainScene->getRenderablesFromNode(node);
+		if (renderablesFromNode.size() > 0) {
+			renderablesFromNode[0]->material->setColorSource(ShadowShaderParameters::COLOR_SOURCE_VERTEX_DATA);
+		}
+
+		std::vector<MBmesh*> testMeshes;
+		std::vector<MBmaterial*> testMaterials;
+
+		MBmesh* boxMesh = new MBmesh;
+		boxMesh->makeBox(2, 2, 2);
+		for (std::vector<VertexData>::iterator it = boxMesh->getVertexData().begin(); it != boxMesh->getVertexData().end(); it++) {
+			it->color = RGBfromHSV((it->U + it->V*2)*5.0/18.0, 1, 1);
+		}
+		boxMesh->loadVerticesToVertexBufferObject();
+		testMeshes.push_back(boxMesh);
+
+		MBmesh* SphereMesh = new MBmesh;
+		SphereMesh->makeSphereCorrectUV(1, 20, 20);
+		for (std::vector<VertexData>::iterator it = SphereMesh->getVertexData().begin(); it != SphereMesh->getVertexData().end(); it++) {
+			it->color = RGBfromHSV((it->U + it->V*2)*5.0/18.0, 1, 1);
+		}
+		SphereMesh->loadVerticesToVertexBufferObject();
+		testMeshes.push_back(SphereMesh);
+
+		MBmesh* ConeMesh = new MBmesh;
+		ConeMesh->makeCone(1, 1, 20);
+		for (std::vector<VertexData>::iterator it = ConeMesh->getVertexData().begin(); it != ConeMesh->getVertexData().end(); it++) {
+			it->color = RGBfromHSV((it->U + it->V*2)*5.0/18.0, 1, 1);
+		}
+		ConeMesh->loadVerticesToVertexBufferObject();
+		testMeshes.push_back(ConeMesh);
+
+		MBmesh* PlaneMesh = new MBmesh;
+		PlaneMesh->makePlane(2, 2);
+		for (std::vector<VertexData>::iterator it = PlaneMesh->getVertexData().begin(); it != PlaneMesh->getVertexData().end(); it++) {
+			it->color = RGBfromHSV((it->U + it->V*2)*5.0/18.0, 1, 1);
+		}
+		PlaneMesh->loadVerticesToVertexBufferObject();
+		testMeshes.push_back(PlaneMesh);
+
+		//				for (int i = 5; i <= 5; i++) {
+		//					for (int j = 5; j <= 5; j++) {
+		//		// Example adding a custom Renderable in the form of a "tennis ball"
+		//		// 1) Add a node to the root to handle the model matrix:
+		//		node = mainScene->rootNode.addNode("Ball");
+		////		node->setLocation( -0.5, 0.5, 67/MM_PER_METER);
+		//						node->setLocation((float)j/10.0 * 67.0*2.0/100, (float)i/10.0 * 67.0*2.0/100, 67/MM_PER_METER);
+		//						node->setScale(67/MM_PER_METER);
+		//		// 2) Create a mesh in the shape and size:
+		////		MBmesh* SphereMesh = new MBmesh;
+		////		SphereMesh->makeSphereCorrectUV(67/MM_PER_METER, 20, 20);
+		////		SphereMesh->loadVerticesToVertexBufferObject();
+		//		// 3) Create a material
+		//		MBmaterial* TennisBallMaterial = new MBmaterial;
+		//		TennisBallMaterial->setColorDiffuse(198.0/255.0, 237.0/255.0, 44.0/255.0);
+		////						TennisBallMaterial->setShininess(10, 0.01);
+		////						TennisBallMaterial->setColorDiffuse(((float)i/10.0 + 0.5), ((float)j/10.0 + 0.5), (0.5 - (float)i/10.0));
+		//						TennisBallMaterial->setShininess(pow(2,((float)i + 5)+1), 1-((float)j/10.0 + 0.5));
+		////		TennisBallMaterial->forceDisable(1, 1, 1, 1);
+		//		// 4) Add the renderable to the scene:
+		//		mainScene->addRenderable(node, SphereMesh, TennisBallMaterial);
+		//
+		////						mainScene->addRenderable(node, boxMesh, TennisBallMaterial);
+		//					}
+		//				}
+
+		MBmaterial* vertexColors = new MBmaterial;
+		vertexColors->setShininess(32, 1.0);
+		vertexColors->setColorSource(ShadowShaderParameters::COLOR_SOURCE_VERTEX_DATA);
+		testMaterials.push_back(vertexColors);
+
+		MBmaterial* shinyRed = new MBmaterial;
+		shinyRed->setShininess(64, 1.0);
+		shinyRed->setColorDiffuse(1.0, 0, 0);
+		testMaterials.push_back(shinyRed);
+
+		MBmaterial* shinyBlue = new MBmaterial;
+		shinyBlue->setShininess(16, 1.0);
+		shinyBlue->setColorDiffuse(0.0, 0, 1.0);
+		testMaterials.push_back(shinyBlue);
+
+
+		MBmaterial* internalTexture = new MBmaterial;
+		Texture* theTexture = new Texture;
+		dynamicTexture = theTexture;
+		Image8 textureImage(64,64);
+		Pixel feltColor;
+		feltColor.r = 198;
+		feltColor.g = 237;
+		feltColor.b = 44;
+		//		feltColor.r = 0;
+		//		feltColor.g = 0;
+		//		feltColor.b = 255;
+		Pixel seamColor;
+		seamColor.r = 255;
+		seamColor.g = 255;
+		seamColor.b = 255;
+		for (int i = 0; i < textureImage.width(); i++) {
+			for (int j = 0; j < textureImage.height(); j++) {
+				textureImage(i,j) = feltColor;
+			}
+		}
+		textureImage.DrawCircle(textureImage.width()/2, textureImage.height()/2, (float)textureImage.width()*0.3, (float)textureImage.width()*0.03, seamColor);
+		textureImage.DrawLine(textureImage.width()/2, textureImage.height()/2, textureImage.width(), textureImage.height(), seamColor);
+		textureImage.DrawLine(textureImage.width()/2, textureImage.height()/2, textureImage.width()/2, textureImage.height(), seamColor);
+		//		textureImage.DrawLine(0, textureImage.height()/2, textureImage.width()/2, textureImage.height()/2, seamColor);
+		//		textureImage.DrawLine(textureImage.width()/2, textureImage.height()/2, textureImage.width(), textureImage.height()/2, seamColor);
+		Pixel testColor;
+		testColor.r = 255;
+		testColor.g = 0;
+		testColor.b = 0;
+		//		textureImage.DrawThickLine(textureImage.width()/2, textureImage.height()/2, textureImage.width(), textureImage.height()/4, 2, testColor);
+		//		textureImage.DrawThickLine(textureImage.width()/2, textureImage.height()/2, textureImage.width()/2+1, 0, 2, testColor);
+		//		textureImage.DrawThickLine(0, textureImage.height()/2, textureImage.width()/2, textureImage.height()/2, 2, testColor);
+		textureImage.DrawThickLine(textureImage.width()/4, textureImage.height()/4, textureImage.width()/2, textureImage.height()/2, 2, testColor);
+		theTexture->setFromImage(textureImage);
+		//		theTexture->setUniformName("colorMap");
+		internalTexture->setTexture(theTexture, MBmaterial::COLOR);
+		//		internalTexture->addTexture(theTexture);
+		//		internalTexture->forceDisable(0, 1, 1, 1);
+		internalTexture->setShininess(10, 0.01);
+
+		testMaterials.push_back(internalTexture);
+
+		if (paverStoneNode) {
+			std::vector<Renderable*> paverRenderables = mainScene->getRenderablesFromNode(paverStoneNode->child(1));
+			if (paverRenderables.size() > 0) {
+				testMaterials.push_back(paverRenderables[0]->material);
+			}
+		}
+
+		for (int i = 0; i < testMeshes.size(); i++) {
+			for (int j = 0; j < testMaterials.size(); j++) {
+				Node* newNode = mainScene->rootNode.addNode("testMeshAndMaterials");
+				newNode->setLocation(-0.8 + 0.2*(float)j, -0.8 + 0.2*(float)i, 67/MM_PER_METER);
+				newNode->setScale(67/MM_PER_METER);
+				mainScene->addRenderable(newNode, testMeshes[i], testMaterials[j]);
+			}
 		}
 
 	}
 
 	void UIhandler::initialize() {
-#ifdef BUILD_FOR_IOS
+#if defined(BUILD_FOR_IOS) || defined(ANDROID)
 #else
 		std::cout << "Initializing SDL:" << std::endl;
 		initSDL();
 		std::cout << " - SDL initialized." << std::endl;
 #endif
-		
+
 		std::cout << "Initializing GL:" << std::endl;
 		initGL();
 		std::cout << " - GL initialized." << std::endl;
@@ -421,16 +566,16 @@ extern "C" {
 		printf("  - -\tDisable all features\n");
 		printf("  - +\tEnable all features\n");
 		printf("\n");
-		
+
 	}
 
 	void UIhandler::updateModels() {
 		for (int i = 0; i < N_LIGHTS; i++) {
 			char modelName[64];
 			sprintf(modelName, "lightModel %d", i);
-			Node *node = mainScene->findNodeByName(modelName);
+			Node *node = mainScene->rootNode.findChildByName(modelName);
 			if (node == NULL) {
-			//	std::cout << ":(" << std::endl;
+				//	std::cout << ":(" << std::endl;
 				continue;
 			}
 
@@ -446,7 +591,7 @@ extern "C" {
 			tempO2.makeFromAngleAndAxis(atan2(tempPosition(1), tempPosition(0)) + 90 * MOGI_PI/180.0, Vector::zAxis);
 			tempOrientation = tempO2 * tempOrientation;
 			node->setOrientation(tempOrientation );
-			
+
 		}
 
 		Quaternion tempOrientation, tempO2, tempO3;
@@ -459,13 +604,43 @@ extern "C" {
 		camera->setFOV(65);
 		camera->update();
 
-		mShadowShader.getParameters()->colorMapEnable = colorMapEnable;
+		//		mShadowShader.getParameters()->colorMapEnable = colorMapEnable;
+		//
+		//		mShadowShader.getParameters()->mColorSource =
 		mShadowShader.getParameters()->normalMapEnable = normalMapEnable;
 		mShadowShader.getParameters()->disparityMapEnable = disparityMapEnable;
 		mShadowShader.getParameters()->specularMapEnable = specularMapEnable;
 
 		mainScene->update();
 
+		if(dynamicTexture) {
+			static int priorSeconds = -1;
+			if (priorSeconds != (int)keyboardTimer.runningTime()) {
+				priorSeconds = (int)keyboardTimer.runningTime();
+				Image8 textureImage(256,256);
+				Pixel clearColor;
+				clearColor.r = 0;
+				clearColor.g = 127;
+				clearColor.b = 0;
+				for (int x = 0; x < textureImage.width(); x++) {
+					for (int y = 0; y < textureImage.height(); y++) {
+						textureImage(x,y) = clearColor;
+					}
+
+				}
+				Pixel circleColor;
+				circleColor.r = 0;
+				circleColor.g = 0;
+				circleColor.b = 255;
+				textureImage.DrawCircle(textureImage.width()/2, textureImage.height()/2, textureImage.width()*0.3, textureImage.width()*0.03, circleColor);
+				Pixel lineColor;
+				lineColor.r = 255;
+				lineColor.g = 0;
+				lineColor.b = 0;
+				textureImage.DrawThickLine(textureImage.width()/2, textureImage.height()/2, textureImage.width()/2 * (sin(priorSeconds * MOGI_PI/30.0)+1), textureImage.width()/2 * (cos(priorSeconds * MOGI_PI/30.0)+1), textureImage.width()*0.04, lineColor);
+				dynamicTexture->setFromImage(textureImage);
+			}
+		}
 	}
 
 	void UIhandler::resize(int xres, int yres) {
@@ -489,8 +664,8 @@ extern "C" {
 		// Shadow map rendering:
 		// Places the camera at each light to render shadow maps.
 		///////////////////////////////////////////////////////////////////////
-		for (int i = 0; i < mainScene->lights.size(); i++) {
-			mainScene->lights[i]->setEnabled(useShadows);
+		for (int i = 0; i < mainScene->getLights().size(); i++) {
+			mainScene->getLights()[i]->setEnabled(useShadows);
 		}
 		mainScene->buildShadowMaps();
 
@@ -503,7 +678,7 @@ extern "C" {
 		glViewport( 0, 0, camera->getXresolution(), camera->getYresolution());
 		glCullFace(GL_BACK);
 
-#ifdef BUILD_FOR_IOS
+#if defined(BUILD_FOR_IOS) || defined(ANDROID)
 		// TODO: same as in scene.cpp, glPolygonmode is not present.
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_CULL_FACE);
@@ -566,71 +741,66 @@ extern "C" {
 		}
 
 		// Write text on the screen, etc.:
-//		renderInterface( cameraLocation, cameraOrientation, NULL);
+		//		renderInterface( cameraLocation, cameraOrientation, NULL);
 
 		glEnable(GL_DEPTH_TEST);
 
 		mPerformanceMeasure.takeMeasurement("bokehPost");
-		mPerformanceMeasure.print();
+		//		mPerformanceMeasure.print();
 		mPerformanceMeasure.reset();
 	}
 
 	void UIhandler::renderES() {
 
-////		frameBuffer->attachFramebuffer();
-//
-//		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-//		glViewport( 0, 0, screenWidth, screenHeight);
-//		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-//
-//		mShadowShader.getParameters()->colorMapEnable = colorMapEnable;
-//		mShadowShader.getParameters()->normalMapEnable = normalMapEnable;
-//		mShadowShader.getParameters()->disparityMapEnable = disparityMapEnable;
-//		mShadowShader.getParameters()->specularMapEnable = specularMapEnable;
-//		mShadowShader.getParameters()->numberOfLights = N_LIGHTS;
-//		mShadowShader.getParameters()->useShadows = false;
-//
-//		mainScene->draw( camera, &mShadowShader );
-//
-////		frameBuffer->removeFramebuffer();
-////
-////		testFinal->process(frameBuffer->getRenderTexture(FrameBuffer::TEXTURE_TYPE_DIFFUSE), camera[0]);
-
-
-		gBuffer->attachFramebuffer();
+		//		frameBuffer->attachFramebuffer();
 
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glViewport( 0, 0, screenWidth, screenHeight);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glCullFace(GL_BACK);
-		glEnable(GL_DEPTH_TEST);
-		glEnable(GL_CULL_FACE);
+//		glEnable(GL_DEPTH_TEST);
+//		glEnable(GL_CULL_FACE);
 
-		mainScene->draw( camera, gShader );
+		//		mShadowShader.getParameters()->colorMapEnable = colorMapEnable;
+		mShadowShader.getParameters()->normalMapEnable = normalMapEnable;
+		mShadowShader.getParameters()->disparityMapEnable = disparityMapEnable;
+		mShadowShader.getParameters()->specularMapEnable = specularMapEnable;
+		mShadowShader.getParameters()->numberOfLights = N_LIGHTS;
+		mShadowShader.getParameters()->useShadows = false;
 
-		gBuffer->removeFramebuffer();
-		int type = ((int)keyboardTimer.runningTime()) % MBGBuffer::NUM_G_TEXTURES+1;
-		if (type == MBGBuffer::NUM_G_TEXTURES) {
-			testFinal->process(gBuffer->getDepthTexture(), camera[0]);
-		} else {
-			testFinal->process(gBuffer->getRenderTexture(type), camera[0]);
-		}
+		mainScene->draw( camera, &mShadowShader );
+
+		//		frameBuffer->removeFramebuffer();
+		//
+		//		testFinal->process(frameBuffer->getRenderTexture(FrameBuffer::TEXTURE_TYPE_DIFFUSE), camera[0]);
+
+
+		//		gBuffer->attachFramebuffer();
+		//
+		//		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+		//		glViewport( 0, 0, screenWidth, screenHeight);
+		//		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		//		glCullFace(GL_BACK);
+		//		glEnable(GL_DEPTH_TEST);
+		//		glEnable(GL_CULL_FACE);
+		//
+		//		mainScene->draw( camera, gShader );
+		//
+		//		gBuffer->removeFramebuffer();
+		//		int type = ((int)keyboardTimer.runningTime()) % MBGBuffer::NUM_G_TEXTURES+1;
+		//		if (type == MBGBuffer::NUM_G_TEXTURES) {
+		//			testFinal->process(gBuffer->getDepthTexture(), camera[0]);
+		//		} else {
+		//			testFinal->process(gBuffer->getRenderTexture(type), camera[0]);
+		//		}
 	}
 
 	void UIhandler::mainLoop() {
-#ifdef BUILD_FOR_IOS
+#if defined(BUILD_FOR_IOS) || defined(ANDROID)
 		mPerformanceMeasure.takeMeasurement("mainLoopCall");
 		// TODO: set up the rendering loop.
 		keyboardTimer.update();
 		updateModels();
-
 		mPerformanceMeasure.takeMeasurement("updateModels");
-//		this->cameraOrientation(0) = MOGI_PI/3;
-//		//this->cameraOrientation(1) = sin(camtime)/4;
-//		this->cameraOrientation(2) = keyboardTimer.runningTime() * MOGI_PI/16;
-//		this->cameraLocation(0) = 0.75 * sin(keyboardTimer.runningTime() * MOGI_PI/16);
-//		this->cameraLocation(1) = -0.75 * cos(keyboardTimer.runningTime() * MOGI_PI/16);
-//		this->cameraLocation(2) = 0.75;
 
 		render();
 #else
@@ -647,7 +817,7 @@ extern "C" {
 				mouse.handleEvent(event);
 				switch(event.type)
 				{
-						case SDL_WINDOWEVENT:
+					case SDL_WINDOWEVENT:
 						switch (event.window.event) {
 							case SDL_WINDOWEVENT_RESIZED:
 								resize(event.window.data1, event.window.data2);
@@ -691,7 +861,10 @@ extern "C" {
 
 	void hexapodToScene(Scene* mScene, Robot::Hexapod* mHexapod, std::string locationOfBodySTL) {
 		Node* body = mHexapod->getBodyNode();// nodeLocation->child(0);
-		mScene->attachMeshToNode(body, Importer::addMesh(mScene, "body.stl", locationOfBodySTL.c_str()));
+		//		mScene->attachMeshToNode(body, Importer::addMesh(mScene, "body.stl", locationOfBodySTL.c_str()));
+		MBmaterial* bodyMaterial = new MBmaterial;
+		bodyMaterial->setColorDiffuse(0.6, 0.6, 0.6);
+		mScene->addRenderable(body, Importer::addMesh(mScene, "body.stl", locationOfBodySTL.c_str()), bodyMaterial);
 
 		std::string locationOfLegSTL = locationOfBodySTL.append("/leg");
 		for (std::vector<Robot::HexapodLeg*>::iterator it = mHexapod->legs.begin(); it != mHexapod->legs.end(); it++) {
@@ -702,20 +875,23 @@ extern "C" {
 
 	void hexapodLegToScene(Scene* mScene, Robot::HexapodLeg* mHexapodLeg, std::string locationOfLegSTL) {
 		Node* base = mHexapodLeg->getBaseNode();
-		int bodyMeshID = Importer::addMesh(mScene, "base.stl", locationOfLegSTL);
-		mScene->attachMeshToNode(base, bodyMeshID);
+		MBmesh* bodyMesh = Importer::addMesh(mScene, "base.stl", locationOfLegSTL);
+		//		mScene->attachMeshToNode(base, bodyMesh);
+		MBmaterial* legMaterial = new MBmaterial;
+		legMaterial->setColorDiffuse(0.6, 0.6, 0.6);
+		mScene->addRenderable(base, bodyMesh, legMaterial);
 
 		Node* coxa = base->child(0);
 		Node* femur = coxa->child(0);
 		Node* tibia = femur->child(0);
 
-		int coxaMeshID = Importer::addMesh(mScene, "coxa.stl", locationOfLegSTL);
-		int femurMeshID = Importer::addMesh(mScene, "femur.stl", locationOfLegSTL);
-		int tibiaMeshID = Importer::addMesh(mScene, "tibia.stl", locationOfLegSTL);
-
-		mScene->attachMeshToNode(coxa, coxaMeshID);
-		mScene->attachMeshToNode(femur, femurMeshID);
-		mScene->attachMeshToNode(tibia, tibiaMeshID);
+		MBmesh* coxaMesh = Importer::addMesh(mScene, "coxa.stl", locationOfLegSTL);
+		MBmesh* femurMesh = Importer::addMesh(mScene, "femur.stl", locationOfLegSTL);
+		MBmesh* tibiaMesh = Importer::addMesh(mScene, "tibia.stl", locationOfLegSTL);
+		
+		mScene->addRenderable( coxa,  coxaMesh, legMaterial);
+		mScene->addRenderable(femur, femurMesh, legMaterial);
+		mScene->addRenderable(tibia, tibiaMesh, legMaterial);
 	}
 	
 #ifdef _cplusplus

@@ -80,10 +80,9 @@ public:
 
 	void setName( std::string name );
 
-	void makeOrthographic(float width, float height, float clipNear,
-			float clipFar);
-	void makeProjection(int xRes, int yRes, float fov, float clipNear,
-			float clipFar);
+	void makeOrthographic(float width, float height, float clipNear, float clipFar);
+	void makeProjection(int xRes, int yRes, float fov, float clipNear, float clipFar);
+	void setClipBounds(float near, float far);
 	void setFOV(double value) {
 		FOV = value;
 	}

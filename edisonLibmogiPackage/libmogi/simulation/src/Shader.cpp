@@ -37,44 +37,55 @@ MBshader::~MBshader() {
 	for (std::map<std::string, GLint*>::iterator it = uniforms.begin(); it != uniforms.end(); it++) {
 		delete it->second;
 	}
-	for (int i = 0; i < textureUniforms.size(); i++) {
-		delete textureUniforms[i];
+	for (std::map<std::string, TextureUniform*>::iterator it = textureUniforms.begin(); it != textureUniforms.end(); it++) {
+		delete it->second;
 	}
 }
 
+	GLint MBshader::getAttributeLocation(std::string name) {
+		GLint* result = attributes[name];
+		if (result == NULL) {
+			result = new GLint;
+			*result = glGetAttribLocation(this->program(), name.c_str());
+			if (*result < 0) {
+				std::cout << "Warning, could not find attribute \"" << name << "\" in shader:" << this->label << std::endl;
+			}
+			attributes[name] = result;
+		}
+		return *result;
+	}
 
-
-void MBshader::enableAttributes() {
-	hasAttributes = true;
-}
-
-void MBshader::disableAttributes() {
-	hasAttributes = false;
-}
+//void MBshader::enableAttributes() {
+//	hasAttributes = true;
+//}
+//
+//void MBshader::disableAttributes() {
+//	hasAttributes = false;
+//}
 
 void MBshader::useProgram() {
 	glUseProgram(this->program());
 
-	if (hasAttributes) {
-		glEnableVertexAttribArray(glGetAttribLocation(this->program(), "position"));
-		glVertexAttribPointer(glGetAttribLocation(this->program(), "position"), 3, GL_FLOAT, GL_FALSE, 40, BUFFER_OFFSET(0));
-		glEnableVertexAttribArray(glGetAttribLocation(this->program(), "normal"));
-		glVertexAttribPointer(glGetAttribLocation(this->program(), "normal"), 3, GL_FLOAT, GL_FALSE, 40, BUFFER_OFFSET(12));
-		glEnableVertexAttribArray(glGetAttribLocation(this->program(), "color"));
-		glVertexAttribPointer(glGetAttribLocation(this->program(), "color"), 4, GL_FLOAT, GL_FALSE, 40, BUFFER_OFFSET(24));
-	} else {
-		int vertex = glGetAttribLocation(this->program(), "vertex");
-		glEnableVertexAttribArray(vertex);
-		glVertexAttribPointer(vertex, 3, GL_FLOAT, GL_FALSE, 40, BUFFER_OFFSET(0));
-	}
+//	if (hasAttributes) {
+//		glEnableVertexAttribArray(glGetAttribLocation(this->program(), "position"));
+//		glVertexAttribPointer(glGetAttribLocation(this->program(), "position"), 3, GL_FLOAT, GL_FALSE, 40, BUFFER_OFFSET(0));
+//		glEnableVertexAttribArray(glGetAttribLocation(this->program(), "normal"));
+//		glVertexAttribPointer(glGetAttribLocation(this->program(), "normal"), 3, GL_FLOAT, GL_FALSE, 40, BUFFER_OFFSET(12));
+//		glEnableVertexAttribArray(glGetAttribLocation(this->program(), "color"));
+//		glVertexAttribPointer(glGetAttribLocation(this->program(), "color"), 4, GL_FLOAT, GL_FALSE, 40, BUFFER_OFFSET(24));
+//	} else {
+//		int vertex = glGetAttribLocation(this->program(), "vertex");
+//		glEnableVertexAttribArray(vertex);
+//		glVertexAttribPointer(vertex, 3, GL_FLOAT, GL_FALSE, 40, BUFFER_OFFSET(0));
+//	}
 }
 
 void MBshader::stopProgram() {
-	if (hasAttributes) {
-		glDisableVertexAttribArray(glGetAttribLocation(this->program(), "position"));
-		glDisableVertexAttribArray(glGetAttribLocation(this->program(), "normal"));
-		glDisableVertexAttribArray(glGetAttribLocation(this->program(), "color"));
-	}
+//	if (hasAttributes) {
+//		glDisableVertexAttribArray(glGetAttribLocation(this->program(), "position"));
+//		glDisableVertexAttribArray(glGetAttribLocation(this->program(), "normal"));
+//		glDisableVertexAttribArray(glGetAttribLocation(this->program(), "color"));
+//	}
 	glUseProgram(0);
 }
 
@@ -112,23 +123,15 @@ GLint MBshader::getUniformLocation(std::string name) {
 
 TextureUniform* MBshader::getTextureUniform(std::string name) {
 	// Find the uniform, if it exists:
-	for (int i = 0; i < textureUniforms.size(); i++) {
-		if (name == textureUniforms[i]->name) {
-			return textureUniforms[i];
-		}
-	}
+	TextureUniform* uniform = textureUniforms[name];
 
-	// Doesn't exist yet, so find and add it:
-	TextureUniform *uniform = new TextureUniform;
-	if ((uniform->location = glGetUniformLocation(this->program(), name.c_str())) >= 0) {	// not good, we will keep calling this method.
-		uniform->name = name;
+	if (uniform == NULL) {
+		TextureUniform *uniform = new TextureUniform;
 		uniform->value = textureTracker++;
-		textureUniforms.push_back(uniform);
-
-		return uniform;
+		uniform->location = glGetUniformLocation(this->program(), name.c_str());
+		textureUniforms[name] = uniform;
 	}
-	delete uniform;
-	return NULL;
+	return uniform;
 }
 
 //	int MBshader::initializeFromSource(const std::string& vertexSource, const std::string& fragmentSource) {

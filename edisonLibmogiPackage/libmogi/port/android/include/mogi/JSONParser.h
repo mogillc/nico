@@ -25,6 +25,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <sstream>
 
 namespace Mogi {
 
@@ -94,6 +95,15 @@ namespace Mogi {
 			}
 
 			return *this;
+		}
+
+		std::string toString() {
+			std::ostringstream oss; 
+			for (JSONToken* token = front(); token != 0; token = token->next) {
+				oss << "type: " << token->type << ", start: " << token->startIndex << ", end: " << token->endIndex << ", #child: " << token->numChildren << ", isKey: " << token->isKey << std::endl;
+			}
+
+			return oss.str();
 		}
 
 		JSONToken* front() {return head;}
@@ -198,6 +208,7 @@ namespace Mogi {
 		float toFloat() const;
 		std::string toString() const;
 		std::string toJSONString() const;
+		std::string toJSONStringPretty(const std::string& prefix) const;
 
 		// Returns number of children, zero if not an array or object
 		unsigned int size() const;

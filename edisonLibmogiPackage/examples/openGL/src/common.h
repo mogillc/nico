@@ -102,6 +102,9 @@ private:
 	Mogi::Simulation::MBshader *gShader;
 	Mogi::Simulation::MBGBuffer* gBuffer;
 
+	Mogi::Math::Node* paverStoneNode;
+	Mogi::Simulation::Texture* dynamicTexture;
+
 #ifdef SDL2_FOUND
 	SDL_Window *sdlWindow;
 	SDL_GLContext glcontext;
@@ -134,6 +137,9 @@ public:
 
 	// Should be called before accessing mainScene and before running printUsage.
 	void initialize();
+
+	// Optional, initializes a set of test meshes and materials with textures from both file importation and from programmatic building.
+	void initTestMeshesAndMaterials();
 
 	// Prints the keyboard commands for modifying shaders and camera pose/orientation.
 	static void printUsage();

@@ -357,7 +357,7 @@ namespace Mogi {
 
 			/*! \brief The speed in \f$\frac{mm}{s}\f$ that the hexapod raises the body during power up.
 			 */
-			double standingVelocity;
+			double standingSpeed;
 
 			/*! \brief The standing height in \f$mm\f$ that the hexapod raises the body to once powered.
 			 */

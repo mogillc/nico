@@ -38,7 +38,7 @@ namespace Mogi {
 		};
 
 		struct TextureUniform {
-			std::string name;
+//			std::string name;
 			GLint location;
 			GLint value;
 		};
@@ -52,10 +52,12 @@ namespace Mogi {
 
 		class MBshader {
 		private:
-			bool hasAttributes;
+//			bool hasAttributes;
 			//	std::vector<MBuniform *> uniforms;
 			std::map<std::string, GLint*> uniforms;
-			std::vector<TextureUniform *> textureUniforms;
+			std::map<std::string, GLint*> attributes;
+//			std::vector<TextureUniform *> textureUniforms;
+			std::map<std::string, TextureUniform *> textureUniforms;
 			int textureTracker;
 
 			GLint getUniformLocation(std::string name);
@@ -75,6 +77,7 @@ namespace Mogi {
 			void enableAttributes();
 			void disableAttributes();
 
+			GLint getAttributeLocation(std::string name);
 			virtual int sendInteger(std::string name, int value);
 			virtual int sendFloat(std::string name, float value);
 			virtual int sendMatrix(std::string name, Math::Matrix &matrix);

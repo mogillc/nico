@@ -710,6 +710,9 @@ int main(int argc, char* argv[]) {
 int searchDynamixels(Interface* interface, DataRange dataRange, bool verbose) {
 	Handler dynamixelHandler;
 
+	// We expect to not get a lot of responses in this case, so no reason to be verbose int he interface:
+	interface->setVerbose(false);
+
 	if (verbose)
 		std::cout << "Beginning search for IDs " << dataRange.reg << "-"
 		<< dataRange.length << std::endl;

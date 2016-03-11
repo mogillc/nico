@@ -22,53 +22,90 @@
 #include <vector>
 
 namespace Mogi {
-namespace Simulation {
+	namespace Simulation {
 
-/**
- *
- * @note Class
- */
-class Texture {
-private:
-	std::string shaderUniformName;
-	int arrayIndex;
-	GLuint textureID;
+		struct Pixel {
+			GLubyte r;
+			GLubyte g;
+			GLubyte b;
+			GLubyte a;
 
-	// If it is not loaded from the file, used for GL stuff:
-	int width;
-	int height;
+			Pixel(): r(127), g(127), b(127), a(255) {};
+		};
 
-	GLenum type;
-	GLenum format;
-	GLint internalFormat;
+		class Image8 {
+		private:
+			Pixel* mData;
+			int mWidth;
+			int mHeight;
 
-	void deleteTexture();
-	GLuint createTexture(int w, int h);
-	void reconfigure();
+		public:
+			Image8(int width, int height);
+			~Image8();
 
-public:
-	Texture();
-	~Texture();
+			Pixel& operator() (const int& x, const int& y);
 
-	// Methods:
-	void sendTextureToShader(MBshader *shader);
-	int loadFromImage(std::string file);
-	int create(int w, int h, bool isDepth);
-	void setUniformName(std::string name);
-	void setUniformIndex(int index);
-	GLuint getTexture() const;
-	int resize(int w, int h);
-	void setType(GLenum textureFormat, GLint textureInternalFormat);
+			const void* data() const;
 
-	GLenum getType();
-	GLenum getFormat();
-	GLint getInternalFormat();
-};
+			const int& width() const;
+			const int& height() const;
 
-	std::string glGetErrorToString(GLenum Status);
+			void DrawPixel(unsigned int x, unsigned int y, const Pixel& color);
+			void DrawLine(float x0, float y0, float x1, float y1, const Pixel& color);
+			void DrawThickLine(int x0, int y0, int x1, int y1, float wd, const Pixel& color);
+			void DrawCircle(int x0, int y0, int radius, const Pixel& color);
+			void DrawCircle(int x0, int y0, int radius, int thickness, const Pixel& color);
+		};
 
-GLuint loadTexture(const char *name);
-}
+		/**
+		 *
+		 * @note Class
+		 */
+		class Texture {
+		private:
+			std::string shaderUniformName;
+			int arrayIndex;
+			GLuint textureID;
+
+			// If it is not loaded from the file, used for GL stuff:
+			int width;
+			int height;
+
+			GLenum type;
+			GLenum format;
+			GLint internalFormat;
+
+			void deleteTexture();
+			GLuint createTexture(int w, int h);
+
+			// If there is no data, set this to NULL and the size/type will be allocated with default data.
+			void reconfigure(const GLvoid* data);
+
+		public:
+			Texture();
+			~Texture();
+
+			// Methods:
+			void sendTextureToShader(MBshader *shader);
+			int loadFromImage(std::string file);
+			int create(int w, int h, bool isDepth);
+			void setUniformName(std::string name);
+			void setUniformIndex(int index);
+			GLuint getTexture() const;
+			int resize(int w, int h);
+			void setType(GLenum textureFormat, GLint textureInternalFormat);
+
+			void setFromImage(const Image8& image);
+
+			GLenum getType();
+			GLenum getFormat();
+			GLint getInternalFormat();
+		};
+		
+		std::string glGetErrorToString(GLenum Status);
+		
+		GLuint loadTexture(const char *name);
+	}
 }
 
 #endif

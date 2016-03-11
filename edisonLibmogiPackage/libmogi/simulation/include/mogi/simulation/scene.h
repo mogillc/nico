@@ -55,82 +55,83 @@ namespace Mogi {
 	namespace Simulation {
 
 		/*!
-		 \struct NodeMatrixAndMeshID
-		 \brief Used for mesh indexing for simulation (Will be deprecated soon).
+		 \struct Renderable
+		 \brief Represents an association between a mesh, material, and node to be drawn.
 		 */
-		struct NodeMatrixAndMeshID {
+		struct Renderable {
 			/*! Mesh Identifier.
 			 */
-			unsigned int ID;
+			MBmesh* mesh;
+
+			MBmaterial* material;
 
 			/*! Transformation matrix specific to the mesh, with respect to the node.
 			 */
-			//	const Matrix *modelMatrix;
-			Math::Node* parentNode;
+			Math::Node* node;
 		};
 
 		/** @file */
 		class Scene {
 		private:
 			MBshader* shadowMapShader;
-			MBshader* gShader;
 
-			std::vector<Animation *> animations;
-			std::vector<MBmaterial *> materials; // This could be loaded, but may not be important.
-			std::vector<MBmesh *> meshes;
-			std::vector<Texture *> textures;
-
-			std::vector<NodeMatrixAndMeshID*> meshesToDraw;
-
-			std::string objectLocation;
-
-			int totalTriangles;
-			
-			void initialize();
-
-		public:
-			// Attributes:
-
-			std::map<Math::Node*,std::vector<Simulation::MBmesh*> > nodeToMeshMap;
-
-			Math::Node rootNode;
+			std::vector<Animation*> animations;
+			std::vector<MBmaterial*> materials; // This could be loaded, but may not be important.
+			// All mesh storage
+			std::vector<MBmesh*> meshes;
+			std::vector<Texture*> textures;
 			std::vector<Camera *> cameras;
 			std::vector<MBlight *> lights;
 
+			// Represents the meshes that will be drawn
+			std::vector<Renderable*> renderables;
+
+			int sortByMeshAndDraw( Camera* cam, MBshader* shader, std::vector<Renderable*>& meshes );
+
+		public:
+			// Attributes:
+			Math::Node rootNode;
 			// Default constructors/destructor:
 			Scene();
 			~Scene();
-
-			void clearVectors();
 
 			// Methods:
 			void update();
 
 			int draw(Camera *cam, MBshader *shader);
 
-			void setLocation(const Math::Vector &loc);
-			void setLocation(double x, double y, double z);
-
-			void setScale(const Math::Vector &loc);
-			void setScale(double x, double y, double z);
-			void setScale(double s);
-
-			void setOrientation(Math::Quaternion &quat);
-			void setOrientation(double angle, Math::Vector &axis);
-
-			Math::Node *findNodeByName(std::string nodeName);
-
 			int buildShadowMaps();
 
-			MBmesh *getMesh(std::string meshName);
+			/*! \breif Adds renderable objects to the scene to be rendered.
+				
+			 This will create the set of associations to be drawn in the scene.
+			 Only unique combinations of all three elements will be added as a renderable.
+			 \param node A node that should be under rootNode tree structure.
+			 \param mesh The geometric definition. If already contained in this scene's meshes, that will be used.  If not contained, the mesh will be added to the list of meshes owned by this object (to be deleted).
+			 \param material The properties of the rendering.  Like the mesh, this will be added to the list of memory to be deleted if it does not already exist under this object.
+			 \return The newly added renderable, or the renderable previously added with the same properties.
+			 */
+			Renderable* addRenderable(Math::Node* node, MBmesh* mesh, MBmaterial* material);
 
+			std::vector<Renderable*> getRenderablesFromNode(Math::Node* node);
+			std::vector<Renderable*> getRenderablesFromMesh(MBmesh* mesh);
+			std::vector<Renderable*> getRenderablesFromMaterial(MBmaterial* material);
+
+			/*!
+			 \return The id of the material added.
+			 */
+			MBmaterial* addMaterial(MBmaterial* material);
+			MBmesh* addMesh(MBmesh* mesh);
+			Texture* addTexture(Texture* mesh);
+
+			std::vector<Renderable*>& getRenderables();
 			std::vector<MBmesh*>& getMeshes();
-			std::vector<NodeMatrixAndMeshID*>& getMeshestoDraw();
-			std::vector<Animation*>& getAnimations();
-			std::vector<Texture*>& getTextures();
 			std::vector<MBmaterial*>& getMaterials();
 
-			void attachMeshToNode(Math::Node* node, int meshId);
+			std::vector<Camera*>& getCameras();
+			std::vector<MBlight*>& getLights();
+			std::vector<Animation*>& getAnimations();
+			std::vector<Texture*>& getTextures();
 
 			static std::string getResourceDirectory();
 		};

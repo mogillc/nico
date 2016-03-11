@@ -262,7 +262,7 @@ std::string AppOption::typeString() {
 std::string Communicator::generateTransmitBuffer() {
 	static int protocolCount = 0;
 	protocolCount++;
-	static JsonValueInterface root;
+	JsonValueInterface root;
 
 	root["protocolCount"] = protocolCount;
 
@@ -309,7 +309,7 @@ std::string Communicator::generateTransmitBuffer() {
 
 		commandIndex++;
 	}
-	std::cout << "result : " << root.toStyledString() << std::endl; // ADRIAN: uncomment
+//	std::cout << "Communicator::generateTransmitBuffer() root: " << root.toStyledString() << std::endl; // ADRIAN: uncomment
 
 	return root.toStyledString();
 }
@@ -501,7 +501,7 @@ int Communicator::handlePossibleBuffer() {
 	}
 
 	bool parsingSuccessful = jsonSubject.parseJson(begin, end);
-	std::cout << "received json : " << std::string(begin, end) << std::endl;
+//	std::cout << "received json : " << std::string(begin, end) << std::endl;
 
 	buffer.erase(buffer.begin(), end); // erase the buffer from the begining up to the end of the JSON.
 

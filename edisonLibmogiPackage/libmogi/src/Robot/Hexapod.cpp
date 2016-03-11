@@ -21,6 +21,8 @@
 
 #include "hexapod.h"
 
+#include "mogi/Logger.h"
+
 #ifdef IDENT_C
 static const char* const Hexapod_C_Id = "$Id$";
 #endif
@@ -49,9 +51,14 @@ Hexapod::Hexapod(Node* rootNode) :
 }
 
 Hexapod::~Hexapod() {
+	Mogi::Logger& logger = Mogi::Logger::getInstance();
+
 	while (stateChart.getCurrentState() != stateChart.getFinalState()) {
 		powerDown();
 	}
+
+	logger << "~Hexapod() " << std::endl;
+	
 	while (Thread::running());
 
 	delete dynamixelHandler;
@@ -351,8 +358,18 @@ void Hexapod::entryAction() {  // TODO: Finish this to fit the setup/loop/finish
 		beginModifying();
 		{
 			//      bodyMotion(mainTimer.dTime());
-			bodyLocationOffsetStanding(2) += standingVelocity
-					* mainTimer.dTime();
+			double standingError = standingHeight - bodyLocationOffsetStanding(2);
+			if (standingError != 0) {
+				double heightToMove = standingSpeed * mainTimer.dTime();
+				if (fabs(standingError) <= heightToMove) {
+					// The motion exceeds the amount to move based on velocity.
+					bodyLocationOffsetStanding(2) = standingHeight;
+				} else {
+					double standingVelocityDirection = standingError/fabs(standingError);
+					bodyLocationOffsetStanding(2) += standingSpeed * standingVelocityDirection * mainTimer.dTime();
+				}
+			}
+
 
 			// I used to set the gait right here;
 
@@ -540,8 +557,8 @@ void Hexapod::endModifying() {
 
 bool Hexapod::bodyHeightCheck(void* param) {
 	Hexapod* This = (Hexapod*) param;
-	if (fabs(This->bodyLocationOffsetStanding(2) - This->standingHeight) < 1) {
-		This->standingVelocity = 0;
+	if (fabs(This->bodyLocationOffsetStanding(2) - This->standingHeight) == 0) {
+//		This->standingSpeed = 0;
 		return true;
 	}
 	return false;
@@ -612,7 +629,7 @@ std::string Hexapod::currentState() {
 
 void Hexapod::setRestingBody(void* param) {
 	Hexapod* This = (Hexapod*) param;
-	This->standingVelocity = -40;
+	This->standingSpeed = 40;
 	This->standingHeight = 0;
 }
 
@@ -1003,7 +1020,7 @@ void Hexapod::startMotors() {
 	}
 
 	//		std::cout << "Done Configuring Motors!" << std::endl;
-	standingVelocity = 40;
+	standingSpeed = 40;
 	terminate = false;
 	start();
 	//		while( !walking() ); // Wait until the body is fully elevated

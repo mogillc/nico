@@ -101,9 +101,7 @@ extern "C" {
 			location = loc;
 			lightAsCamera.setLocation(location);
 		} else {
-			std::cout
-			<< "Error! cannot set light location, size of vector should be "
-			"3, this is size " << loc.size() << std::endl;
+			std::cout << "Error! cannot set light location, size of vector should be 3, this is size " << loc.size() << std::endl;
 		}
 	}
 
@@ -119,9 +117,7 @@ extern "C" {
 		if (col.size() == 3) {
 			color = col;
 		} else {
-			std::cout
-			<< "Error! cannot set light location, size of vector should be "
-			"3, this is size " << col.size() << std::endl;
+			std::cout << "Error! cannot set light location, size of vector should be 3, this is size " << col.size() << std::endl;
 		}
 	}
 
@@ -132,6 +128,7 @@ extern "C" {
 	}
 
 	void MBlight::updateLightCamera() {
+		lightAsCamera.setClipBounds(0.1, 20);
 		lightAsCamera.setFOV(FOV);
 		lightAsCamera.setResolution(width, height);
 		lightAsCamera.setOrientation(orientation);

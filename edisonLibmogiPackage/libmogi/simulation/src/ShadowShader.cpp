@@ -51,8 +51,9 @@ extern "C" {
 		if (name.compare("nLights") == 0) {
 			getParameters()->numberOfLights = value;
 			return 0;
-		} else if(name.compare("colorMapEnable") == 0) {
-			getParameters()->colorMapEnableFromMaterial = value;
+		} else if(name.compare("colorSource") == 0) {
+//			getParameters()->colorMapEnableFromMaterial = value;
+			getParameters()->mColorSource = (ShadowShaderParameters::ColorSource)value;
 			return 0;
 		} else if(name.compare("normalMapEnable") == 0) {
 			getParameters()->normalMapEnableFromMaterial = value;

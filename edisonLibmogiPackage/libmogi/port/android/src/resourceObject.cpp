@@ -34,7 +34,7 @@ GLuint _loadTexture(const char* name, int glslVersion) {
 		Mogi::Android::JavaStaticClass* textureLoaderAPI = androidEnv.getJavaAPI(apiName);
 
 		jstring jtextureName = env->NewStringUTF(name); // convert the asset's name 
-		textureLoaderAPI->callMethod(&textureID, "testLoadTexture", jtextureName); // Call load method
+		textureLoaderAPI->callMethod(&textureID, "loadTexture", jtextureName, glslVersion); // Call load method
 	}
 
 	return textureID;

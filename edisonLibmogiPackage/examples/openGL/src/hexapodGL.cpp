@@ -71,6 +71,7 @@ int main(int argc, char *argv[])
 
 	// Initialize SDL/OpenGL, default models for environment, camera, etc.
 	mUIhandler.initialize();
+	mUIhandler.initTestMeshesAndMaterials();
 
 	// THEN initialize models for this simulation session:
 	init(argc, argv);

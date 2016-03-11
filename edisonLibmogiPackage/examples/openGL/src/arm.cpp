@@ -66,6 +66,7 @@ int main(int argc, char *argv[])
 
 	// Initialize SDL/OpenGL, default models for environment, camera, etc.
 	mUIhandler.initialize();
+	mUIhandler.initTestMeshesAndMaterials();
 
 	// THEN initialize models for this simulation session:
 	init(argc, argv);
@@ -94,8 +95,8 @@ void init(int argc, char *argv[])
 
 	btime.initialize();
 
-	//	std::cout << "Final node structure for mainScene:" << std::endl;
-	//	std::cout << mUIhandler.mainScene->rootNode.structureToString() << std::endl;
+		std::cout << "Final node structure for mainScene:" << std::endl;
+		std::cout << mUIhandler.mainScene->rootNode.structureToString() << std::endl;
 }
 
 void initArms() {
@@ -188,7 +189,7 @@ void updateArmModels() {
 	launchpadOrientation.makeFromAngleAndAxis(sin(btime.runningTime()*1.167) * MOGI_PI/6, tempAxis);
 
 	// Update the model of the launchpad in the scene:
-	Node *node = mUIhandler.mainScene->findNodeByName("launchpad");
+	Node *node = mUIhandler.mainScene->rootNode.findChildByName("launchpad");
 	node->setOrientation(launchpadOrientation);
 	node->setLocation(2 * launchpadLocation / MM_PER_METER);
 

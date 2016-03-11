@@ -20,6 +20,8 @@
 
 #include "appcomm.h"
 
+#include <json/json.h>
+
 using namespace Mogi;
 using namespace App;
 
@@ -33,6 +35,7 @@ public:
 	}
 };
 
+bool testJsonValueInterface();
 bool testJsonValueObserver();
 bool testJsonObjectObserver();
 bool testJsonArrayObserver();
@@ -40,6 +43,8 @@ bool testJsonArrayObserver();
 int main(int argc, char* argv[]) {
 	bool allTestsPass = true;
 
+	std::cout << " - Beginning ValueInterface tests:" << std::endl;
+	allTestsPass = testJsonValueInterface() ? allTestsPass : false;
 	std::cout << " - Beginning Value Observer tests:" << std::endl;
 	allTestsPass = testJsonValueObserver() ? allTestsPass : false;
 	std::cout << " - Beginning Json Object Observer tests:" << std::endl;
@@ -51,6 +56,55 @@ int main(int argc, char* argv[]) {
 		return EXIT_SUCCESS;
 	}
 	return EXIT_FAILURE;
+}
+
+bool testJsonValueInterface() {
+	bool allTestsPass = true;
+
+	JsonValueInterface value;
+
+	value["testArray"][6] = 4;
+
+	JsonValueInterface value2(value);
+
+	value["testDouble"][3] = 5.6;
+	value["testString"] = std::string("yoyoy");
+
+	JsonValueInterface result;
+
+	std::cout << " - Checking value creation/parsing ... ";
+	if(JsonValueInterface::parse(value.toStyledString(), result)) {
+		std::cout << "FAILED during parsing." << std::endl;
+		return false;
+	}
+	
+	if ((!result["testArray"].isArray()) ||
+		result["testArray"].size() != 7 ||
+		!result["testArray"][6].isInt() ||
+		result["testArray"][6].asInt() != 4) {
+		std::cout << "FAILED: testArray incorrect" << std::endl;
+		allTestsPass = false;
+	}
+
+	if ((!result["testDouble"].isArray()) ||
+		result["testDouble"].size() != 4 ||
+		!result["testDouble"][3].isDouble() ||
+		result["testDouble"][3].asDouble() != 5.6) {
+		std::cout << "FAILED: testDouble incorrect" << std::endl;
+		allTestsPass = false;
+	}
+
+	if (!result["testString"].isString() ||
+		result["testString"].asString().compare("yoyoy") != 0) {
+		std::cout << "FAILED: testString incorrect" << std::endl;
+		allTestsPass = false;
+	}
+
+	if (allTestsPass) {
+		std::cout << "Passed" << std::endl;
+	}
+
+	return allTestsPass;
 }
 
 bool testJsonValueObserver() {

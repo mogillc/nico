@@ -43,11 +43,18 @@ namespace Mogi {
 		public:
 			ShadowShaderParameters();
 
-			bool colorMapEnable;
+			enum ColorSource {
+				COLOR_SOURCE_VERTEX_DATA,
+				COLOR_SOURCE_MAP,
+				COLOR_SOURCE_MATERIAL
+			};
+
+			ColorSource mColorSource;
+//			bool colorMapEnable;
 			bool specularMapEnable;
 			bool normalMapEnable;
 			bool disparityMapEnable;
-			bool colorMapEnableFromMaterial;
+//			bool colorMapEnableFromMaterial;
 			bool specularMapEnableFromMaterial;
 			bool normalMapEnableFromMaterial;
 			bool disparityMapEnableFromMaterial;

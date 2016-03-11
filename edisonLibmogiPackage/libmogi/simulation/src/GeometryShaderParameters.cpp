@@ -30,8 +30,9 @@ extern "C" {
 		"\n"
 		"#VERTEX_INPUT vec3 position;\n"
 		"#VERTEX_INPUT vec3 normal;\n"
-		"#VERTEX_INPUT vec3 color;\n"
 		"#VERTEX_INPUT vec3 tangent;\n"
+//		"#VERTEX_INPUT vec3 bitangent;\n"
+		"#VERTEX_INPUT vec3 color;\n"
 		"#VERTEX_INPUT vec2 UV;\n"
 		"\n"
 		"uniform mat4 modelViewProjectionMatrix;\n"
@@ -113,17 +114,11 @@ extern "C" {
 		"//varying mat3 TBN;\n"
 		"//varying vec3 fposition;\n"
 		"\n"
-		"#FRAGMENT_OUTPUT // TODO: look into deferred rendering methods\n"
-		"//layout(location = 1) out vec4 NormalOut; // TODO: look into deferred rendering methods\n"
-		"//layout(location = 2) out vec4 MaterialOut; // TODO: look into deferred rendering methods\n"
-		"\n"
-		"//layout(location = 0) out vec4 FragColor; // TODO: look into deferred rendering methods\n"
-		"//layout(location = 1) out vec4 NormalOut; // TODO: look into deferred rendering methods\n"
-		"//layout(location = 2) out vec4 MaterialOut; // TODO: look into deferred rendering methods\n"
-		"//vec4 NormalOut; // TODO: look into deferred rendering methods\n"
-		"//vec4 MaterialOut; // TODO: look into deferred rendering methods\n"
+		"#FRAGMENT_OUTPUT"
 		"\n"
 		"void main() {\n"
+		"   PositionOut = vec4(fposition, 1.0);\n"
+		"\n"
 		"	// Height map should be determined first for new texture coordinates:\n"
 		"	vec2 newCoords;\n"
 		"	vec3 tangentSurface2view = TBN * -fposition;\n"
@@ -180,14 +175,16 @@ extern "C" {
 
 		if (MogiGLInfo::getInstance()->getVersion() >= 300) {
 			macros["#FRAGMENT_OUTPUT"] =
-			"layout(location = 0) out vec4 FragColor; // TODO: look into deferred rendering methods\n"
-			"layout(location = 1) out vec4 NormalOut; // TODO: look into deferred rendering methods\n"
-			"layout(location = 2) out vec4 MaterialOut; // TODO: look into deferred rendering methods\n";
+			"layout(location = 0) out vec4 FragColor;\n"
+			"layout(location = 1) out vec4 NormalOut;\n"
+			"layout(location = 2) out vec4 MaterialOut;\n"
+			"layout(location = 3) out vec4 PositionOut;\n";
 		} else {
 			macros["#FRAGMENT_OUTPUT"] =
 			"//layout(location = 0) out vec4 FragColor; // TODO: look into deferred rendering methods\n"
 			"vec4 NormalOut; // TODO: look into deferred rendering methods\n"
-			"vec4 MaterialOut; // TODO: look into deferred rendering methods\n";
+			"vec4 MaterialOut; // TODO: look into deferred rendering methods\n"
+			"vec4 PositionOut; // TODO: look into deferred rendering methods\n";
 
 			// Not a good way to handle this:
 			macros["smooth "] = "";

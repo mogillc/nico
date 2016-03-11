@@ -2,6 +2,7 @@
 
 #include <mogi/port/android/jsonWrapperIOS.h>
 #include <mogi/JSONParser.h>
+#include <android/log.h>
 
 namespace _JsonWrapperIOS {
 
@@ -22,10 +23,18 @@ namespace _JsonWrapperIOS {
 	}
 
 	int parseJson( void** value, const std::string& jsonString) {
+		//__android_log_print(ANDROID_LOG_INFO,"jsonWrapper.cpp","parseJson: %s", jsonString.c_str());
+
+
+
 		Mogi::JSONValue* jsonValue = new Mogi::JSONValue;
 		Mogi::JSONParser parser;
 		int result = parser.parseJSONString(jsonString, *jsonValue);
 		
+		//__android_log_print(ANDROID_LOG_INFO,"jsonWrapper.cpp","parseJson result: %d", result);
+
+
+
 		if (result >= 0) {
 			*value = (void*) jsonValue;
 			result = 0;
