@@ -25,7 +25,8 @@ extern "C" {
 	using namespace Simulation;
 
 	const char* FinalProcessShaderParameters::getVertexTemplate() const {
-		return "#HEADER\n"
+		return "// Generated: FinalProcessShaderParameters::getVertexTemplate()\n"
+		"#HEADER\n"
 		"\n"
 		"#VERTEX_INPUT vec3 position;\n"
 		"\n"
@@ -43,7 +44,8 @@ extern "C" {
 	}
 
 	const char* FinalProcessShaderParameters::getFragmentTemplate() const {
-		return "#HEADER\n"
+		return "// Generated: FinalProcessShaderParameters::getFragmentTemplate()\n"
+		"#HEADER\n"
 		"\n"
 		"//uniform sampler2D bgl_RenderedTexture;\n"
 		"//uniform sampler2D bgl_DepthTexture;\n"
@@ -67,11 +69,11 @@ extern "C" {
 
 	}
 
-	const bool FinalProcessShaderParameters::lessThan(const ShaderParameters* right) const {
+	const bool FinalProcessShaderParameters::lessThan(const ShaderParametersDynamic* right) const {
 		return false; // always equal?
 	}
 
-	ShaderParameters* FinalProcessShaderParameters::copy() const {
+	ShaderParametersDynamic* FinalProcessShaderParameters::copy() const {
 		FinalProcessShaderParameters* result = new FinalProcessShaderParameters;
 		*result = *this;
 		return result;

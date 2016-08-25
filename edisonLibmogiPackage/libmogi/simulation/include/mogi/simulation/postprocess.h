@@ -28,6 +28,7 @@ namespace Simulation {
 class MBpostprocess {
 private:
 	MBshader* basicShader;
+	FinalProcessShaderParameters mFinalProcessShaderParameters;
 
 protected:
 	Camera camera;  // this wil be set as an orthographic projection
@@ -131,6 +132,7 @@ public:
 class MBdeferredLighting: public MBpostprocess {
 private:
 	MBshader* lightingShader;
+	DeferredLightingShaderParameters mDeferredLightingShaderParameters;
 
 public:
 	MBdeferredLighting(int xRes, int yRes);

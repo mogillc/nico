@@ -3,13 +3,14 @@
  *             Copyright (C) 2016 Mogi, LLC - All Rights Reserved             *
  *                            Author: Matt Bunting                            *
  *                                                                            *
- *   Proprietary and confidential.                                            *
+ *            This program is distributed under the LGPL, version 2           *
  *                                                                            *
- *   Unauthorized copying of this file via any medium is strictly prohibited  *
- *   without the explicit permission of Mogi, LLC.                            *
+ *   This program is free software; you can redistribute it and/or modify     *
+ *   it under the terms of the GNU Lesser General Public License              *
+ *   version 2.1 as published by the Free Software Foundation;                *
  *                                                                            *
  *   See license in root directory for terms.                                 *
- *   http://www.binpress.com/license/view/l/0088eb4b29b2fcff36e42134b0949f93  *
+ *   https://github.com/mogillc/nico/tree/master/edisonLibmogiPackage/libmogi *
  *                                                                            *
  *****************************************************************************/
 
@@ -135,6 +136,8 @@ bool testCenters() {  // currently a very weak test
 		case MODEL_M42_10_S260_R:
 		case MODEL_M54_40_S250_R:
 		case MODEL_M54_60_S250_R:
+			case MODEL_XM430_W350:
+			case MODEL_XM430_W210:
 			expected[0] = 0;
 			expected[1] = 0;
 			expected[2] = 0;
@@ -194,7 +197,15 @@ bool testZeros() {  // currently a very weak test
 			expected[1] = 0;
 			expected[2] = 55;  // untouched
 			expected[3] = 56;  // untouched
-			break;
+				break;
+			case MODEL_XM430_W350:
+			case MODEL_XM430_W210:
+				angle = -150 * MOGI_PI / 180.0;
+				expected[0] = 0;
+				expected[1] = 0;
+				expected[2] = 0;
+				expected[3] = 0;
+				break;
 
 		case MODEL_MX106:
 		case MODEL_MX12W:
@@ -353,6 +364,15 @@ bool testReverse() {
 			expected[3] = 56;  // untouched
 			break;
 
+			case MODEL_XM430_W210:
+			case MODEL_XM430_W350:
+				angle = -180 * MOGI_PI / 180.0;
+				expected[0] = 0xFF;
+				expected[1] = 0x0F;
+				expected[2] = 0;
+				expected[3] = 0;
+				break;
+
 		case MODEL_EX106PLUS:
 			angle = -125.46 * MOGI_PI / 180.0;
 			expected[0] = 0xFF;
@@ -499,6 +519,17 @@ bool testInversion() {
 			buffer[0] = 0x00;
 			buffer[1] = 0x08;
 			break;
+
+
+			case MODEL_XM430_W350:
+			case MODEL_XM430_W210:
+				mc.setReverse(false);
+				expected = 0.0 * MOGI_PI / 180.0 + offset;
+				buffer[0] = 0x00;
+				buffer[1] = 0x08;
+				buffer[2] = 0x00;
+				buffer[3] = 0x00;
+				break;
 
 		case MODEL_EX106PLUS:
 			mc.setReverse(false);

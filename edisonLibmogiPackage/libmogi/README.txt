@@ -1,6 +1,5 @@
-Hexapod Libraries
-Matt Bunting
-12centdwarf <at> gmail <dot> com
+Mogi Libraries
+info <at> mogi <dot> io
 
 Introduction:
 	These libraries were designed to operate a 3DOF leg hexapod design using the Robotis Dynamixel series of motors.

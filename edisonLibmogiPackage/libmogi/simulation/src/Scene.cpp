@@ -13,6 +13,7 @@
  *                                                                            *
  *****************************************************************************/
 
+#include "mogiGL.h"
 #include "scene.h"
 #include "mogi.h"
 #include "dynamicShader.h"
@@ -96,6 +97,7 @@ extern "C" {
 	}
 
 	int Scene::sortByMeshAndDraw( Camera* cam, MBshader* shader, std::vector<Renderable*>& renderables ) {
+		checkGLError();
 		int triangles = 0;
 
 		// Order the renderables by mesh:
@@ -106,14 +108,16 @@ extern "C" {
 
 		shader->useProgram();
 
-		shader->sendInteger("nLights", (int)lights.size());
+//		shader->sendInteger("nLights", (int)lights.size());
+		shader->setInt("nLights", (int)lights.size());
 
 		for (int i = 0; i < lights.size(); i++) {
 			lights[i]->setShadowUniforms( shader, i );
 		}
 
 		Vector viewPosition = cam->getLocation();
-		shader->sendMatrix("viewPosition", viewPosition);
+//		shader->sendMatrix("viewPosition", viewPosition);
+		shader->setMatrix("viewPosition", viewPosition);
 
 		Matrix ViewProjection = cam->getProjectionMatrix() * cam->getViewMatrix();
 
@@ -125,6 +129,9 @@ extern "C" {
 			// For each node/material to be rendered for each mesh:
 			for (std::vector<Renderable*>::iterator it2 = it->second.begin(); it2 != it->second.end(); it2++) {
 				Renderable* renderable = *it2;
+				renderable->material->sendToShader(shader);
+				mesh->bindForDrawing(shader);
+
 
 				for (int j = 0; j < lights.size(); j++) {
 					lights[j]->sendToShader(shader, *(renderable->node->getModelMatrix()), j);
@@ -134,12 +141,17 @@ extern "C" {
 				Matrix modelMatrix = *renderable->node->getModelMatrix();
 				Matrix normalMatrix = modelMatrix.subMatrix(3, 3).inverse().transpose();
 
-				shader->sendMatrix("modelViewProjectionMatrix", modelViewProjectionMatrix);
-				shader->sendMatrix("normalMatrix", normalMatrix);
-				shader->sendMatrix("modelMatrix", modelMatrix);
+//				shader->sendMatrix("modelViewProjectionMatrix", modelViewProjectionMatrix);
+//				shader->sendMatrix("normalMatrix", normalMatrix);
+//				shader->sendMatrix("modelMatrix", modelMatrix);
+				shader->setMatrix("modelViewProjectionMatrix", modelViewProjectionMatrix);
+				shader->setMatrix("normalMatrix", normalMatrix);
+				shader->setMatrix("modelMatrix", modelMatrix);
 
-				renderable->material->sendToShader(shader);
 
+
+//				shader->getParameters()->sendAllUniformsToShader();
+				shader->updateUniforms();
 				triangles += mesh->draw(shader);
 			}
 			mesh->unbindFromDrawing();
@@ -152,6 +164,8 @@ extern "C" {
 
 	int Scene::draw(Camera *cam, MBshader *shader) {
 
+		checkGLError();
+
 		if( dynamic_cast<const DynamicShader*>(shader) ) {
 			std::map<MBshader*, std::vector<Renderable*> > orderedShaders;
 
@@ -160,20 +174,24 @@ extern "C" {
 			// Lights -> quantity.    Dynamic: color, position, MVP matrix
 			// Mesh/Camera -> All dynamic: MVP, MV, V, and N matrices
 
-			shader->sendInteger("nLights", (int)lights.size());	// needed for all variants of the shader, will be compiled.
+//			shader->sendInteger("nLights", (int)lights.size());	// needed for all variants of the shader, will be compiled.
+			shader->setInt("nLights", (int)lights.size());
 
-			//		std::cerr << "Beginning ordering" << std::endl;
+			checkGLError();
+
 			for (std::vector<Renderable*>::iterator it = renderables.begin(); it != renderables.end(); it++) {
 				(*it)->material->sendToShader(shader);	// Note: there is a lot of possible variability within this call
 				orderedShaders[((DynamicShader*)shader)->getActualShader()].push_back(*it);	// Add a renderable to to this shader
 			}
+
+			checkGLError();
 
 			int triangles = 0;
 			for (std::map<MBshader*, std::vector<Renderable*> >::iterator it = orderedShaders.begin(); it != orderedShaders.end(); it++) {
 				MBshader* theShader = it->first;
 				std::vector<Renderable*>& theRenderablesForThisShader = it->second;
 
-				triangles += sortByMeshAndDraw(cam, theShader, theRenderablesForThisShader);
+				triangles += sortByMeshAndDraw(cam, theShader->getMainShader(), theRenderablesForThisShader);
 			}
 			return triangles;
 		}

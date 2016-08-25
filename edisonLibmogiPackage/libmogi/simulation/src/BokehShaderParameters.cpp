@@ -31,7 +31,8 @@ extern "C" {
 	}
 	
 	const char* BokehShaderParameters::getVertexTemplate() const {
-		return "#HEADER\n"
+		return "// Generated: BokehShaderParameters::getVertexTemplate()\n"
+		"#HEADER\n"
 		"\n"
 		"#VERTEX_INPUT vec3 position;\n"
 		"\n"
@@ -48,7 +49,8 @@ extern "C" {
 	}
 
 	const char* BokehShaderParameters::getFragmentTemplate() const {
-		return "#HEADER\n"
+		return "// Generated: BokehShaderParameters::getFragmentTemplate()\n"
+		"#HEADER\n"
 		"\n"
 		"uniform sampler2D bgl_RenderedTexture;\n"
 		"uniform sampler2D bgl_DepthTexture;\n"
@@ -57,8 +59,8 @@ extern "C" {
 		"\n"
 		"#define PI  (3.14159265)\n"
 		"\n"
-		"float width = bgl_RenderedTextureWidth; //texture width\n"
-		"float height = bgl_RenderedTextureHeight; //texture height\n"
+		"//float width = bgl_RenderedTextureWidth; //texture width\n"
+		"//float height = bgl_RenderedTextureHeight; //texture height\n"
 		"\n"
 		"uniform float focalDepth;  //focal distance value in meters, but you may use autofocus option below\n"
 		"uniform float focalLength; //focal length in mm\n"
@@ -113,8 +115,8 @@ extern "C" {
 		"\n"
 		"vec2 rand(vec2 coord) //generating noise/pattern texture for dithering\n"
 		"{\n"
-		"    float noiseX;// = ((fract( 1.0 - coord.s*(width/2.0))*0.25) + (fract(coord.t*(height/2.0))*0.75))*2.0 - 1.0;\n"
-		"    float noiseY;// = ((fract( 1.0 - coord.s*(width/2.0))*0.75) + (fract(coord.t*(height/2.0))*0.25))*2.0 - 1.0;\n"
+		"    float noiseX;// = ((fract( 1.0 - coord.s*(bgl_RenderedTextureWidth/2.0))*0.25) + (fract(coord.t*(bgl_RenderedTextureHeight/2.0))*0.75))*2.0 - 1.0;\n"
+		"    float noiseY;// = ((fract( 1.0 - coord.s*(bgl_RenderedTextureWidth/2.0))*0.75) + (fract(coord.t*(bgl_RenderedTextureHeight/2.0))*0.25))*2.0 - 1.0;\n"
 		"\n"
 		"    //if (noise)\n"
 		"    //{\n"
@@ -176,8 +178,8 @@ extern "C" {
 		"\n"
 		"    // getting blur x and y step factor\n"
 		"\n"
-		"    float w = (1.0/width)*blur*maxblur+noise.x;\n"
-		"    float h = (1.0/height)*blur*maxblur+noise.y;\n"
+		"    float w = (1.0/bgl_RenderedTextureWidth)*blur*maxblur+noise.x;\n"
+		"    float h = (1.0/bgl_RenderedTextureHeight)*blur*maxblur+noise.y;\n"
 		"\n"
 		"    // calculation of final color\n"
 		"\n"
@@ -233,7 +235,7 @@ extern "C" {
 		macros["#SAMPLING_LOOP"] = unrollSamplingLoop();
 	}
 
-	const bool BokehShaderParameters::lessThan(const ShaderParameters* right) const {
+	const bool BokehShaderParameters::lessThan(const ShaderParametersDynamic* right) const {
 //		const BokehShaderParameters* Left = (const BokehShaderParameters*)left;
 		const BokehShaderParameters* Right = (const BokehShaderParameters*)right;
 
@@ -251,7 +253,7 @@ extern "C" {
 		return false;
 	}
 
-	ShaderParameters* BokehShaderParameters::copy() const {
+	ShaderParametersDynamic* BokehShaderParameters::copy() const {
 		BokehShaderParameters* result = new BokehShaderParameters;
 		*result = *this;
 		return result;

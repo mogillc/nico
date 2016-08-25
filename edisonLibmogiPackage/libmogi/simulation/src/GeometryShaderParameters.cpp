@@ -25,7 +25,8 @@ extern "C" {
 	using namespace Simulation;
 
 	const char* GeometryShaderParameters::getVertexTemplate() const {
-		return "#HEADER\n"
+		return "// Generated: GeometryShaderParameters::getVertexTemplate()\n"
+		"#HEADER\n"
 		"// Very simple shader for shadowmapping:\n"
 		"\n"
 		"#VERTEX_INPUT vec3 position;\n"
@@ -71,7 +72,8 @@ extern "C" {
 	}
 
 	const char* GeometryShaderParameters::getFragmentTemplate() const {
-		return "#HEADER\n"
+		return "// Generated: GeometryShaderParameters::getFragmentTemplate()\n"
+		"#HEADER\n"
 		"\n"
 		"// Simple fragment shader for shadowmapping:\n"
 		"uniform sampler2D normalMap[10];\n"
@@ -167,8 +169,15 @@ extern "C" {
 
 	const void GeometryShaderParameters::getMacros(std::map<std::string, std::string>& macros) const {
 
-#ifndef OPENGLES_FOUND
-		macros["#HEADER"] = "#version 410";
+//#ifndef OPENGLES_FOUND
+#ifndef GL_ES_VERSION_2_0 // also defined for 3.0
+		if(MogiGLInfo::getInstance()->getVersion() >= 410) {
+			macros["#HEADER"] = "#version 410";
+		} else if(MogiGLInfo::getInstance()->getVersion() >= 300) {
+			macros["#HEADER"] = "#version 330";	// untested
+		} else if(MogiGLInfo::getInstance()->getVersion() >= 130) {
+			macros["#HEADER"] = "#version 130";	// untested
+		}
 #endif
 
 
@@ -192,11 +201,11 @@ extern "C" {
 
 	}
 
-	const bool GeometryShaderParameters::lessThan(const ShaderParameters* right) const {
+	const bool GeometryShaderParameters::lessThan(const ShaderParametersDynamic* right) const {
 		return false; // always equal?
 	}
 
-	ShaderParameters* GeometryShaderParameters::copy() const {
+	ShaderParametersDynamic* GeometryShaderParameters::copy() const {
 		GeometryShaderParameters* result = new GeometryShaderParameters;
 		*result = *this;
 		return result;

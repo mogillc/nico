@@ -1,18 +1,87 @@
+/******************************************************************************
+ *                                                                            *
+ *             Copyright (C) 2016 Mogi, LLC - All Rights Reserved             *
+ *                          Author: Adrian Lizarraga                          *
+ *                                                                            *
+ *            This program is distributed under the LGPL, version 2           *
+ *                                                                            *
+ *   This program is free software; you can redistribute it and/or modify     *
+ *   it under the terms of the GNU Lesser General Public License              *
+ *   version 2.1 as published by the Free Software Foundation;                *
+ *                                                                            *
+ *   See license in root directory for terms.                                 *
+ *   https://github.com/mogillc/nico/tree/master/edisonLibmogiPackage/libmogi *
+ *                                                                            *
+ *****************************************************************************/
+
 //
 // Created by adrian on 2/19/16.
 //
 
 #include <mogi/port/android/JavaStaticClass.h>
+#include <mogi/port/android/AndroidEnvironment.h>
 
 using namespace Mogi;
 
-Android::JavaStaticClass::JavaStaticClass(JNIEnv *env, const std::string &className): env(env), className(className) {
-    this->clazz = env->FindClass(className.c_str());
+std::string Android::JavaStaticClass::getJClassName(jclass clazz) {
+	JNIEnv* env = Android::Environment::getInstance().getJNIEnvironment();
+
+    jclass javaClassClass = env->FindClass("java/lang/Class");
+    jmethodID javaClassNameMethod = env->GetMethodID(javaClassClass, "getName", "()Ljava/lang/String;");
+
+    jstring javaClassNameJString = (jstring)env->CallObjectMethod(clazz, javaClassNameMethod);
+
+    const char* str = env->GetStringUTFChars(javaClassNameJString, NULL);
+
+    std::string theName(str);
+
+    std::size_t found;
+    while ((found = theName.find('.')) != std::string::npos) {
+        theName[found] = '/';
+    }
+
+    env->ReleaseStringUTFChars(javaClassNameJString, str);
+
+	return theName;
+}
+
+Android::JavaStaticClass::JavaStaticClass(const std::string &className): 
+	className(className) {
+	JNIEnv* env = Android::Environment::getInstance().getJNIEnvironment();
+	this->clazz = reinterpret_cast<jclass>(
+					env->NewGlobalRef(env->FindClass(className.c_str()))
+	);
+}
+
+Android::JavaStaticClass::JavaStaticClass(jclass clazz) {
+	JNIEnv* env = Android::Environment::getInstance().getJNIEnvironment();
+	this->className = Android::JavaStaticClass::getJClassName(clazz);
+
+	this->clazz = reinterpret_cast<jclass>(
+					env->NewGlobalRef(clazz)
+	);
+}
+
+Android::JavaStaticClass::JavaStaticClass(const std::string& className, 
+										 jclass clazz) {
+	JNIEnv* env = Android::Environment::getInstance().getJNIEnvironment();
+	this->className = className;
+
+	this->clazz = reinterpret_cast<jclass>(
+					env->NewGlobalRef(clazz)
+	);
+}
+
+Android::JavaStaticClass::~JavaStaticClass() {
+	JNIEnv* env = Android::Environment::getInstance().getJNIEnvironment();
+	env->DeleteGlobalRef(this->clazz);
 }
 
 void Android::JavaStaticClass::addMethod(const std::string& methodName, const std::string& methodSignature) {
     JavaMethodInfo methodInfo;
-    methodInfo.methodID = this->env->GetStaticMethodID(this->clazz, methodName.c_str(), methodSignature.c_str());
+	JNIEnv* env = Android::Environment::getInstance().getJNIEnvironment();
+
+    methodInfo.methodID = env->GetStaticMethodID(this->clazz, methodName.c_str(), methodSignature.c_str());
     methodInfo.returnTypeInfo = this->parseReturnType(methodSignature);
 
 
@@ -20,6 +89,7 @@ void Android::JavaStaticClass::addMethod(const std::string& methodName, const st
 }
 
 void Android::JavaStaticClass::callMethod(void* returnVal, const char* methodName, ...) {
+	JNIEnv* env = Android::Environment::getInstance().getJNIEnvironment();
     JavaMethodInfo methodInfo = this->methods[methodName];
     jstring jstr;
     const char* cstr;
@@ -31,47 +101,47 @@ void Android::JavaStaticClass::callMethod(void* returnVal, const char* methodNam
     ReturnTypeInfo& returnTypeInfo = methodInfo.returnTypeInfo;
     switch (returnTypeInfo.returnType) {
         case RETURN_VOID:
-            this->env->CallStaticVoidMethodV(this->clazz, methodInfo.methodID, args);
+            env->CallStaticVoidMethodV(this->clazz, methodInfo.methodID, args);
             break;
         case RETURN_BOOLEAN:
-            *((bool*)returnVal) = (bool) (this->env->CallStaticBooleanMethodV(this->clazz, methodInfo.methodID, args));
+            *((bool*)returnVal) = (bool) (env->CallStaticBooleanMethodV(this->clazz, methodInfo.methodID, args));
             break;
         case RETURN_BYTE:
-            *((char*)returnVal) = (char) (this->env->CallStaticByteMethodV(this->clazz, methodInfo.methodID, args));
+            *((char*)returnVal) = (char) (env->CallStaticByteMethodV(this->clazz, methodInfo.methodID, args));
             break;
         case RETURN_CHAR:
-            *((char*)returnVal) = (char) (this->env->CallStaticCharMethodV(this->clazz, methodInfo.methodID, args));
+            *((char*)returnVal) = (char) (env->CallStaticCharMethodV(this->clazz, methodInfo.methodID, args));
             break;
         case RETURN_SHORT:
-            *((short*)returnVal) = (short) (this->env->CallStaticShortMethodV(this->clazz, methodInfo.methodID, args));
+            *((short*)returnVal) = (short) (env->CallStaticShortMethodV(this->clazz, methodInfo.methodID, args));
             break;
         case RETURN_INT:
-            *((int*)returnVal) = (int)(this->env->CallStaticIntMethodV(this->clazz, methodInfo.methodID, args));
+            *((int*)returnVal) = (int)(env->CallStaticIntMethodV(this->clazz, methodInfo.methodID, args));
             break;
         case RETURN_LONG:
-            *((long*)returnVal) = (long) (this->env->CallStaticLongMethodV(this->clazz, methodInfo.methodID, args));
+            *((long*)returnVal) = (long) (env->CallStaticLongMethodV(this->clazz, methodInfo.methodID, args));
             break;
         case RETURN_FLOAT:
-            *((float*)returnVal) = (float) (this->env->CallStaticFloatMethodV(this->clazz, methodInfo.methodID, args));
+            *((float*)returnVal) = (float) (env->CallStaticFloatMethodV(this->clazz, methodInfo.methodID, args));
             break;
         case RETURN_DOUBLE:
-            *((double *)returnVal) = (double) (this->env->CallStaticDoubleMethodV(this->clazz, methodInfo.methodID, args));
+            *((double *)returnVal) = (double) (env->CallStaticDoubleMethodV(this->clazz, methodInfo.methodID, args));
             break;
         case RETURN_STRING:
-            jstr = (jstring) this->env->CallStaticObjectMethodV(this->clazz, methodInfo.methodID, args);
-            cstr = this->env->GetStringUTFChars(jstr, NULL);
+            jstr = (jstring) env->CallStaticObjectMethodV(this->clazz, methodInfo.methodID, args);
+            cstr = env->GetStringUTFChars(jstr, NULL);
 
             cppStr = (std::string*) returnVal;
             cppStr->clear();
             cppStr->append(cstr);
 
-            this->env->ReleaseStringUTFChars(jstr, cstr);
+            env->ReleaseStringUTFChars(jstr, cstr);
             break;
         case RETURN_OBJECT:
-            *((jobject*)returnVal) = (jobject) (this->env->CallStaticObjectMethodV(this->clazz, methodInfo.methodID, args));
+            *((jobject*)returnVal) = (jobject) (env->CallStaticObjectMethodV(this->clazz, methodInfo.methodID, args));
             break;
         case RETURN_ARRAY:
-            *((jarray*)returnVal) = (jarray) (this->env->CallStaticObjectMethodV(this->clazz, methodInfo.methodID, args)); // TODO: make sure this is correct and test it out
+            *((jarray*)returnVal) = (jarray) (env->CallStaticObjectMethodV(this->clazz, methodInfo.methodID, args)); // TODO: make sure this is correct and test it out
                                                                                                                            // See: http://docs.oracle.com/javase/1.5.0/docs/guide/jni/spec/functions.html
             break;
         default:

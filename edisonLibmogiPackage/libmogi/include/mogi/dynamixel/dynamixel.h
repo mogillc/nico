@@ -3,13 +3,14 @@
  *             Copyright (C) 2016 Mogi, LLC - All Rights Reserved             *
  *                            Author: Matt Bunting                            *
  *                                                                            *
- *   Proprietary and confidential.                                            *
+ *            This program is distributed under the LGPL, version 2           *
  *                                                                            *
- *   Unauthorized copying of this file via any medium is strictly prohibited  *
- *   without the explicit permission of Mogi, LLC.                            *
+ *   This program is free software; you can redistribute it and/or modify     *
+ *   it under the terms of the GNU Lesser General Public License              *
+ *   version 2.1 as published by the Free Software Foundation;                *
  *                                                                            *
  *   See license in root directory for terms.                                 *
- *   http://www.binpress.com/license/view/l/0088eb4b29b2fcff36e42134b0949f93  *
+ *   https://github.com/mogillc/nico/tree/master/edisonLibmogiPackage/libmogi *
  *                                                                            *
  *****************************************************************************/
 
@@ -57,6 +58,9 @@ typedef enum {
 	MODEL_MX28 = 29, /*!< Robotis Dynamixel MX-28. */
 	MODEL_MX64 = 310, /*!< Robotis Dynamixel MX-64. */
 	MODEL_MX106 = 320, /*!< Robotis Dynamixel MX-106. */
+
+	MODEL_XM430_W210 = 1030, /*!< Robotis Dynamixel XM-430-W210. */
+	MODEL_XM430_W350 = 1020, /*!< Robotis Dynamixel XM-430-W350. */
 
 	MODEL_XL320 = 350, /*!< Robotis Dynamixel XL-320. */
 
@@ -278,6 +282,57 @@ enum {
 #define REG_AX_Punch				(48)
 
 #define REG_EX106_Current			(56)
+
+// XM series:
+#define REG_XM_Model_Number			(0)
+#define REG_XM_Model_Info			(2)
+#define REG_XM_Firmware_Ver			(6)
+#define REG_XM_ID					(7)
+#define REG_XM_Baud					(8)
+#define REG_XM_Ret_Delay_Time		(9)
+#define REG_XM_Operating_Mode		(11)
+#define REG_XM_Protocol_Version		(13)
+#define REG_XM_Homing_Offset		(20)
+#define REG_XM_Moving_Threshold		(24)
+#define REG_XM_Temp_Lim				(31)
+#define REG_XM_Voltage_Lim_Hi		(32)
+#define REG_XM_Voltage_Lim_Low		(34)
+#define REG_XM_PWM_Limit			(36)
+#define REG_XM_Current_Limit		(38)
+#define REG_XM_Accelerate_Lim		(40)
+#define REG_XM_Velocity_Lim			(44)
+#define REG_XM_Max_Position_Lim		(48)
+#define REG_XM_Min_Position_Lim		(52)
+#define REG_XM_Shutdown				(63)
+
+#define REG_XM_Torque_EN			(64)
+#define REG_XM_LED					(65)
+#define REG_XM_Vel_I_Gain			(76)
+#define REG_XM_Vel_P_Gain			(78)
+#define REG_XM_Pos_D_Gain			(80)
+#define REG_XM_Pos_I_Gain			(82)
+#define REG_XM_Pos_P_Gain			(84)
+#define REG_XM_Gain_FF_2			(88)
+#define REG_XM_Gain_FF_1			(90)
+#define REG_XM_Goal_PWM				(100)
+#define REG_XM_Goal_Current			(102)
+#define REG_XM_Goal_Vel				(104)
+#define REG_XM_Profile_Acceleration	(108)
+#define REG_XM_Profile_Velocity		(112)
+#define REG_XM_Goal_Pos				(116)
+#define REG_XM_Realtime_Tick		(120)
+#define REG_XM_Moving				(122)
+#define REG_XM_Moving_Status		(123)
+#define REG_XM_Present_PWM			(124)
+#define REG_XM_Present_Current		(126)
+#define REG_XM_Present_Speed		(128)
+#define REG_XM_Present_Pos			(132)
+#define REG_XM_Velocity_Trajectory	(136)
+#define REG_XM_Position_Trajectory	(140)
+#define REG_XM_Present_Voltage		(144)
+#define REG_XM_Present_Temp			(146)
+#define REG_XM_Indirect_Add(x)		((x)+168)	// up to 256
+#define REG_XM_Indirect_Data(x)		((x)+244)	// up to 256
 
 // Pro:
 #define REG_PRO_Model_Number		(0)

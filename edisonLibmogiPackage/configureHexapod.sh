@@ -172,6 +172,17 @@ if [ $? != 0 ]; then
 	exit 2
 fi
 
+# mogid:
+#echo "Installing mogid .......... "
+#echo "############### MOGID ###############" >> ${LOGFILE}
+#
+#cmake_and_build mogid ${LOGFILE}
+#if [ $? != 0 ]; then
+#echo "Failed to compile and install, see log file: ${LOGFILE}"
+#exit 2
+#fi
+
+
 # the final example programs
 echo "Installing the dance program ... "
 echo "############### EXAMPLES ###############" >> ${LOGFILE}

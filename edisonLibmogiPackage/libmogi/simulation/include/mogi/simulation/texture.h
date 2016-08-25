@@ -102,8 +102,6 @@ namespace Mogi {
 			GLint getInternalFormat();
 		};
 		
-		std::string glGetErrorToString(GLenum Status);
-		
 		GLuint loadTexture(const char *name);
 	}
 }

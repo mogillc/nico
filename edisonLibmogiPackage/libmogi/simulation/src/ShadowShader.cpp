@@ -12,7 +12,7 @@
  *   http://www.binpress.com/license/view/l/0088eb4b29b2fcff36e42134b0949f93  *
  *                                                                            *
  *****************************************************************************/
-
+#include "shader.h"
 #include "dynamicShader.h"
 
 #include <string>
@@ -27,50 +27,75 @@ extern "C" {
 	using namespace Mogi;
 	using namespace Simulation;
 
-	ShadowShader::ShadowShader() {
+	ShadowShader::ShadowShader()  {
 		static int instanceCount = 0;
 		std::stringstream shaderName("");
 		shaderName << "ShadowShader_" << instanceCount++;
-//		actualShader->setName(shaderName.str());
-//		std::cout << "Generated shader: " << actualShader->getName();
+		//		actualShader->setName(shaderName.str());
+		//		std::cout << "Generated shader: " << actualShader->getName();
 		this->setName(shaderName.str());
+		//		delete params;
+		//		params = new ShadowShaderParameters;
 	}
 
 	ShadowShader::~ShadowShader() {
 	}
 
-	ShadowShaderParameters* ShadowShader::getParameters() {
-		if (parameters == NULL) {
-			parameters = new ShadowShaderParameters;
-		}
-		return (ShadowShaderParameters*)parameters;
+	ShadowShaderParameters* ShadowShader::getParametersMaterial() {
+		//		if (params == NULL) {
+		//			params = new ShadowShaderParameters;
+		//		}
+		return (ShadowShaderParameters*)getParameters();
 	}
 
 
-	int ShadowShader::sendInteger(std::string name, int value) {
+	void ShadowShader::setUniform(const std::string& name, void* value, int index) {
+//	int ShadowShader::sendInteger(std::string name, int value) {
 		if (name.compare("nLights") == 0) {
-			getParameters()->numberOfLights = value;
-			return 0;
+			if(getParametersMaterial()->numberOfLights != *(GLint*)value) {
+				getParametersMaterial()->numberOfLights = *(GLint*)value;
+				getParametersMaterial()->allocateBasedOnLightCount();
+			}
+
+			reuseProgram();
+			return;
 		} else if(name.compare("colorSource") == 0) {
-//			getParameters()->colorMapEnableFromMaterial = value;
-			getParameters()->mColorSource = (ShadowShaderParameters::ColorSource)value;
-			return 0;
+			//			getParameters()->colorMapEnableFromMaterial = value;
+			getParametersMaterial()->mColorSource = *(ShadowShaderParameters::ColorSource*)value;
+			//			std::cout << "Reconfiguring shader after setting colorSource" << std::endl;
+			reuseProgram();
+			return;
 		} else if(name.compare("normalMapEnable") == 0) {
-			getParameters()->normalMapEnableFromMaterial = value;
-			return 0;
+			getParametersMaterial()->normalMapEnableFromMaterial = *(GLint*)value;
+			reuseProgram();
+			return;
 		} else if(name.compare("specularityMapEnable") == 0) {
-			getParameters()->specularMapEnableFromMaterial = value;
-			return 0;
+			getParametersMaterial()->specularMapEnableFromMaterial = *(GLint*)value;
+			reuseProgram();
+			return;
 		} else if(name.compare("heightMapEnable") == 0) {
-			getParameters()->disparityMapEnableFromMaterial = value;
-			return 0;
+			getParametersMaterial()->disparityMapEnableFromMaterial = *(GLint*)value;
+			reuseProgram();
+			return;
 		}
 
-		return MBshader::sendInteger(name, value);
+//		getParameters()->
+//		setInt(name, value);
+		DynamicShader::setUniform(name, value, index);
+//		return 0;//MBshader::sendInteger(name, value);
 	}
+
+	ShaderParameters* ShadowShader::allocateParameters() {
+		std::cout << "In ShadowShader::allocateParameters()" << std::endl;
+		if(params == NULL) {
+			params = new ShadowShaderParameters;
+			params->setParent(this);
+		}
+		return params;
+	}
+
 
 	
-
 #ifdef _cplusplus
 }
 #endif

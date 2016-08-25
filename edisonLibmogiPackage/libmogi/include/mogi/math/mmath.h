@@ -3,13 +3,14 @@
  *             Copyright (C) 2016 Mogi, LLC - All Rights Reserved             *
  *                            Author: Matt Bunting                            *
  *                                                                            *
- *   Proprietary and confidential.                                            *
+ *            This program is distributed under the LGPL, version 2           *
  *                                                                            *
- *   Unauthorized copying of this file via any medium is strictly prohibited  *
- *   without the explicit permission of Mogi, LLC.                            *
+ *   This program is free software; you can redistribute it and/or modify     *
+ *   it under the terms of the GNU Lesser General Public License              *
+ *   version 2.1 as published by the Free Software Foundation;                *
  *                                                                            *
  *   See license in root directory for terms.                                 *
- *   http://www.binpress.com/license/view/l/0088eb4b29b2fcff36e42134b0949f93  *
+ *   https://github.com/mogillc/nico/tree/master/edisonLibmogiPackage/libmogi *
  *                                                                            *
  *****************************************************************************/
 
@@ -22,6 +23,8 @@
 #define UNIX
 //#include <stdlib.h>
 #endif
+
+#include <ostream>
 
 #ifdef UNIX
 //	//#define DEBUG_MATRICES
@@ -143,6 +146,11 @@ public:
 	const Matrix& operator/(const MogiDouble&) const;
 	const Matrix& operator^(const int&) const;
 	const Matrix& operator*(const Matrix&) const;  // dot product
+
+	friend std::ostream& operator<< (std::ostream& stream, const Matrix& matrix) {
+		matrix.print();
+		return stream;
+	}
 
 	/// \endcond
 
@@ -498,6 +506,7 @@ public:
 	 @return The quaternion inverse.
 	 */
 	const Quaternion inverse() const;
+
 };
 
 /*!

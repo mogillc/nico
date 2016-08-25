@@ -109,13 +109,16 @@ set(LIBS ${LIBS} GLcommon)
 add_executable(hexapodGL src/hexapodGL.cpp )
 add_executable(armGL src/arm.cpp )
 add_executable(simple src/simple.cpp)
+add_executable(testSDL src/testSDL.cpp)
 
 target_link_libraries(hexapodGL ${LIBS})
 target_link_libraries(armGL ${LIBS})
 target_link_libraries(simple ${LIBS})
+target_link_libraries(testSDL ${LIBS})
 
 if (NOT APPLE) #ADDED BY ADRIAN
 	target_link_libraries(hexapodGL ${GLEW_LIBRARY} )
 	target_link_libraries(armGL ${GLEW_LIBRARY} )
 	target_link_libraries(simple ${GLEW_LIBRARY} )
+	target_link_libraries(testSDL ${GLEW_LIBRARY} )
 endif()

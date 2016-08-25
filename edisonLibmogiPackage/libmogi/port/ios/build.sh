@@ -10,6 +10,8 @@ if [[ $# -gt 1 ]] ; then
 	exit 1
 fi
 
+SDK_OS="iphoneos9.3"
+SDK_SIMULATOR="iphonesimulator9.3"
 
 BUILD_DIRECTORY="build-ios"	# output directory name
 
@@ -24,14 +26,14 @@ fi
 
 cd ${BUILD_DIRECTORY}
 cmake -DCMAKE_TOOLCHAIN_FILE=../iOS.cmake ../../.. -DIOS_PLATFORM=OS -DBUILD_FOR_IOS=ON -DBUILD_SIMULATION=ON -DBUILD_WITH_SDL2=OFF -G Xcode
-xcodebuild -target mogi-static -configuration Debug -sdk iphoneos9.2
-xcodebuild -target mbsimulation-static -configuration Debug -sdk iphoneos9.2
+xcodebuild -target mogi-static -configuration Debug -sdk ${SDK_OS}
+xcodebuild -target mbsimulation-static -configuration Debug -sdk ${SDK_OS}
 cd ..
 
 cd ${BUILD_DIRECTORY}
 cmake -DCMAKE_TOOLCHAIN_FILE=../iOS.cmake ../../.. -DIOS_PLATFORM=SIMULATOR -DBUILD_FOR_IOS=ON -DBUILD_SIMULATION=ON -DBUILD_WITH_SDL2=OFF -G Xcode
-xcodebuild -target mogi-static -configuration Debug -sdk iphonesimulator9.2
-xcodebuild -target mbsimulation-static -configuration Debug -sdk iphonesimulator9.2
+xcodebuild -target mogi-static -configuration Debug -sdk ${SDK_SIMULATOR}
+xcodebuild -target mbsimulation-static -configuration Debug -sdk ${SDK_SIMULATOR}
 cd ..
 
 lipo -create ${BUILD_DIRECTORY}/simulation/Debug-iphoneos/libmbsimulation.a ${BUILD_DIRECTORY}/simulation/Debug-iphonesimulator/libmbsimulation.a -output libmogisim.a

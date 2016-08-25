@@ -13,9 +13,12 @@
  *                                                                            *
  *****************************************************************************/
 
+#include "mogiGL.h"
+#include "shader.h"
 #include "dynamicShader.h"
 
 #include <string>
+#include <sstream>
 #include <iostream>
 #include <typeinfo>
 #include <cxxabi.h>
@@ -28,7 +31,7 @@ extern "C" {
 	using namespace Mogi;
 	using namespace Simulation;
 
-	bool ShaderParametersCompare::operator()(const ShaderParameters* left, const ShaderParameters* right) const
+	bool ShaderParametersCompare::operator()(const ShaderParametersDynamic* left, const ShaderParametersDynamic* right) const
 	{
 		if (typeid(*left) == typeid(*right)) {
 			return left->lessThan(right);
@@ -37,15 +40,14 @@ extern "C" {
 		return typeid(*left).before( typeid(*right) );
 	}
 
-	bool replace(std::string& str, const std::string& oldString, const std::string& newString);
-	void replaceAll(std::string& str, const std::string& oldString, const std::string& newString);
+	
 
-	std::map<ShaderParameters*, MBshader*, ShaderParametersCompare> ShaderFactory::instances = std::map<ShaderParameters*, MBshader*, ShaderParametersCompare>(ShaderParametersCompare());
+	std::map<ShaderParametersDynamic*, StaticShader*, ShaderParametersCompare> ShaderFactory::instances = std::map<ShaderParametersDynamic*, StaticShader*, ShaderParametersCompare>(ShaderParametersCompare());
 	int ShaderFactory::instanceCount = 0;
 
-	MBshader* ShaderFactory::getInstance( ShaderParameters* parameters) {
-		ShaderParameters* key = parameters->copy();
-		MBshader* instance = instances[key];	// need to be careful to not add a dynamic reference here
+	StaticShader* ShaderFactory::getInstance( ShaderParametersDynamic* parameters) {
+		ShaderParametersDynamic* key = parameters->copy();
+		StaticShader* instance = instances[key];	// need to be careful to not add a dynamic reference here
 		if (instance == NULL) {
 			instance = create(key);
 			instances[key] = instance;
@@ -57,8 +59,9 @@ extern "C" {
 		return instance;
 	}
 
-	MBshader* ShaderFactory::create(const ShaderParameters* parameters) {
+	StaticShader* ShaderFactory::create(const ShaderParametersDynamic* parameters) {
 		StaticShader* instance = new StaticShader;
+
 		std::string vertexShaderSource;
 		std::string fragmentShaderSource;
 		std::map<std::string, std::string> macros;
@@ -66,13 +69,15 @@ extern "C" {
 		getGlobalMacros(macros);
 
 		vertexShaderSource = parameters->getVertexTemplate();
-		fragmentShaderSource = parameters->getFragmentTemplate();
-		parameters->getMacros(macros);
+		fragmentShaderSource = ((ShaderParametersDynamic*)parameters)->getFragmentTemplate();
+		((ShaderParametersDynamic*)parameters)->getMacros(macros);
 
 		for (std::map<std::string, std::string>::iterator it = macros.begin(); it != macros.end(); it++) {
 			replaceAll(vertexShaderSource, it->first, it->second);
 			replaceAll(fragmentShaderSource, it->first, it->second);
 		}
+//		std::cout << vertexShaderSource;
+//		std::cout << fragmentShaderSource;
 
 		instance->initializeFromSource(vertexShaderSource, fragmentShaderSource);
 		return instance;
@@ -80,12 +85,15 @@ extern "C" {
 
 	void ShaderFactory::getGlobalMacros(std::map<std::string, std::string>& macros) {
 
-		if (MogiGLInfo::getInstance()->getVersion() >= 300) {
-#ifdef OPENGLES_FOUND
-			macros["#HEADER"] = "#version 300 es\nprecision highp float;";
-#else
-			macros["#HEADER"] = "#version 330";
-#endif
+		std::stringstream header("");
+
+		if (MogiGLInfo::getInstance()->getVersion() >= 130) {
+			header << "#version " << MogiGLInfo::getInstance()->getGLSLVersionStr();
+			if(MogiGLInfo::getInstance()->isGLES()) {
+				 header << " es\nprecision highp float;";
+			}
+			macros["#HEADER"] = header.str();
+
 			macros["#VERTEX_INPUT"] = "in";
 			macros["#VERTEX_OUTPUT"] = "out";
 			macros["#FRAGMENT_INPUT"] = "in";
@@ -93,11 +101,11 @@ extern "C" {
 			macros["#FRAGMENT_OUTCOLOR"] = "FragColor";
 			macros["#TEXTURE_FUNC"] = "texture";
 		} else {
-#ifdef OPENGLES_FOUND
-			macros["#HEADER"] = "precision highp float;";
-#else
-			macros["#HEADER"] = "";
-#endif
+			//header << "#version " << MogiGLInfo::getInstance()->getGLSLVersionStr();
+			if(MogiGLInfo::getInstance()->isGLES()) {
+				header << "precision highp float;";
+			}
+			macros["#HEADER"] = header.str();
 
 			macros["#VERTEX_INPUT"] = "attribute";
 			macros["#VERTEX_OUTPUT"] = "varying";
@@ -109,23 +117,13 @@ extern "C" {
 
 	}
 
-	bool replace(std::string& str, const std::string& from, const std::string& to) {
-		size_t start_pos = str.find(from);
-		if(start_pos == std::string::npos)
-			return false;
-		str.replace(start_pos, from.length(), to);
-		return true;
+	bool ShaderFactory::instanceExists(ShaderParametersDynamic* parameters) {
+		ShaderParametersDynamic* key = parameters->copy();
+//		MBshader* instance = instances[key];	// need to be careful to not add a dynamic reference here
+
+		return instances[key] != NULL;
 	}
 
-	void replaceAll(std::string& str, const std::string& from, const std::string& to) {
-		if(from.empty())
-			return;
-		size_t start_pos = 0;
-		while((start_pos = str.find(from, start_pos)) != std::string::npos) {
-			str.replace(start_pos, from.length(), to);
-			start_pos += to.length(); // In case 'to' contains 'from', like replacing 'x' with 'yx'
-		}
-	}
 
 
 #ifdef _cplusplus

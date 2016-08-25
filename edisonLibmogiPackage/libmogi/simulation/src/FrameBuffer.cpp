@@ -13,8 +13,11 @@
  *                                                                            *
  *****************************************************************************/
 
+#include "mogiGL.h"
 #include "framebuffer.h"
 #include <iostream>
+
+
 
 #ifdef _cplusplus
 extern "C" {
@@ -34,22 +37,28 @@ void _FrameBuffer::initialize(int numberOfRenderTextures, int xRes, int yRes) {
 
 	// std::cout << "Creating depthTexture: " << std::endl;
 	depthTexture.create(xResolution, yResolution, true);
-#ifdef OPENGLES_FOUND
+	if(MogiGLInfo::getInstance()->isGLES()) {
+//#ifdef OPENGLES_FOUND
 	// TODO: OpenGLES is this even needed?
-#else
+//#else
+	} else {
 	depthTexture.setType(GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT32F);
-#endif
+//#endif
+	}
 
 	//std::cout << "_FrameBuffer::initialize(): Creating " << numberOfRenderTextures << " renderTextures: " << std::endl;
 	for (int i = 0; i < numberOfRenderTextures; i++) {
 	//	std::cout << " -- " << i+1 << "...";
 		Texture *newTexture = new Texture;
 		newTexture->create(xResolution, yResolution, false);
-#ifdef OPENGLES_FOUND
-		// TODO: OpenGLES is this even needed?
-#else
+		if(MogiGLInfo::getInstance()->isGLES()) {
+//#ifdef OPENGLES_FOUND
+//		// TODO: OpenGLES is this even needed?
+//#else
+		} else {
 		newTexture->setType(GL_RGBA, GL_RGBA32F);
-#endif
+//#endif
+		}
 		renderTextures.push_back(newTexture);
 	//	std::cout << "Done." << std::endl;
 	}
@@ -72,7 +81,8 @@ _FrameBuffer::~_FrameBuffer() {
 			case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
 				std::cerr << "GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT";
 				break;
-#ifdef OPENGLES_FOUND
+//#ifdef OPENGLES_FOUND
+#ifdef GL_ES_VERSION_2_0 // also defined for 3.0
 			case GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS:
 				std::cerr << "GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS";
 				break;
@@ -164,7 +174,8 @@ int _FrameBuffer::resize(int width, int height) {
 }
 
 void _FrameBuffer::attachFramebufferForReading() {
-#ifdef OPENGLES_FOUND
+//#ifdef OPENGLES_FOUND
+#ifdef GL_ES_VERSION_2_0 // also defined for 3.0
 	std::cerr << "_FrameBuffer::attachFramebufferForReading() is unsupported" << std::endl;
 #else
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, frameBuffer);
@@ -172,10 +183,12 @@ void _FrameBuffer::attachFramebufferForReading() {
 }
 
 void _FrameBuffer::attachFramebuffer() {
-#ifdef OPENGLES_FOUND
+//#ifdef OPENGLES_FOUND
+#ifdef GL_ES_VERSION_2_0 // also defined for 3.0
 	glGetIntegerv(GL_FRAMEBUFFER_BINDING, &priorFrameBuffer);
 	glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);	// TODO: test this
-	if (MogiGLInfo::getInstance()->getVersion() < 300) {
+	if (MogiGLInfo::getInstance()->getVersion() < 130) {	// GLes2?
+//		std::cout << "_FrameBuffer::attachFramebuffer() for  GLES 2.0!" << std::endl;
 		glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,renderTextures[0]->getTexture(),0);
 		glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D, depthTexture.getTexture(), 0);
 
@@ -189,11 +202,19 @@ void _FrameBuffer::attachFramebuffer() {
 }
 
 void _FrameBuffer::removeFramebuffer() {
-#ifdef OPENGLES_FOUND
+
+	checkGLError();
+
+//#ifdef OPENGLES_FOUND
+#ifdef GL_ES_VERSION_2_0 // also defined for 3.0
 	glBindFramebuffer(GL_FRAMEBUFFER, priorFrameBuffer);	// TODO: test this
 #else
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+//	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, priorFrameBuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, priorFrameBuffer);
 #endif
+
+	checkGLError();
+
 }
 
 void _FrameBuffer::setRenderUniform(int texture, std::string name) {

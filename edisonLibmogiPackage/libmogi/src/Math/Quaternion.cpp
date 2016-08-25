@@ -3,13 +3,14 @@
  *             Copyright (C) 2016 Mogi, LLC - All Rights Reserved             *
  *                            Author: Matt Bunting                            *
  *                                                                            *
- *   Proprietary and confidential.                                            *
+ *            This program is distributed under the LGPL, version 2           *
  *                                                                            *
- *   Unauthorized copying of this file via any medium is strictly prohibited  *
- *   without the explicit permission of Mogi, LLC.                            *
+ *   This program is free software; you can redistribute it and/or modify     *
+ *   it under the terms of the GNU Lesser General Public License              *
+ *   version 2.1 as published by the Free Software Foundation;                *
  *                                                                            *
  *   See license in root directory for terms.                                 *
- *   http://www.binpress.com/license/view/l/0088eb4b29b2fcff36e42134b0949f93  *
+ *   https://github.com/mogillc/nico/tree/master/edisonLibmogiPackage/libmogi *
  *                                                                            *
  *****************************************************************************/
 
@@ -175,14 +176,10 @@ Quaternion& Quaternion::operator*=(const Quaternion& param)  // A *= B (A = A*B)
 	Quaternion q1, q2, result;
 	q1 = *this;
 	q2 = param;
-	result(0, 0) = q1(0, 0) * q2(0, 0) - q1(1, 0) * q2(1, 0)
-			- q1(2, 0) * q2(2, 0) - q1(3, 0) * q2(3, 0);
-	result(1, 0) = q1(0, 0) * q2(1, 0) + q1(1, 0) * q2(0, 0)
-			+ q1(2, 0) * q2(3, 0) - q1(3, 0) * q2(2, 0);
-	result(2, 0) = q1(0, 0) * q2(2, 0) - q1(1, 0) * q2(3, 0)
-			+ q1(2, 0) * q2(0, 0) + q1(3, 0) * q2(1, 0);
-	result(3, 0) = q1(0, 0) * q2(3, 0) + q1(1, 0) * q2(2, 0)
-			- q1(2, 0) * q2(1, 0) + q1(3, 0) * q2(0, 0);
+	result(0, 0) = q1(0, 0) * q2(0, 0) - q1(1, 0) * q2(1, 0) - q1(2, 0) * q2(2, 0) - q1(3, 0) * q2(3, 0);
+	result(1, 0) = q1(0, 0) * q2(1, 0) + q1(1, 0) * q2(0, 0) + q1(2, 0) * q2(3, 0) - q1(3, 0) * q2(2, 0);
+	result(2, 0) = q1(0, 0) * q2(2, 0) - q1(1, 0) * q2(3, 0) + q1(2, 0) * q2(0, 0) + q1(3, 0) * q2(1, 0);
+	result(3, 0) = q1(0, 0) * q2(3, 0) + q1(1, 0) * q2(2, 0) - q1(2, 0) * q2(1, 0) + q1(3, 0) * q2(0, 0);
 
 	*this = result;
 	return *this;

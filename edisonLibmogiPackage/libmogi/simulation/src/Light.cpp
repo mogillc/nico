@@ -75,17 +75,20 @@ extern "C" {
 	}
 
 	void MBlight::setShadowUniforms(MBshader *shader, int location) {
-		char str[64];
+//		char str[64];
 		frameBuffer->setDepthUniform("shadowMap");
 		frameBuffer->setDepthIndex(location);
 		frameBuffer->sendTexturesToShader(shader);
 
-		sprintf(str, "shadowEnable[%d]", location);
-		shader->sendInteger(str, shadowEnable);
-		sprintf(str, "mapWidth[%d]", location);
-		shader->sendFloat(str, width);
-		sprintf(str, "mapHeight[%d]", location);
-		shader->sendFloat(str, height);
+//		sprintf(str, "shadowEnable[%d]", location);
+//		shader->sendInteger(str, shadowEnable);
+		shader->setInt("shadowEnable", shadowEnable, 0);
+//		sprintf(str, "mapWidth[%d]", location);
+//		shader->sendFloat(str, width);
+		shader->setFloat("mapWidth", width, 0);
+//		sprintf(str, "mapHeight[%d]", location);
+//		shader->sendFloat(str, height);
+		shader->setFloat("mapHeight", height, 0);
 	}
 
 	void MBlight::setLocation(double x, double y, double z) {
@@ -185,16 +188,19 @@ extern "C" {
 	void MBpointLight::sendToShader(MBshader *shader, const Matrix& modelMatrix,
 									int index) {
 		Matrix shadowMatrix = buildShadowMapMatrix(modelMatrix);
-		char variableName[64];
+//		char variableName[64];
 
-		sprintf(variableName, "lightModelViewProjectionMatrix[%d]", index);
-		shader->sendMatrix(variableName, shadowMatrix);
+//		sprintf(variableName, "lightModelViewProjectionMatrix[%d]", index);
+//		shader->sendMatrix(variableName, shadowMatrix);
+		shader->setMatrix("lightModelViewProjectionMatrix", shadowMatrix, index);
 
-		sprintf(variableName, "lightPos[%d]", index);
-		shader->sendMatrix(variableName, location);
+//		sprintf(variableName, "lightPos[%d]", index);
+//		shader->sendMatrix(variableName, location);
+		shader->setMatrix("lightPos", location, index);
 
-		sprintf(variableName, "lightColor[%d]", index);
-		shader->sendMatrix(variableName, color);
+//		sprintf(variableName, "lightColor[%d]", index);
+//		shader->sendMatrix(variableName, color);
+		shader->setMatrix("lightColor", color, index);
 
 //		sprintf(variableName, "kc[%d]", index);
 //		shader->sendFloat(variableName, attenuationConstant);
@@ -210,23 +216,28 @@ extern "C" {
 		kAtt(1) = attenuationLinear;
 		kAtt(2) = attenuationQuadratic;
 		
-		sprintf(variableName, "kAtt[%d]", index);
-		shader->sendMatrix(variableName, kAtt);
+//		sprintf(variableName, "kAtt[%d]", index);
+//		shader->sendMatrix(variableName, kAtt);
+		shader->setMatrix("kAtt", kAtt, index);
+
 	}
 
 	void MBspotLight::sendToShader(MBshader *shader, const Matrix& modelMatrix,
 								   int index) {
 		Matrix shadowMatrix = buildShadowMapMatrix(modelMatrix);
-		char variableName[64];
+//		char variableName[64];
 
-		sprintf(variableName, "lightModelViewProjectionMatrix[%d]", index);
-		shader->sendMatrix(variableName, shadowMatrix);
+//		sprintf(variableName, "lightModelViewProjectionMatrix[%d]", index);
+		//		shader->sendMatrix(variableName, shadowMatrix);
+		shader->setMatrix("lightModelViewProjectionMatrix", shadowMatrix, index);
 
-		sprintf(variableName, "lightPos[%d]", index);
-		shader->sendMatrix(variableName, location);
+//		sprintf(variableName, "lightPos[%d]", index);
+		//		shader->sendMatrix(variableName, location);
+		shader->setMatrix("lightPos", location, index);
 
-		sprintf(variableName, "lightColor[%d]", index);
-		shader->sendMatrix(variableName, color);
+//		sprintf(variableName, "lightColor[%d]", index);
+		//		shader->sendMatrix(variableName, color);
+		shader->setMatrix("lightColor", color, index);
 
 //		sprintf(variableName, "kc[%d]", index);
 //		shader->sendFloat(variableName, attenuationConstant);
@@ -242,23 +253,27 @@ extern "C" {
 		kAtt(1) = attenuationLinear;
 		kAtt(2) = attenuationQuadratic;
 
-		sprintf(variableName, "kAtt[%d]", index);
-		shader->sendMatrix(variableName, kAtt);
+//		sprintf(variableName, "kAtt[%d]", index);
+		//		shader->sendMatrix(variableName, kAtt);
+		shader->setMatrix("kAtt", kAtt, index);
 	}
 
 	void MBdirectionalLight::sendToShader(MBshader *shader,
 										  const Matrix &modelMatrix, int index) {
 		Matrix shadowMatrix = buildShadowMapMatrix(modelMatrix);
-		char variableName[64];
+//		char variableName[64];
 
-		sprintf(variableName, "lightModelViewProjectionMatrix[%d]", index);
-		shader->sendMatrix(variableName, shadowMatrix);
+//		sprintf(variableName, "lightModelViewProjectionMatrix[%d]", index);
+		//		shader->sendMatrix(variableName, shadowMatrix);
+		shader->setMatrix("lightModelViewProjectionMatrix", shadowMatrix, index);
 
-		sprintf(variableName, "lightPos[%d]", index);
-		shader->sendMatrix(variableName, location);
+//		sprintf(variableName, "lightPos[%d]", index);
+		//		shader->sendMatrix(variableName, location);
+		shader->setMatrix("lightPos", location, index);
 
-		sprintf(variableName, "lightColor[%d]", index);
-		shader->sendMatrix(variableName, color);
+//		sprintf(variableName, "lightColor[%d]", index);
+		//		shader->sendMatrix(variableName, color);
+		shader->setMatrix("lightColor", color, index);
 	}
 
 	void MBspotLight::setAttenuationFactors(float constant, float linear, float quadratic) {

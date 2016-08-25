@@ -25,7 +25,8 @@ extern "C" {
 	using namespace Simulation;
 
 	const char* ShadowMapShaderParameters::getVertexTemplate() const {
-		return "#HEADER\n"
+		return "// Generated: ShadowMapShaderParameters::getVertexTemplate()\n"
+		"#HEADER\n"
 		"#VERTEX_INPUT vec3 position;\n"
 		"uniform mat4 modelViewProjectionMatrix;\n"
 		"\n"
@@ -35,7 +36,8 @@ extern "C" {
 	}
 
 	const char* ShadowMapShaderParameters::getFragmentTemplate() const {
-		return "#HEADER\n"
+		return "// Generated: ShadowMapShaderParameters::getFragmentTemplate()\n"
+		"#HEADER\n"
 		"\n"
 		"#FRAGMENT_OUTPUT\n"
 		"\n"
@@ -48,11 +50,11 @@ extern "C" {
 
 	}
 
-	const bool ShadowMapShaderParameters::lessThan(const ShaderParameters* right) const {
+	const bool ShadowMapShaderParameters::lessThan(const ShaderParametersDynamic* right) const {
 		return false; // always equal?
 	}
 
-	ShaderParameters* ShadowMapShaderParameters::copy() const {
+	ShaderParametersDynamic* ShadowMapShaderParameters::copy() const {
 		ShadowMapShaderParameters* result = new ShadowMapShaderParameters;
 		*result = *this;
 		return result;

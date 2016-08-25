@@ -3,13 +3,14 @@
  *             Copyright (C) 2016 Mogi, LLC - All Rights Reserved             *
  *                            Author: Matt Bunting                            *
  *                                                                            *
- *   Proprietary and confidential.                                            *
+ *            This program is distributed under the LGPL, version 2           *
  *                                                                            *
- *   Unauthorized copying of this file via any medium is strictly prohibited  *
- *   without the explicit permission of Mogi, LLC.                            *
+ *   This program is free software; you can redistribute it and/or modify     *
+ *   it under the terms of the GNU Lesser General Public License              *
+ *   version 2.1 as published by the Free Software Foundation;                *
  *                                                                            *
  *   See license in root directory for terms.                                 *
- *   http://www.binpress.com/license/view/l/0088eb4b29b2fcff36e42134b0949f93  *
+ *   https://github.com/mogillc/nico/tree/master/edisonLibmogiPackage/libmogi *
  *                                                                            *
  *****************************************************************************/
 
@@ -158,8 +159,7 @@ public:
 	 @param key The json key in the root of the incoming JSON string.
 	 @param observer The value observer that is notified when the the key is sent.
 	 */
-	void addJsonValueListener(const std::string& key,
-			JsonValueObserver* observer);
+	void addJsonValueListener(const std::string& key, JsonValueObserver* observer);
 
 	/*! \brief Creates an option menu item.
 	 */
@@ -283,8 +283,22 @@ public:
 	int stop();
 };
 
+
 }
 
 }
+
+#ifdef __cplusplus
+extern "C"{
+#endif	
+	int getTokenLength(char* begin, char* end);
+	int getJsonObjectLength(char* begin, char* end);
+	int getJsonStringLength(char* begin, char* end);	
+	int getTokenLength(char* begin, char* end);	
+	int getGoodJsonString(std::string& string, std::string::iterator* begin,
+		std::string::iterator* end);	
+#ifdef __cplusplus
+}
+#endif
 
 #endif

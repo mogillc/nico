@@ -73,7 +73,8 @@ elseif(BUILD_FOR_IOS)
     if(OPENGLES_FRAMEWORKS)
         set( OPENGLES_LIBRARIES "-framework OpenGLES" )
     endif()
-
+else()
+	find_package(PkgConfig)
 endif()
 
 SET( OPENGLES_FOUND "NO" )

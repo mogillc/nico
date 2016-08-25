@@ -3,13 +3,14 @@
  *             Copyright (C) 2016 Mogi, LLC - All Rights Reserved             *
  *                            Author: Matt Bunting                            *
  *                                                                            *
- *   Proprietary and confidential.                                            *
+ *            This program is distributed under the LGPL, version 2           *
  *                                                                            *
- *   Unauthorized copying of this file via any medium is strictly prohibited  *
- *   without the explicit permission of Mogi, LLC.                            *
+ *   This program is free software; you can redistribute it and/or modify     *
+ *   it under the terms of the GNU Lesser General Public License              *
+ *   version 2.1 as published by the Free Software Foundation;                *
  *                                                                            *
  *   See license in root directory for terms.                                 *
- *   http://www.binpress.com/license/view/l/0088eb4b29b2fcff36e42134b0949f93  *
+ *   https://github.com/mogillc/nico/tree/master/edisonLibmogiPackage/libmogi *
  *                                                                            *
  *****************************************************************************/
 
@@ -26,450 +27,357 @@ static const char* const MotionControl_C_Id = "$Id$";
 
 #include <float.h>
 
-//#define DEBUGSTATE
-
-#define method(return, signature)					\
-template return MotionControl<double>::signature;	\
-template return MotionControl<Vector>::signature;	\
-template <class T>									\
-return MotionControl<T>::signature
-
-#define methodReturnT(signature)                    \
-template double MotionControl<double>::signature;	\
-template Vector MotionControl<Vector>::signature;	\
-template <class T>									\
-T MotionControl<T>::signature
 
 #ifdef _cplusplus
 extern "C" {
 #endif
 
-namespace Mogi {
-namespace Math {
+	namespace Mogi {
+		namespace Math {
 
-template<>
-MotionControl<Vector>::MotionControl() :
-		controlMode(LOCATION), tolerance(0.000000001), maxSpeed(1), locationState(
-				STOPPED), speed(0), maxAcceleration(1) {
-}
-
-template MotionControl<double>::MotionControl();
-template<class T>
-MotionControl<T>::MotionControl() :
-		controlMode(LOCATION), tolerance(0.000000001), maxSpeed(1), locationState(
-				STOPPED), velocity(0), speed(0), maxAcceleration(1), goalPosition(
-				0), position(0) {
-
-}
-
-method(void, enableLocationControl()){
-if (controlMode != LOCATION) {
-	controlMode = LOCATION;
-	locationState = STOPPED;
-#ifdef DEBUGSTATE
-	std::cout << " - state is now: STOPPED" << std::endl;
-#endif
-	velocity *= 0;
-	speed = 0;
-}
-}
-
-method(void, enableVelocityControl()){
-if (controlMode != VELOCITY) {
-	controlMode = VELOCITY;
-	acceleration *= 0;
-}
-}
-
-method(void, setMaxSpeed(double newSpeed)){
-if (newSpeed < DBL_MIN) {
-	maxSpeed = DBL_MIN;
-} else {
-	maxSpeed = newSpeed;
-}
-}
-
-method(void, setAcceleration(double newAcceleration)){
-if (newAcceleration < DBL_MIN) {
-	maxAcceleration = DBL_MIN;
-} else {
-	maxAcceleration = newAcceleration;
-}
-}
-
-template<>
-long double MotionControl<Vector>::getMagnitude(const Vector& value) const {
-	return value.magnitude();
-}
-template long double MotionControl<double>::getMagnitude(
-		const double& value) const;
-template<class T>
-long double MotionControl<T>::getMagnitude(const T& value) const {
-	return fabs(value);
-}
-
-template<>
-void MotionControl<Vector>::setVelocity(const Vector& newVelocity) {
-	velocity = newVelocity;
-	if (position.size() != newVelocity.size()) {
-		position.setLength(newVelocity.size());
-		// velocity.set_size(newVelocity.size());
-		acceleration.setLength(newVelocity.size());
-	}
-}
-template void MotionControl<double>::setVelocity(const double& velocity);
-template<class T>
-void MotionControl<T>::setVelocity(const T& velocity) {
-	this->velocity = velocity;
-}
-
-template<>
-long double MotionControl<Vector>::getDistanceLeft() {
-	Vector vectorToGo = goalPosition - position;
-	return vectorToGo.magnitude();
-}
-template long double MotionControl<double>::getDistanceLeft();
-template<class T>
-long double MotionControl<T>::getDistanceLeft() {
-	return fabs(goalPosition - position);
-}
-
-method(void, updateState()){
-// This determines the stopping distance based on acceleration and current
-// speed.
-long double currentStoppingDistance = square(speed) / (2.0 * maxAcceleration);
-T stopLocation = position + currentStoppingDistance * velocity / speed;
-if (speed < tolerance) {
-	stopLocation = position;
-} else {
-	stopLocation = position + currentStoppingDistance * velocity / speed;
-}
-
-long double magnitudeStoppingLocationToGoalPosition =
-getMagnitude(stopLocation - goalPosition);
-
-//  			std::cout << " - dtimeForNow:  " << dtimeForNow <<
-//  std::endl;
-//	std::cout << " - wvelocity:     " << getMagnitude(velocity) << std::endl;
-//	std::cout << " - acceleration: " << getMagnitude(acceleration) << std::endl;
-//	std::cout << " - goal pos:     " << getMagnitude(goalPosition) << std::endl;
-//	std::cout << " - position:     " << getMagnitude(position) << std::endl;
-//	std::cout << " - stopLocation: " << getMagnitude(stopLocation) << std::endl;
-
-// So I could implement a recursive method here but then all of the above
-// needs to be recomputed every time.
-bool repeat = true;
-while (repeat) {  // repeat every time we switch states to ensure that we
-	// don't need to switch again
-	repeat = false;
-
-	switch (locationState) {
-		case STOPPED:
-		//		std::cout << "state is STOPPED" << std::endl;
-		if (magnitudeStoppingLocationToGoalPosition >
-				tolerance) {  // Goal is not equal to position
-			locationState = ACCELERATION;
-#ifdef DEBUGSTATE
-			std::cout << " - state is now: ACCELERATION" << std::endl;
-#endif
-			repeat = true;
-		}
-		break;
-
-		case ACCELERATION:
-		//				std::cout << "state is ACCELERATION" <<
-		//std::endl;
-		if (magnitudeStoppingLocationToGoalPosition <= tolerance) {
-			locationState = DECELERATING;
-#ifdef DEBUGSTATE
-			std::cout << " - state is now: DECELERATING" << std::endl;
-#endif
-			repeat = true;
-		} else if (speed == maxSpeed) {  // Speed is at the max, begin moving
-			locationState = MOVING;
-#ifdef DEBUGSTATE
-			std::cout << " - state is now: MOVING" << std::endl;
-#endif
-			repeat = true;
-		}
-		break;
-
-		case MOVING:
-		//			std::cout << "state is MOVING" << std::endl;
-		if (magnitudeStoppingLocationToGoalPosition <=
-				tolerance) {  // Equal at the point when we need to begin
-			// deceleration
-			locationState = DECELERATING;
-#ifdef DEBUGSTATE
-			std::cout << " - state is now: DECELERATING" << std::endl;
-#endif
-			repeat = true;
-		}
-		break;
-
-		case DECELERATING:
-		if (magnitudeStoppingLocationToGoalPosition >
-				tolerance) {  // Goal position was changed
-			locationState = ACCELERATION;
-#ifdef DEBUGSTATE
-			std::cout << " - state is now: ACCELERATION" << std::endl;
-#endif
-			repeat = true;
-		} else if (getDistanceLeft() < tolerance) {  // We are complete
-			position = goalPosition;
-			locationState = STOPPED;
-#ifdef DEBUGSTATE
-			std::cout << " - state is now: STOPPED" << std::endl;
-#endif
-			repeat = true;
-		}
-
-		break;
-	}
-}
-}
-
-template<>
-void MotionControl<Vector>::setGoalPosition(const Vector& location) {
-	goalPosition = location;
-	if (position.size() != location.size()) {
-		position.setLength(location.size());
-		velocity.setLength(location.size());
-		acceleration.setLength(location.size());
-	}
-	updateState();
-}
-template void MotionControl<double>::setGoalPosition(const double& location);
-template<class T>
-void MotionControl<T>::setGoalPosition(const T& location) {
-	goalPosition = location;
-	updateState();
-}
-
-methodReturnT(getDirectionToGoal() const){
-T locationVector = goalPosition - position;
-return locationVector / getMagnitude(locationVector);
-}
-
-method(void, calculateAcceleration()){
-switch (locationState) {
-	case STOPPED:
-	case MOVING:
-	acceleration *= 0;
-	break;
-
-	case ACCELERATION:
-	// Acceleration = desired acceleration * unit vector to goal location
-	acceleration = maxAcceleration * getDirectionToGoal();
-	break;
-
-	case DECELERATING:
-	//Acceleration = -1 * desired acceleration * unit vector to goal location
-	acceleration = maxAcceleration * getDirectionToGoal() * (long double)(-1.0);
-	break;
-}
-}
-
-  // There is never a need to call this when in the STOPPED state
-  // THE ACCURACY OF THIS METHOD IS CRITICAL FOR updateState() TO WORK PROPERLY
-method(long double, getNextStateChangeTime(double dtime)){
-long double result = 0;
-
-if (locationState == ACCELERATION) {
-	// double magSpeed = getMagnitude(velocity);
-	// simple case, time from current to max speed based on acc:
-	result = (maxSpeed - speed) / maxAcceleration;
-
-	//	Ok so what if maxSpeed is too high? Let's solve for the time to accelerate then decelerate to a stop:
-	// some models for derivation:
-	// distA = 0 + v*t + 1/2 * maxA*t*t
-	// vs = v + maxA*t						// velocity at switch point
-	// td = vs/maxA							// time for deceleration once at vs
-	// dT = distA + dD						// total distance (known)
-	// dD = vs*vs/(2*maxA)					// distance for deceleration
-	//
-	// want to know t
-	// dT = vs*vs/(2*maxA) + v*t + 1/2maxA *t*t
-	// dT = v*v/(2*maxA) + 2*v*maxA*t/(2*maxA) + maxA*maxA*t*t/(2*maxA) + v*t + 1/2*maxA *t*t
-	// dT = v*v/(2*maxA) + v*t                 + maxA*t*t/(2) + v*t + 1/2*maxA *t*t
-	// dT = v*v/(2*maxA) + 2*v*t               + maxA*t*t
-	// 0 = maxA*t*t + 2*v*t + (v*v/(2*maxA)-dT)
-
-	//			double a = maxAcceleration;
-	//			double b = 2.0*magSpeed;
-	//			double c = magSpeed*magSpeed/((double)2.0*maxAcceleration) - getDistanceLeft();
-	//    long double accToDecTime = ((-(long double)2.0 * speed) +
-	//						   sqrt(square(2.0 * speed) - (long double)4.0 * maxAcceleration * (speed * speed / ((long double)2.0 * maxAcceleration) -
-	//                   getDistanceLeft()))) / ((long double)2.0 * maxAcceleration);
-
-	long double a = maxAcceleration;
-	long double b = 2.0*speed;
-	long double c = speed*speed/((long double)2.0*maxAcceleration) - getDistanceLeft();
-	long double accToDecTime = (-b + sqrt(square(b) - (long double)4.0 * a*c)) / ((long double)2.0 * a);
-//					std::cout << "maxSpeed = " << maxSpeed << std::endl;
-//					std::cout << "maxAcceleration = " << maxAcceleration << std::setprecision(30) << std::fixed << std::endl;
-//					std::cout << "speed = " << speed << std::endl;
-//					std::cout << "getDistanceLeft() = " << getDistanceLeft() << std::endl;
-//					std::cout << "(-b + sqrt(square(b) - (long double)4.0 * a*c) = " << (-b + sqrt(square(b) - (long double)4.0 * a*c)) << std::endl;
-//					std::cout << "accToDecTime = " << accToDecTime << std::endl;
-//					std::cout << "result = " << result << std::endl;
-//					std::cout << "locationState = " << stateToString(locationState) << std::endl;
-	if (accToDecTime < result) {
-		result = accToDecTime > 0 ? accToDecTime : 0;
-
-		//locationState = DECELERATING;	// HACK: There are precision issues when transitioning from accelerating to decelerating
-	}
-
-} else if (locationState == DECELERATING) {
-	result = speed / maxAcceleration; // time from current to 0 speed based on acc
-} else {                        // Then we must be in the state of MOVING:
-	// If we are moving, then we are at maxSpeed (no need to compute magnitude).
-	// Need to find the stopping time after undergoing deceleration from
-	// maxSpeed to 0 (maxSpeed/maxAcceleration)
-	// if dtime is larger than this, then return the difference. (external
-	// logic?)
-
-	long double currentStoppingDistance =
-	square(maxSpeed) /
-	((long double)2.0 *
-			maxAcceleration);// how far the distance is for deceleration
-	long double distanceForMovingState = getDistanceLeft() - currentStoppingDistance;
-	result = distanceForMovingState / maxSpeed;
-}
-
-return result;
-}
-
-method(void, updateModel(long double dtime)){
-// x(n+1) = x(n) + (v(n) + a(n)*t/2)*t				// 1 + 1 + 1 +
-// 1
-// x(n+1) = x(n) + v(n)*t + a(n)*t*t/2				// 1 + 1 + 1 +
-// 1
-// x(n+1) = x(n) + (v(n) + a(n)*t)*t - a(n)*t*t/2	// 1 + 1 + 1 + 1 + 1 + 1
-// x(n+1) = x(n) + v(n+1)*t - a(n)*t*t/2			// 1 + 1 + 1 + 1
-// x(n+1) = x(n) + (v(n+1) - a(n)*t/2)*t			// 1 + 1 + 1 + 1
-position = position + (velocity + (acceleration / (long double)2.0)* dtime) * dtime;
-// v(n+1) = v(n) + a(n)*t
-velocity = velocity + acceleration * dtime;
-speed = getMagnitude(velocity);// get the current speed as a double value
-if (speed > maxSpeed) {
-	// std::cout << "Time to switch to moving!" << std::endl;
-	// Note on coverage: This should never run if getNextStateChangeTime() is correct
-	// This DOES run when in velocity control mode when there is a maximum velocity set.
-	velocity = velocity / speed * maxSpeed;
-	speed = maxSpeed;// get the current speed as a double value
-}
-}
-
-template const double& MotionControl<double>::processLocationControl(
-		long double dtime);
-template const Vector& MotionControl<Vector>::processLocationControl(
-		long double dtime);
-template<class T>
-const T& MotionControl<T>::processLocationControl(long double dtime) {
-	if (controlMode == VELOCITY) {
-		updateModel(dtime);
-		if (speed == 0) {
-			locationState = STOPPED;
-#ifdef DEBUGSTATE
-			std::cout << " - state is now: STOPPED" << std::endl;
-#endif
-		} else {
-			locationState = MOVING;
-#ifdef DEBUGSTATE
-			std::cout << " - state is now: MOVING" << std::endl;
-#endif
-		}
-		return position;
-	}
-
-	//	if (locationState == ACCELERATION && dtime > 0) {
-	//		calculateAcceleration();  // do action'
-	//		long double dtimeForNow = getNextStateChangeTime(dtime);
-	//		if (dtimeForNow > dtime) {
-	//			updateModel(dtime);
-	//			updateState();
-	//		} else if( dtimeForNow == 0 ) {	// corner case
-	//			//updateModel(dtimeForNow);
-	//			locationState = DECELERATING;
-	//			//dtime -= dtimeForNow;
-	//			dtimeForNow = getNextStateChangeTime(dtime);
-	//			if (dtimeForNow > dtime) {
-	//				updateModel(dtime);
-	//				updateState();
-	//			} else {
-	//				updateModel(dtimeForNow);
-	//				locationState = DECELERATING;
-	//			}
-	//		}
-	//	}
-	//int maxIterations = 4;
-	while (dtime > 0) {				// &&
-		// maxIterations-- >= 0) {  // dtime becomes divided into different sections based on the state
-
-		if (locationState == STOPPED) {  // just basic optimization
-			return position;
-		}
-
-		calculateAcceleration();  // do action
-		long double dtimeForNow = getNextStateChangeTime(dtime);
-//					std::cout << "dtimeForNow = " << dtimeForNow << " dtime = " << dtime << std::endl;
-		if (dtimeForNow > dtime) {
-			dtimeForNow = dtime;
-		} else if (locationState == ACCELERATION && dtimeForNow == 0) {	// corner case
-//						std::cout << "WINNERWINEEREINFISDNVFISADF" << std::endl;
-				//updateModel(dtimeForNow);	// will do nothing.
-				//updateState();	// will also do nothing
-			if (speed == maxSpeed) {
-				locationState = MOVING;
-			} else {
-				locationState = DECELERATING;
+			MotionControl::MotionControl() :
+			controlMode(LOCATION), maxSpeed(1), locationState(STOPPED), velocity(0), maxAcceleration(1), goalPosition(0), position(0) {
+				acc[1] = 0;
+				acc[3] = 0;
 			}
-			calculateAcceleration();  // do action
-			dtimeForNow = getNextStateChangeTime(dtime);
+
+			void MotionControl::enableLocationControl() {
+				if (controlMode != LOCATION) {
+					controlMode = LOCATION;
+					locationState = STOPPED;
+#ifdef DEBUGSTATE
+					std::cout << " - state is now: STOPPED" << std::endl;
+#endif
+					velocity *= 0;
+//					speed = 0;
+				}
+			}
+
+			void MotionControl::enableVelocityControl() {
+				if (controlMode != VELOCITY) {
+					controlMode = VELOCITY;
+					acceleration *= 0;
+				}
+			}
+
+			void MotionControl::setMaxSpeed(double newSpeed) {
+				if (newSpeed < 0) {
+					maxSpeed = 0;
+				} else {
+					maxSpeed = newSpeed;
+				}
+			}
+
+			void MotionControl::setAcceleration(double newAcceleration) {
+				if (newAcceleration < 0) {
+					maxAcceleration = 0;
+				} else {
+					maxAcceleration = newAcceleration;
+				}
+			}
+
+			double MotionControl::getMagnitude(const double& value) const {
+				return fabs(value);
+			}
+
+			double MotionControl::getDirection(const double& value) const {
+				return value >= 0 ? 1 : -1;
+			}
+
+			void MotionControl::setVelocity(const double& velocity) {
+				this->velocity = velocity;
+			}
+
+			double MotionControl::getDistanceLeft() {
+				return fabs(goalPosition - position);
+			}
+
+			void MotionControl::setGoalPosition(const double& location) {
+				goalPosition = location;
+			}
+
+			double MotionControl::getGoalPosition() const {
+				return goalPosition;
+			}
+
+			double MotionControl::getCurrentPosition() const {
+				return position;
+			}
+
+			double MotionControl::getCurrentVelocity() const {
+				return velocity;
+			}
+
+			double MotionControl::getMaxAcceleration() const {
+				return maxAcceleration;
+			}
+
+			inline double p2(double t, double x, double v, double a) {
+				return x + t*v + 0.5*t*t*a;
+			};
+
+			void MotionControl::updateModel(double dtime) {
+				// x(n+1) = x(n) + (v(n) + a(n)*t/2)*t				// 1 + 1 + 1 +
+				// 1
+				// x(n+1) = x(n) + v(n)*t + a(n)*t*t/2				// 1 + 1 + 1 +
+				// 1
+				// x(n+1) = x(n) + (v(n) + a(n)*t)*t - a(n)*t*t/2	// 1 + 1 + 1 + 1 + 1 + 1
+				// x(n+1) = x(n) + v(n+1)*t - a(n)*t*t/2			// 1 + 1 + 1 + 1
+				// x(n+1) = x(n) + (v(n+1) - a(n)*t/2)*t			// 1 + 1 + 1 + 1
+				position = position + (velocity + (acceleration / (double)2.0)* dtime) * dtime;
+				// v(n+1) = v(n) + a(n)*t
+				velocity = velocity + acceleration * dtime;
+//				speed = getMagnitude(velocity);// get the current speed as a double value
+//				if (speed > maxSpeed) {
+//					// std::cout << "Time to switch to moving!" << std::endl;
+//					// Note on coverage: This should never run if getNextStateChangeTime() is correct
+//					// This DOES run when in velocity control mode when there is a maximum velocity set.
+//					velocity = velocity / speed * maxSpeed;
+//					speed = maxSpeed;// get the current speed as a double value
+//				}
+			}
+
+			double MotionControl::getTimeToStop() {
+				determineStateTimes();
+				return dt[0] + dt[1] + dt[2];
+			}
+
+			double MotionControl::getSoonestStoppingLocation() {
+				return square(velocity) / ((double)2.0 * maxAcceleration)*getDirection(velocity) + position;
+			}
+
+			void MotionControl::determineStateTimes() {
+				// https://www.researchgate.net/profile/Erik_Weitnauer/publication/224339798_On-line_planning_of_time-optimal_jerk-limited_trajectories/links/00b7d52bf1a158f775000000.pdf
+
+				double currentStoppingLocation = square(velocity) / ((double)2.0 * maxAcceleration)*getDirection(velocity) + position;
+				double d = getDirection(getDifference(goalPosition, currentStoppingLocation));
+				double v = d * maxSpeed;
+
+				acc[0] = d*maxAcceleration;
+				acc[2] = -d*maxAcceleration;
+
+				// trapezoid times::
+				dt[0] = (v - velocity) / acc[0];
+				dt[2] = (v) / -acc[2];
+
+				// If maxSpped is called while velocity is higher than the new setting, this handles the acceleraiton direction.
+				if(dt[0] < 0) {
+					dt[0] = -dt[0];
+					acc[0] = -acc[0];
+				}
+
+				dx[0] = p2(dt[0], 0, velocity, acc[0]);
+				dx[2] = p2(dt[2], 0, v, acc[2]);
+
+				if (maxSpeed == 0) {
+					dt[1] = 0;
+					dt[2] = 0;
+					return;
+				} else {
+					dt[1] = (goalPosition - (position + dx[0] + dx[2])) / v;
+				}
+
+				if (dt[1] <= 0) {
+					// Use wedge, not trapezoidal.
+					double magPeakV = sqrt(maxAcceleration*fabs(getDifference(goalPosition, position)) + 0.5*velocity*velocity);
+					dt[0] = (d*magPeakV - velocity) / acc[0];
+					dt[1] = 0;
+					dt[2] = d*magPeakV / -acc[2];
+				}
+
+			}
+
+			const double& MotionControl::processLocationControl(double dtime) {
+				if (controlMode == VELOCITY) {
+					updateModel(dtime);
+					if (velocity == 0) {
+						locationState = STOPPED;
+#ifdef DEBUGSTATE
+						std::cout << " - state is now: STOPPED" << std::endl;
+#endif
+					} else {
+						locationState = MOVING;
+#ifdef DEBUGSTATE
+						std::cout << " - state is now: MOVING" << std::endl;
+#endif
+					}
+					return position;
+				}
+
+				determineStateTimes();
+
+				for (int i = 0; i < 3; i++) {
+					acceleration = acc[i];
+					if (dtime < dt[i]) {
+						updateModel(dtime);
+						locationState = (LocationState)i;
+						// corner case?
+						if (dt[i] == INFINITY) {
+							locationState = STOPPED;
+						}
+						return position;
+					}
+					updateModel(dt[i]);
+					dtime -= dt[i];
+				}
+
+				// update the model one last time, but really we know where we should be and what the velocity should be.
+				position = goalPosition;
+				velocity = 0;
+				acceleration = 0;
+
+				locationState = STOPPED;
+
+				return position;
+			}
+
+			MotionControlMultiple::MotionControlMultiple( unsigned int count )
+			:count(count){
+				motionControllers = new MotionControl[count];
+			}
+
+			MotionControlMultiple::~MotionControlMultiple() {
+				delete [] motionControllers;
+			}
+
+			Vector MotionControlMultiple::process(double dtime) {
+				Vector result(count);
+
+				for (unsigned int i = 0; i < count; i++) {
+					result(i) = motionControllers[i].processLocationControl(dtime);
+				}
+
+				return result;
+			}
+
+			void MotionControlMultiple::setGoal(const Vector& goal) {
+				double T = 0;
+				double t3[count];
+				unsigned int maxIndex = 0;
+				for (unsigned int i = 0; i < count; i++) {
+					motionControllers[i].setGoalPosition(goal.valueLinearIndex(i));
+					motionControllers[i].setMaxSpeed(maxS);
+					motionControllers[i].setAcceleration(maxA);
+					motionControllers[i].enableLocationControl();
+
+					t3[i] = motionControllers[i].getTimeToStop();
+					if (t3[i] > T) {
+						T = t3[i];
+						maxIndex = i;
+					}
+				}
+
+				if(T == 0) {
+					return;
+				}
+
+				Vector v(count);	// new max speed for each motion controller
+				for (unsigned int i = 0; i < count; i++) {
+					v(i) = fabs((motionControllers[i].getGoalPosition() - motionControllers[i].getSoonestStoppingLocation()) / (T - fabs(motionControllers[i].getCurrentVelocity())/motionControllers[i].getMaxAcceleration()));
+
+					// Need to be careful here, since once we are in the deceleration phase, the duration may closely match the duration, causing division by 0:
+					if(v(i) != v(i) || v(i) > maxS) {
+						v(i) = maxS;
+					}
+				}
+
+				bool allZero = true;
+				for (unsigned int i = 0; i < count; i++) {	// We may be at the goal in every axis, so don't mess things up:
+					if (v(i) != 0) {
+						allZero = false;
+						break;
+					}
+				}
+				if (allZero) {	// nothing to be done.
+					return;
+				}
+
+				// Here we have a non-zero, non-nan, and non-inf values in the vector:
+				v.normalize();
+				v *= fabs(maxS);
+				for (unsigned int i = 0; i < count; i++) {
+					motionControllers[i].setMaxSpeed(v(i));
+				}
+
+			}
+			void MotionControlMultiple::setMaxSpeed(const double& max) {
+				maxS = max;
+			}
+			void MotionControlMultiple::setMaxAcceleration(const double& max) {
+				maxA = max;
+			}
+			Vector MotionControlMultiple::getCurrentPosition() {
+				Vector result(count);
+				for (unsigned int i = 0; i < count; i++) {
+					result(i) = motionControllers[i].getCurrentPosition();
+				}
+				return result;
+			}
+			Vector MotionControlMultiple::getCurrentVelocity() {
+				Vector result(count);
+				for (unsigned int i = 0; i < count; i++) {
+					result(i) = motionControllers[i].getCurrentVelocity();
+				}
+				return result;
+			}
+			Vector MotionControlMultiple::getGoalPosition() {
+				Vector result(count);
+				for (unsigned int i = 0; i < count; i++) {
+					result(i) = motionControllers[i].getGoalPosition();
+				}
+				return result;
+			}
+			Vector MotionControlMultiple::getSoonestStoppingLocation() {
+				Vector result(count);
+				for (unsigned int i = 0; i < count; i++) {
+					result(i) = motionControllers[i].getSoonestStoppingLocation();
+				}
+				return result;
+			}
+
+			bool MotionControlMultiple::isStopped() {
+				for (unsigned int i = 0; i < count; i++) {
+					if(motionControllers[i].getState() != MotionControl::STOPPED) {
+						return false;
+					}
+				}
+				return true;
+			}
+
+
+			double loopRange(double x) {
+				if (x < 0) {
+					return -(fmod(MOGI_PI - x, 2.0*MOGI_PI) - MOGI_PI);
+				}
+				return fmod(MOGI_PI + x, 2.0*MOGI_PI) - MOGI_PI;
+			}
+			
+			void MotionControlAngular::setGoalPosition(const double& heading) {
+				MotionControl::setGoalPosition( loopRange(heading) );
+			}
+			
+			double MotionControlAngular::getDistanceLeft() {
+				double result = fabs( loopRange(goalPosition - position) );
+				return result;
+			}
+			
+			void MotionControlAngular::updateModel(double dtime) {
+				MotionControl::updateModel(dtime);
+				position = loopRange(position);
+			}
+
+			double MotionControl::getDifference(const double& to, const double& from) const {
+				return to - from;
+			}
+
+			double MotionControlAngular::getDifference(const double& to, const double& from) const {
+				return loopRange(to - from);
+			}
+			
+
 		}
-
-		updateModel(dtimeForNow);
-
-		updateState();
-
-		dtime -= dtimeForNow;
 	}
-
-	return position;
-}
-
-void MotionControlAngular::setGoalPosition(const double& heading) {
-	MotionControl<double>::setGoalPosition(
-			fmod((double) 3.0 * (double) MOGI_PI + heading,
-					(double) 2.0 * (double) MOGI_PI) - (double) MOGI_PI);
-}
-
-long double MotionControlAngular::getDistanceLeft() {
-	long double result = fabs(goalPosition - position);
-	if (result > MOGI_PI) {
-		result = 2.0 * MOGI_PI - result;
-	}
-	return result;
-}
-
-void MotionControlAngular::updateModel(long double dtime) {
-	MotionControl<double>::updateModel(dtime);
-	position = fmod((long double) 3.0 * (long double) MOGI_PI + position,
-			(long double) 2.0 * (long double) MOGI_PI) - (long double) MOGI_PI;
-}
-
-double MotionControlAngular::getDirectionToGoal() const {
-	double difference = goalPosition - position;
-	double magnitude = fabs(difference);
-	if (magnitude > (double) MOGI_PI) {
-		return -difference / magnitude;
-	}
-	return difference / magnitude;
-}
-}
-}
-
+	
 #ifdef _cplusplus
 }
 #endif

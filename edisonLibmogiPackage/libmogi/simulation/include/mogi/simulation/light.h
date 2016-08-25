@@ -27,155 +27,144 @@
 #include <vector>
 
 namespace Mogi {
-namespace Simulation {
+	namespace Simulation {
 
-class MBlight {
-protected:
-	enum {
-		TYPE_SPOT, TYPE_POINT, TYPE_DIRECTIONAL, NUM_TYPES
-	};
+		class MBlight {
+		protected:
+			enum {
+				TYPE_SPOT, TYPE_POINT, TYPE_DIRECTIONAL, NUM_TYPES
+			};
 
-	int type;
+			int type;
 
-	std::string name;
-	Math::Node* parentNode;
+			std::string name;
+			Math::Node* parentNode;
 
-	FrameBuffer* frameBuffer;
+			FrameBuffer* frameBuffer;
 
-	int width, height;
-	bool shadowEnable;
-	Math::Vector location;
-	Math::Quaternion orientation;
-	Math::Vector color;
+			int width, height;
+			bool shadowEnable;
+			Math::Vector location;
+			Math::Quaternion orientation;
+			Math::Vector color;
 
-	bool shadowsAllocated;
+			bool shadowsAllocated;
 
-	Math::Matrix shadowMapMatrix;
-	double FOV;
+			Math::Matrix shadowMapMatrix;
+			double FOV;
 
-	Camera lightAsCamera;  // for computing shadowmap matrices
+			Camera lightAsCamera;  // for computing shadowmap matrices
 
-	float intensity;
+			float intensity;
 
-public:
-	// Attributes:
+		public:
+			// Attributes:
 
-	// Methods:
-	MBlight();
-	virtual ~MBlight();
+			// Methods:
+			MBlight();
+			virtual ~MBlight();
 
-	//virtual void set(aiLight* light) = 0;
-	void setName(const std::string& name);
+			//virtual void set(aiLight* light) = 0;
+			void setName(const std::string& name);
 
-	void setLocation(double x, double y, double z);
-	void setLocation(Math::Vector loc);
-	Math::Vector& getLocation() {
-		return location;
+			void setLocation(double x, double y, double z);
+			void setLocation(Math::Vector loc);
+			Math::Vector& getLocation() {
+				return location;
+			};;
+			float* getLocationPointer() {
+				return location.dataAsFloat();
+			};;
+
+			void setOrientation(Math::Quaternion ori);
+			Math::Quaternion& getOrientation() {
+				return orientation;
+			};;
+			float* getOrientationPointer() {
+				return orientation.dataAsFloat();
+			};;
+
+			void setColor(double r, double g, double b);
+			void setColor(Math::Vector col);
+			Math::Vector& getColor() {
+				return color;
+			};;
+			float* getColorPointer() {
+				return color.dataAsFloat();
+			};;
+
+			void setFOV(double value) {
+				FOV = value;
+				lightAsCamera.setFOV(FOV);
+			};;
+			double getFOV() {
+				return FOV;
+			};;
+
+			void setEnabled(bool value) {
+				shadowEnable = value;
+			};;
+			bool isEnabled() {
+				return shadowEnable;
+			};;
+
+			bool prepareShadowMap();
+			void finishShadowMap();
+
+			void setShadowUniforms(MBshader* shader, int location);
+
+			const Math::Matrix& buildShadowMapMatrix(const Math::Matrix& modelMatrix);
+
+			void findNode(Math::Node* rootNode);
+
+			void updateLightCamera();
+			Camera* getCamera() {
+				return &lightAsCamera;
+			};
+
+			virtual void sendToShader(MBshader* shader, const Math::Matrix& modelMatrix,
+									  int index) = 0;
+		};
+
+		class MBspotLight: public MBlight {
+		private:
+			float attenuationQuadratic;
+			float attenuationLinear;
+			float attenuationConstant;
+
+			float innerCone;
+			float outerCone;
+
+		public:
+			void sendToShader(MBshader* shader, const Math::Matrix& modelMatrix,
+							  int index);
+			void setCone(float innerCone, float outerCone);
+			void setAttenuationFactors(float constant, float linear, float quadratic);
+		};
+
+		class MBpointLight: public MBlight {
+		private:
+			float attenuationQuadratic;
+			float attenuationLinear;
+			float attenuationConstant;
+
+			float sphereSize;
+
+			void updateSphere();
+
+		public:
+			void sendToShader(MBshader* shader, const Math::Matrix& modelMatrix,
+							  int index);
+			
+			void setAttenuationFactors(float constant, float linear, float quadratic);
+		};
+		
+		class MBdirectionalLight: public MBlight {
+		public:
+			void sendToShader(MBshader* shader, const Math::Matrix& modelMatrix,
+							  int index);
+		};
 	}
-	;
-	float* getLocationPointer() {
-		return location.dataAsFloat();
-	}
-	;
-
-	void setOrientation(Math::Quaternion ori);
-	Math::Quaternion& getOrientation() {
-		return orientation;
-	}
-	;
-	float* getOrientationPointer() {
-		return orientation.dataAsFloat();
-	}
-	;
-
-	void setColor(double r, double g, double b);
-	void setColor(Math::Vector col);
-	Math::Vector& getColor() {
-		return color;
-	}
-	;
-	float* getColorPointer() {
-		return color.dataAsFloat();
-	}
-	;
-
-	void setFOV(double value) {
-		FOV = value;
-		lightAsCamera.setFOV(FOV);
-	}
-	;
-	double getFOV() {
-		return FOV;
-	}
-	;
-
-	void setEnabled(bool value) {
-		shadowEnable = value;
-	}
-	;
-	bool isEnabled() {
-		return shadowEnable;
-	}
-	;
-
-	bool prepareShadowMap();
-	void finishShadowMap();
-
-	void setShadowUniforms(MBshader* shader, int location);
-
-	const Math::Matrix& buildShadowMapMatrix(const Math::Matrix& modelMatrix);
-
-	void findNode(Math::Node* rootNode);
-
-	void updateLightCamera();
-	Camera* getCamera() {
-		return &lightAsCamera;
-	}
-	;
-
-	virtual void sendToShader(MBshader* shader, const Math::Matrix& modelMatrix,
-			int index) = 0;
-};
-
-class MBspotLight: public MBlight {
-private:
-	float attenuationQuadratic;
-	float attenuationLinear;
-	float attenuationConstant;
-
-	float innerCone;
-	float outerCone;
-
-public:
-	void sendToShader(MBshader* shader, const Math::Matrix& modelMatrix,
-			int index);
-	void setCone(float innerCone, float outerCone);
-	void setAttenuationFactors(float constant, float linear, float quadratic);
-};
-
-class MBpointLight: public MBlight {
-private:
-	float attenuationQuadratic;
-	float attenuationLinear;
-	float attenuationConstant;
-
-	float sphereSize;
-
-	void updateSphere();
-
-public:
-	void sendToShader(MBshader* shader, const Math::Matrix& modelMatrix,
-			int index);
-
-	void setAttenuationFactors(float constant, float linear, float quadratic);
-};
-
-class MBdirectionalLight: public MBlight {
-public:
-	void sendToShader(MBshader* shader, const Math::Matrix& modelMatrix,
-			int index);
-};
-}
 }
 
 #endif

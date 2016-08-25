@@ -12,7 +12,7 @@
  *   http://www.binpress.com/license/view/l/0088eb4b29b2fcff36e42134b0949f93  *
  *                                                                            *
  *****************************************************************************/
-
+#include "mogiGL.h"
 #include "texture.h"
 
 #ifdef SDL2_FOUND
@@ -60,14 +60,17 @@ extern "C" {
 
 	void Texture::sendTextureToShader(MBshader* shader) {
 		if (shaderUniformName != "") {
-			char uniformName[64];
-			if (arrayIndex >= 0) {
-				sprintf(uniformName, "%s[%d]", shaderUniformName.c_str(), arrayIndex);
-			} else {
-				sprintf(uniformName, "%s", shaderUniformName.c_str());
-			}
-
-			shader->sendTexture(uniformName, textureID);
+//			char uniformName[64];
+////			if (arrayIndex >= 0) {
+////				sprintf(uniformName, "%s[%d]", shaderUniformName.c_str(), arrayIndex);
+////			} else {
+////				sprintf(uniformName, "%s", shaderUniformName.c_str());
+////			}
+//			sprintf(uniformName, "%s", shaderUniformName.c_str());
+//
+////			shader->sendTexture(uniformName, textureID);
+//			shader->setTexture(uniformName, (GLint)textureID, arrayIndex >= 0 ? arrayIndex : 0);
+			shader->setTexture(shaderUniformName, (GLint)textureID, arrayIndex >= 0 ? arrayIndex : 0);
 
 		} else {
 			// std::cout << "whoops, \"" << shaderUniformName <<"\" is undefined"  <<
@@ -84,42 +87,36 @@ extern "C" {
 		// See notes on adopting OpenGLES3 here:
 		// https://developer.apple.com/library/ios/documentation/3DDrawing/Conceptual/OpenGLES_ProgrammingGuide/AdoptingOpenGLES3/AdoptingOpenGLES3.html
 		if (isDepth) {
-#ifdef OPENGLES_FOUND
-			format = GL_DEPTH_COMPONENT;
-			type = GL_UNSIGNED_INT;
-			if (MogiGLInfo::getInstance()->getVersion() >= 300) {
-#ifdef GL_ES_VERSION_3_0
-				internalFormat = GL_DEPTH_COMPONENT24;	// in ES3, explicit sizes must be given to internal format
-#else
-				internalFormat = GL_DEPTH_COMPONENT16;	// TODO: test this
-#endif
-			} else {
-				internalFormat = GL_DEPTH_COMPONENT;
-			}
+			if(MogiGLInfo::getInstance()->isGLES()) {
+				format = GL_DEPTH_COMPONENT;
+				type = GL_UNSIGNED_INT;
+				if (MogiGLInfo::getInstance()->getVersion() >= 300) {
+					internalFormat = GL_DEPTH_COMPONENT24;	// in ES3, explicit sizes must be given to internal format
+				} else {
+					internalFormat = GL_DEPTH_COMPONENT;	//iOS, Raspberry pi!
+				}
 
-#else
-			format = GL_DEPTH_COMPONENT;
-			internalFormat = GL_DEPTH_COMPONENT32F;
-			type = GL_FLOAT;
-#endif
-		} else {
-#ifdef OPENGLES_FOUND
-			if (MogiGLInfo::getInstance()->getVersion() >= 300) {
-#ifdef GL_ES_VERSION_3_0
-				internalFormat = GL_RGBA8;	// in ES3, explicit sizes must be given to internal format
-#else
-				internalFormat = GL_RGBA4;	// TODO: test this
-#endif
-			} else {
-				internalFormat = GL_RGBA;
+			} else { // Not GLES:
+				format = GL_DEPTH_COMPONENT;
+				internalFormat = GL_DEPTH_COMPONENT32F;
+				type = GL_FLOAT;
 			}
-			format = GL_RGBA;
-			type = GL_UNSIGNED_BYTE;
-#else
-			format = GL_RGBA;
-			internalFormat = GL_RGBA8;
-			type = GL_FLOAT;
-#endif
+		} else {
+			if(MogiGLInfo::getInstance()->isGLES()) {
+				if (MogiGLInfo::getInstance()->getVersion() >= 300) {	// check for ES
+					internalFormat = GL_RGBA8;	// in ES3, explicit sizes must be given to internal format
+				} else {
+					internalFormat = GL_RGBA; // raspberry pi, iOS
+				}
+				format = GL_RGBA;
+				type = GL_UNSIGNED_BYTE;
+				//#else
+			} else { // Not GLES:
+				format = GL_RGBA;
+				internalFormat = GL_RGBA8;
+				type = GL_FLOAT;
+				//#endif
+			}
 		}
 		if ((textureID = createTexture(w, h)) == 0) {
 			return 0;
@@ -128,33 +125,24 @@ extern "C" {
 	}
 
 	void Texture::reconfigure(const GLvoid* data) {
-		GLenum Status = glGetError();
-		if (Status != GL_NO_ERROR) {
-			std::cout << "Error: Texture::reconfigure(): Before binding: " << glGetErrorToString(Status) << std::endl;
-		}
+		checkGLError();
 
 		glBindTexture(GL_TEXTURE_2D, textureID);
-		Status = glGetError();
-		if (Status != GL_NO_ERROR) {
-			std::cout << "Error: Texture::reconfigure(): Broke at glBindTexture(): " << glGetErrorToString(Status) << std::endl;
-		}
+		checkGLError();
 
 		glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, type, data);
-		Status = glGetError();
-		if (Status != GL_NO_ERROR) {
-			std::cout << "Error: Texture::reconfigure(): Broke at glTexImage2D: " << glGetErrorToString(Status) << std::endl;
-		}
+		checkGLError();
 	}
 
 
 	void Texture::setFromImage(const Image8& image) {
 		bool needToCreateTexture = false;
 		if (width == -1 || height == -1) {
-//			textureID = createTexture(image.width(), image.height());
+			//			textureID = createTexture(image.width(), image.height());
 			needToCreateTexture = true;
 		} else {
-		width = image.width();
-		height = image.height();
+			width = image.width();
+			height = image.height();
 		}
 		if (MogiGLInfo::getInstance()->getVersion() >= 300) {
 			internalFormat = GL_RGBA8;
@@ -162,17 +150,31 @@ extern "C" {
 			internalFormat = GL_RGBA;
 		}
 		format = GL_RGBA;
-#ifdef OPENGLES_FOUND
-		type = GL_UNSIGNED_BYTE;
+
+		//
+		if(MogiGLInfo::getInstance()->isGLES()) {
+			type = GL_UNSIGNED_BYTE;
+			//#else
+		} else {
+//#ifdef OPENGLES_FOUND
+//#ifdef GL_ES_VERSION_2_0 // also defined for 3.0
+//			#warning Untested Texture GL_UNSIGNED_BYTE
+//			type = GL_UNSIGNED_BYTE;
+//#else
+
+#ifdef GL_UNSIGNED_INT_8_8_8_8_REV
+			type = GL_UNSIGNED_INT_8_8_8_8_REV;
 #else
-		type = GL_UNSIGNED_INT_8_8_8_8_REV;
+			#warning Untested use of GL_UNSIGNED_BYTE for replacement of GL_UNSIGNED_INT_8_8_8_8_REV
+			type = GL_UNSIGNED_BYTE;
 #endif
+		}
 		if (needToCreateTexture) {
 			textureID = createTexture(image.width(), image.height());
 		}
 		reconfigure(image.data());
-//		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-//		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		//		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		//		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
 	}
 
@@ -214,82 +216,46 @@ extern "C" {
 		return -1;
 	}
 
-
-
-	std::string Simulation::glGetErrorToString(GLenum Status) {
-		switch (Status) {
-			case GL_NO_ERROR:
-				return "glGetError() returned GL_NO_ERROR";
-				break;
-			case GL_INVALID_ENUM:
-				return "glGetError() returned GL_INVALID_ENUM";
-				break;
-			case GL_INVALID_VALUE:
-				return "glGetError() returned GL_INVALID_VALUE";
-				break;
-			case GL_INVALID_OPERATION:
-				return "glGetError() returned GL_INVALID_OPERATION";
-				break;
-			case GL_INVALID_FRAMEBUFFER_OPERATION:
-				return "glGetError() returned GL_INVALID_FRAMEBUFFER_OPERATION";
-				break;
-			case GL_OUT_OF_MEMORY:
-				return "glGetError() returned GL_OUT_OF_MEMORY";
-				break;
-		}
-		return "???";
-	}
-
 	// cplusplusguy stuff:
 	GLuint Texture::createTexture(int w, int h) {
 		// unsigned int textureId = 0;
-		GLenum Status;
-
-		Status = glGetError();
-		if (Status != GL_NO_ERROR) {
-			std::cout << "Error: Texture::createTexture(): Broke before texture created: " << glGetErrorToString(Status) << std::endl;
-		}
+		checkGLError();
 
 		glGenTextures(1, &textureID);
-		Status = glGetError();
-		if (Status != GL_NO_ERROR) {
-			std::cout << "Error: Texture::createTexture(): Broke at glGenTextures: " << glGetErrorToString(Status) << std::endl;
-		}
+		checkGLError();
 
 		//	glBindTexture(GL_TEXTURE_2D, textureID);
-		//	Status = glGetError();
-		//	if (Status != GL_NO_ERROR) {
-		//		std::cout << "Error: Texture::createTexture(): Broke at glBindTexture() : " << glGetErrorToString(Status) << std::endl;
-		//	}
+		//		checkGLError();
 		// This will call glBindTexture and glTexImage2D
 		resize(w, h);
 
 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		if (Status != GL_NO_ERROR) {
-			std::cout << "Error: Texture::createTexture(): Error happened while cperforming glTexParameteri(): " << glGetErrorToString(Status) << std::endl;
-		}
+		checkGLError();
 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-#ifdef OPENGLES_FOUND
-		if (MogiGLInfo::getInstance()->getVersion() >= 300) {	// NOT SURE IF WE SHOULD BLANKET ALL OF THIS
-			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT); // from working iOS
-			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		if(MogiGLInfo::getInstance()->isGLES()) {
+			if (MogiGLInfo::getInstance()->getVersion() >= 300) {	// NOT SURE IF WE SHOULD BLANKET ALL OF THIS
+				glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT); // from working iOS
+				glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+			} else {
+				glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // prevents repeating edge...?
+				glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			}
+
 		} else {
-			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // prevents repeating edge...?
-			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		}
-
+//#ifdef OPENGLES_FOUND
+//#ifdef GL_ES_VERSION_2_0 // also defined for 3.0
+#ifndef GL_CLAMP_TO_BORDER
+			std::cerr << "Unhandled texture thingy!" << std::endl;
 #else
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER); // prevents repeating edge...?
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER); // prevents repeating edge...?
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 #endif
-
-
-		if (Status != GL_NO_ERROR) {
-			std::cout << "Error: Texture::createTexture(): Error happened while cperforming glTexParameteri(): " << glGetErrorToString(Status) << std::endl;
 		}
+
+		checkGLError();
 
 		glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -302,48 +268,65 @@ extern "C" {
 #ifdef SDL2_FOUND	// TODO: find another type of support for loading a texture with SDL?
 		SDL_Surface* img = IMG_Load(name);
 
-		// SDL_PixelFormat form={ NULL, 32, 4, 0, 0, 0, 0, 8, 8, 8, 8, 0xff000000,
-		// 0x00ff0000, 0x0000ff00, 0x000000ff, 0, 255 };
-		SDL_PixelFormat form2; //={ SDL_PIXELFORMAT_RGB888, NULL, 32, 4, 0xff000000,
-		//0x00ff0000, 0x0000ff00, 0x000000ff};//, 0, 0, 0, 0,
-		//8, 8, 8, 8, 0, 255 };
-
-		form2.format = SDL_PIXELFORMAT_RGBA8888;
-		form2.palette = NULL;
-		form2.BitsPerPixel = 32;
-		form2.BytesPerPixel = 4;
-		/*
-		 form2.Rloss = 0;
-		 form2.Gloss = 0;
-		 form2.Bloss = 0;
-		 form2.Aloss = 0;
-
-		 form2.Rshift = 8;
-		 form2.Gshift = 8;
-		 form2.Bshift = 8;
-		 form2.Ashift = 8;
-		 */
-		form2.Rmask = 0xff000000;
-		form2.Gmask = 0x00ff0000;
-		form2.Bmask = 0x0000ff00;
-		form2.Amask = 0x000000ff;
-
-		// SDL_SetColorKey(SDL_Surface *surface, <#int flag#>, <#Uint32 key#>)
-
 		if (img == NULL) {
 			std::cout << "Error! Could not load texture: " << name << std::endl;
 			return 0;
 		}
-		SDL_Surface* img2 = SDL_ConvertSurface(img, &form2, SDL_SWSURFACE);
-
 
 		glGenTextures(1, &texture);
 		glBindTexture(GL_TEXTURE_2D, texture);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, img2->w, img2->h, 0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, img2->pixels);
+		if(MogiGLInfo::getInstance()->isGLES()) {
+			GLint mode;
+			if (img->format->BytesPerPixel == 3) { // RGB 24bit
+				mode = GL_RGB;
+			} else if (img->format->BytesPerPixel == 4) { // RGBA 32bit
+				mode = GL_RGBA;
+			} else {
+				std::cerr << "Error: unkown uiamge format, img->format->BytesPerPixel == " << img->format->BytesPerPixel << std::endl;
+				mode = GL_RGBA;
+				SDL_FreeSurface(img);
+				return -1;
+			}
+			glTexImage2D(GL_TEXTURE_2D, 0, mode, img->w, img->h, 0, mode, GL_UNSIGNED_BYTE, img->pixels);
+
+		} else {
+			// SDL_PixelFormat form={ NULL, 32, 4, 0, 0, 0, 0, 8, 8, 8, 8, 0xff000000,
+			// 0x00ff0000, 0x0000ff00, 0x000000ff, 0, 255 };
+			SDL_PixelFormat form2; //={ SDL_PIXELFORMAT_RGB888, NULL, 32, 4, 0xff000000,
+			//0x00ff0000, 0x0000ff00, 0x000000ff};//, 0, 0, 0, 0,
+			//8, 8, 8, 8, 0, 255 };
+
+			form2.format = SDL_PIXELFORMAT_RGBA8888;
+			form2.palette = NULL;
+			form2.BitsPerPixel = 32;
+			form2.BytesPerPixel = 4;
+			/*
+			 form2.Rloss = 0;
+			 form2.Gloss = 0;
+			 form2.Bloss = 0;
+			 form2.Aloss = 0;
+
+			 form2.Rshift = 8;
+			 form2.Gshift = 8;
+			 form2.Bshift = 8;
+			 form2.Ashift = 8;
+			 */
+			form2.Rmask = 0xff000000;
+			form2.Gmask = 0x00ff0000;
+			form2.Bmask = 0x0000ff00;
+			form2.Amask = 0x000000ff;
+
+			// SDL_SetColorKey(SDL_Surface *surface, <#int flag#>, <#Uint32 key#>)
+
+			SDL_Surface* img2 = SDL_ConvertSurface(img, &form2, SDL_SWSURFACE);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, img2->w, img2->h, 0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, img2->pixels);
+
+
+			SDL_FreeSurface(img2);
+		}
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		SDL_FreeSurface(img);
-		SDL_FreeSurface(img2);
 
 #else // SDL2_FOUND
 
@@ -354,9 +337,11 @@ extern "C" {
 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// wrap the textures
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-		
+
 		glBindTexture(GL_TEXTURE_2D, 0);
 #endif // SDL2_FOUND	// TODO: find another type of support for loading a texture with SDL?
+
+		std::cout << " - Loaded Texture ID:" << texture << "\tFile: " << name << std::endl;
 		return texture;
 	}
 	

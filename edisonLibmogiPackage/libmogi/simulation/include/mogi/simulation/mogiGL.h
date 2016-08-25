@@ -47,24 +47,61 @@
 	#endif
 #endif // __APPLE__
 
+#include <string>
+
+#define checkGLError() _checkGLError(__PRETTY_FUNCTION__, __FILE__, __LINE__)
 
 namespace Mogi {
 	namespace Simulation {
+
+		bool replace(std::string& str, const std::string& oldString, const std::string& newString);
+		void replaceAll(std::string& str, const std::string& oldString, const std::string& newString);
+
+		typedef enum {
+			MOGI_GLSL_VERSION_100 = 100,	// for GLES
+			MOGI_GLSL_VERSION_110 = 110,
+			MOGI_GLSL_VERSION_120 = 120,
+			MOGI_GLSL_VERSION_130 = 130,
+			MOGI_GLSL_VERSION_140 = 140,
+			MOGI_GLSL_VERSION_150 = 150,
+			MOGI_GLSL_VERSION_300 = 300,	// for GLES
+			MOGI_GLSL_VERSION_330 = 330,
+			MOGI_GLSL_VERSION_400 = 400,
+			MOGI_GLSL_VERSION_410 = 410,
+			MOGI_GLSL_VERSION_420 = 420,
+			MOGI_GLSL_VERSION_430 = 430,
+			MOGI_GLSL_VERSION_440 = 440,
+			MOGI_GLSL_VERSION_450 = 450
+		} Mogi_GLSL_Version;
 
 		// Singletone class to handle GL information
 		class MogiGLInfo {
 		private:
 			static MogiGLInfo* instance;
-			int versionMajor;
-			int versionMinor;
+			int versionMajorGL;
+			int versionMinorGL;
+
+			Mogi_GLSL_Version versionGLSL;
+//			int versionMajorGLSL;
+//			int versionMinorGLSL;
+
+			bool useGLES;
 
 			MogiGLInfo();
 		public:
 			static MogiGLInfo* getInstance();
 
-			int getVersion();
+			Mogi_GLSL_Version getVersion();
+			const char* getGLSLVersionStr();
+
+			bool isGLES();
 
 		};
+
+		std::string glGetErrorToString(GLenum Status);
+
+		int _checkGLError(const char* function, const char* file,int line);
+
 	}
 }
 

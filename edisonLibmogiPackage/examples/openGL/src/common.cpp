@@ -108,13 +108,15 @@ extern "C" {
 		if(SDL_Init(SDL_INIT_VIDEO) < 0) /* Initialize SDL's Video subsystem */
 			exit(1); /* Or die on error */
 
-
 		SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 4 );
 		SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 1 );
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+//		SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 2 );
+//		SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 0 );
+//		SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
 
 		SDL_GL_SetAttribute( SDL_GL_RED_SIZE, 5 );
-		SDL_GL_SetAttribute( SDL_GL_GREEN_SIZE, 5 );
+		SDL_GL_SetAttribute( SDL_GL_GREEN_SIZE, 6 );
 		SDL_GL_SetAttribute( SDL_GL_BLUE_SIZE, 5 );
 #ifdef __APPLE__
 		SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 32 );
@@ -124,7 +126,7 @@ extern "C" {
 		SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
 		//SDL_SetVideoMode(screenWidth,screenHeight,32,SDL_OPENGL);
 		//SDL_SetVideoMode( screenWidth, screenHeight, 32, SDL_OPENGL);
-		sdlWindow = SDL_CreateWindow("My Simulation Window",
+		sdlWindow = SDL_CreateWindow("Mogi",
 									 SDL_WINDOWPOS_UNDEFINED,
 									 SDL_WINDOWPOS_UNDEFINED,
 									 screenWidth, screenHeight,
@@ -151,7 +153,10 @@ extern "C" {
 		// See: http://stackoverflow.com/questions/10857335/opengl-glgeterror-returns-invalid-enum-after-call-to-glewinit
 #endif
 
-#ifndef OPENGLES_FOUND
+//#ifndef OPENGLES_FOUND
+//#if defined(BUILD_FOR_IOS) || defined(ANDROID)
+		// The raspberry pi breaks if the following runs even though it is ES2.  The following is needed for mobile devices
+		if( !MogiGLInfo::getInstance()->isGLES() ) {
 		// Some VAO needs to be bound before validating shaders in scene...
 		// This VAO is not used for anything else.
 		glGenVertexArrays(1, &_vertexArray);
@@ -161,7 +166,8 @@ extern "C" {
 			std::cout << " - Broke after VAO created: " << i << std::endl; // Adrian added printing of error value
 			exit(-1);
 		}
-#endif
+		}
+//#endif
 
 		std::cout << " - Allocating frame buffer." << std::endl;
 		frameBuffer = new FrameBuffer(screenWidth, screenHeight);
@@ -383,6 +389,7 @@ extern "C" {
 			}
 		}
 
+		if(0) {
 		for (int i = 0; i < testMeshes.size(); i++) {
 			for (int j = 0; j < testMaterials.size(); j++) {
 				Node* newNode = mainScene->rootNode.addNode("testMeshAndMaterials");
@@ -391,7 +398,7 @@ extern "C" {
 				mainScene->addRenderable(newNode, testMeshes[i], testMaterials[j]);
 			}
 		}
-
+		}
 	}
 
 	void UIhandler::initialize() {
@@ -415,6 +422,8 @@ extern "C" {
 		std::cout << " - Models initialized." << std::endl;
 
 		keyboardTimer.initialize();
+
+		std::cout << "MogiGLInfo::getInstance()->getVersion() == " << MogiGLInfo::getInstance()->getVersion() << std::endl;
 	}
 
 	void UIhandler::updateKeyboardControl()
@@ -570,6 +579,10 @@ extern "C" {
 	}
 
 	void UIhandler::updateModels() {
+		GLenum Status = glGetError();
+		if (Status != GL_NO_ERROR) {
+			std::cout << "Error: UIhandler::updateModels(): " << glGetErrorToString(Status) << std::endl;
+		}
 		for (int i = 0; i < N_LIGHTS; i++) {
 			char modelName[64];
 			sprintf(modelName, "lightModel %d", i);
@@ -607,15 +620,20 @@ extern "C" {
 		//		mShadowShader.getParameters()->colorMapEnable = colorMapEnable;
 		//
 		//		mShadowShader.getParameters()->mColorSource =
-		mShadowShader.getParameters()->normalMapEnable = normalMapEnable;
-		mShadowShader.getParameters()->disparityMapEnable = disparityMapEnable;
-		mShadowShader.getParameters()->specularMapEnable = specularMapEnable;
+		mShadowShader.getParametersMaterial()->normalMapEnable = normalMapEnable;
+		mShadowShader.getParametersMaterial()->disparityMapEnable = disparityMapEnable;
+		mShadowShader.getParametersMaterial()->specularMapEnable = specularMapEnable;
 
 		mainScene->update();
 
 		if(dynamicTexture) {
 			static int priorSeconds = -1;
 			if (priorSeconds != (int)keyboardTimer.runningTime()) {
+				GLenum Status = glGetError();
+				if (Status != GL_NO_ERROR) {
+					std::cout << "Error: if(dynamicTexture): " << glGetErrorToString(Status) << std::endl;
+				}
+
 				priorSeconds = (int)keyboardTimer.runningTime();
 				Image8 textureImage(256,256);
 				Pixel clearColor;
@@ -639,7 +657,17 @@ extern "C" {
 				lineColor.b = 0;
 				textureImage.DrawThickLine(textureImage.width()/2, textureImage.height()/2, textureImage.width()/2 * (sin(priorSeconds * MOGI_PI/30.0)+1), textureImage.width()/2 * (cos(priorSeconds * MOGI_PI/30.0)+1), textureImage.width()*0.04, lineColor);
 				dynamicTexture->setFromImage(textureImage);
+
+				Status = glGetError();
+				if (Status != GL_NO_ERROR) {
+					std::cout << "Error: if(dynamicTexture) end: " << glGetErrorToString(Status) << std::endl;
+				}
 			}
+
+		}
+		Status = glGetError();
+		if (Status != GL_NO_ERROR) {
+			std::cout << "Error: UIhandler::updateModels() end: " << glGetErrorToString(Status) << std::endl;
 		}
 	}
 
@@ -709,11 +737,15 @@ extern "C" {
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		mShadowShader.getParameters()->useShadows = useShadows;
-		mShadowShader.getParameters()->numberOfLights = 2;
+		mShadowShader.getParametersMaterial()->useShadows = useShadows;
+		mShadowShader.getParametersMaterial()->numberOfLights = 2;
 
 		// Main render call:
 		mainScene->draw( camera, &mShadowShader );
+		GLenum Status = glGetError();
+		if (Status != GL_NO_ERROR) {
+			std::cout << "Error: UIhandler::render() post draw: " << glGetErrorToString(Status) << std::endl;
+		}
 
 		// Disable the frame buffer:
 		frameBuffer->removeFramebuffer();
@@ -740,6 +772,11 @@ extern "C" {
 			testFinal->process(frameBuffer->getRenderTexture(FrameBuffer::TEXTURE_TYPE_DIFFUSE), camera[0]);
 		}
 
+		Status = glGetError();
+		if (Status != GL_NO_ERROR) {
+			std::cout << "Error: UIhandler::render() after postprocessing: " << glGetErrorToString(Status) << std::endl;
+		}
+
 		// Write text on the screen, etc.:
 		//		renderInterface( cameraLocation, cameraOrientation, NULL);
 
@@ -748,6 +785,11 @@ extern "C" {
 		mPerformanceMeasure.takeMeasurement("bokehPost");
 		//		mPerformanceMeasure.print();
 		mPerformanceMeasure.reset();
+
+		Status = glGetError();
+		if (Status != GL_NO_ERROR) {
+			std::cout << "Error: UIhandler::render() end: " << glGetErrorToString(Status) << std::endl;
+		}
 	}
 
 	void UIhandler::renderES() {
@@ -761,11 +803,11 @@ extern "C" {
 //		glEnable(GL_CULL_FACE);
 
 		//		mShadowShader.getParameters()->colorMapEnable = colorMapEnable;
-		mShadowShader.getParameters()->normalMapEnable = normalMapEnable;
-		mShadowShader.getParameters()->disparityMapEnable = disparityMapEnable;
-		mShadowShader.getParameters()->specularMapEnable = specularMapEnable;
-		mShadowShader.getParameters()->numberOfLights = N_LIGHTS;
-		mShadowShader.getParameters()->useShadows = false;
+		mShadowShader.getParametersMaterial()->normalMapEnable = normalMapEnable;
+		mShadowShader.getParametersMaterial()->disparityMapEnable = disparityMapEnable;
+		mShadowShader.getParametersMaterial()->specularMapEnable = specularMapEnable;
+		mShadowShader.getParametersMaterial()->numberOfLights = N_LIGHTS;
+		mShadowShader.getParametersMaterial()->useShadows = false;
 
 		mainScene->draw( camera, &mShadowShader );
 
@@ -842,7 +884,7 @@ extern "C" {
 			updateKeyboardControl();
 			displayCB(this);
 			updateModels();
-			render();
+			renderES();
 
 			SDL_GL_SwapWindow(sdlWindow);
 			//if(1000.0/30>SDL_GetTicks()-start)

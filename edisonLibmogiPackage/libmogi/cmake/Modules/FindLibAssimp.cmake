@@ -1,3 +1,16 @@
+#                                               -*- cmake -*-
+#
+#  FindLibAssimp.cmake
+#
+#  Copyright (C) 2016 Mogi LLC
+#
+#  This file is part of LibMogi.
+#
+#  LibMogi is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU Lesser General Public License
+#  version 2.1 as published by the Free Software Foundation;
+#
+
 # This module defines
 #  ASSIMP_INCLUDE_DIR, where to find assimp header files location, etc.
 #  ASSIMP_FOUND, If false, do not try to use ASSIMP.

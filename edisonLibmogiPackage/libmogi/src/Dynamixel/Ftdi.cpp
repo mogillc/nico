@@ -3,13 +3,14 @@
  *             Copyright (C) 2016 Mogi, LLC - All Rights Reserved             *
  *                            Author: Matt Bunting                            *
  *                                                                            *
- *   Proprietary and confidential.                                            *
+ *            This program is distributed under the LGPL, version 2           *
  *                                                                            *
- *   Unauthorized copying of this file via any medium is strictly prohibited  *
- *   without the explicit permission of Mogi, LLC.                            *
+ *   This program is free software; you can redistribute it and/or modify     *
+ *   it under the terms of the GNU Lesser General Public License              *
+ *   version 2.1 as published by the Free Software Foundation;                *
  *                                                                            *
  *   See license in root directory for terms.                                 *
- *   http://www.binpress.com/license/view/l/0088eb4b29b2fcff36e42134b0949f93  *
+ *   https://github.com/mogillc/nico/tree/master/edisonLibmogiPackage/libmogi *
  *                                                                            *
  *****************************************************************************/
 
@@ -56,6 +57,12 @@ int Ftdi::writeInterface(std::vector<unsigned char> data) {
 	//	ftdi_usb_purge_tx_buffer(ftdiContext);
 	// ftdi_transfer_data_done( ftdiContext);
 
+//	std::cout << "Outgoing:";
+//	for (int i = 0; i < data.size(); i++) {
+//		std::cout << " " << (int)data[i];
+//	}
+//	std::cout << std::endl;
+
 	ftdi_transfer_control* tc = ftdi_write_data_submit(ftdiContext, data.data(),
 			data.size());
 	if (tc == NULL) {
@@ -77,8 +84,13 @@ int Ftdi::readInterface(std::vector<unsigned char>* buffer, size_t maxSize) {
 	unsigned char tempBuffer[maxSize];
 	if (currentlyOpen) {
 		numSent = ftdi_read_data(ftdiContext, tempBuffer, maxSize);
+
 		for (int i = 0; i < numSent; i++) {
 			buffer->push_back(tempBuffer[i]);
+			
+//			if(i == 0) std::cout << "Incoming:";
+//			std::cout << " " << (int)tempBuffer[i];
+//			if(i == numSent-1) std::cout << std::endl;
 		}
 	}
 

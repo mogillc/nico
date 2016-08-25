@@ -13,6 +13,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 # options
 option( BUILD_FOR_IOS "Build library for iOS" OFF)
 option( BUILD_SIMULATION "Build the simulation engine" OFF)
+option (IPK "Generate IPK using CPack" OFF)
 
 if(BUILD_FOR_IOS)
 	add_definitions(-DBUILD_FOR_IOS)
@@ -47,13 +48,17 @@ else()
 endif()
 option( BUILD_STATIC_LIBS "Build the static library" ON)
 
+set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
+include( MogiLibrary )
+
 # The version number
 set (MAJOR_VERSION 0)
 set (MINOR_VERSION 1)
 set (MICRO_VERSION 1)
-set (VERSION_STRING ${MAJOR_VERSION}.${MINOR_VERSION}.${MICRO_VERSION})
+get_repo_version( SVN_VERSION )
+message(STATUS "Detected svn version: ${SVN_VERSION}")
+set (VERSION_STRING ${MAJOR_VERSION}.${MINOR_VERSION}.${MICRO_VERSION}-r${SVN_VERSION})
 
-set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
 if( BUILD_TESTS )
 	enable_testing()
@@ -100,7 +105,7 @@ ENDMACRO()
 HEADER_DIRECTORIES(ALL_HEADER_DIRS)
 include_directories(${ALL_HEADER_DIRS})
 
-include( MogiLibrary )
+
 
 # FIND PACKAGES:
 #	Threads:
@@ -135,31 +140,31 @@ if(BUILD_WITH_FTDI)
 	endif()
 endif()
 
-# SET COMPONENTS:
-INCLUDE(CPack)
-set(CPACK_COMPONENTS_ALL headers)
-
-set(CPACK_COMPONENT_HEADERS_DISPLAY_NAME "C++ Headers")
-set(CPACK_COMPONENT_HEADERS_DESCRIPTION "C/C++ header files.")
-set(CPACK_COMPONENT_HEADERS_GROUP    "Development")
-
-if(BUILD_STATIC_LIBS)
-	set(CPACK_COMPONENTS_ALL ${CPACK_COMPONENTS_ALL} staticlibs)
-	set(CPACK_COMPONENT_STATICLIBS_DISPLAY_NAME "Static libraries")
-	set(CPACK_COMPONENT_STATICLIBS_DESCRIPTION "Static library, good if you want to embed libmogi in your application.")
-	set(CPACK_COMPONENT_STATICLIBS_GROUP "Development")
-endif(BUILD_STATIC_LIBS)
-
-if(BUILD_SHARED_LIBS)
-	set(CPACK_COMPONENTS_ALL ${CPACK_COMPONENTS_ALL} sharedlibs)
-	set(CPACK_COMPONENT_SHAREDLIBS_DISPLAY_NAME "Shared libraries")
-	set(CPACK_COMPONENT_SHAREDLIBS_DESCRIPTION "Shared library for general use.")
-	set(CPACK_COMPONENT_SHAREDLIBS_GROUP "Development")
-endif(BUILD_SHARED_LIBS)
-
-#if(OPENGL_FOUND)
-	set(CPACK_COMPONENTS_ALL ${CPACK_COMPONENTS_ALL} resources)
-#endif(OPENGL_FOUND)
+## SET COMPONENTS:
+#INCLUDE(CPack)
+#set(CPACK_COMPONENTS_ALL headers)
+#
+#set(CPACK_COMPONENT_HEADERS_DISPLAY_NAME "C++ Headers")
+#set(CPACK_COMPONENT_HEADERS_DESCRIPTION "C/C++ header files.")
+#set(CPACK_COMPONENT_HEADERS_GROUP    "Development")
+#
+#if(BUILD_STATIC_LIBS)
+#	set(CPACK_COMPONENTS_ALL ${CPACK_COMPONENTS_ALL} staticlibs)
+#	set(CPACK_COMPONENT_STATICLIBS_DISPLAY_NAME "Static libraries")
+#	set(CPACK_COMPONENT_STATICLIBS_DESCRIPTION "Static library, good if you want to embed libmogi in your application.")
+#	set(CPACK_COMPONENT_STATICLIBS_GROUP "Development")
+#endif(BUILD_STATIC_LIBS)
+#
+#if(BUILD_SHARED_LIBS)
+#	set(CPACK_COMPONENTS_ALL ${CPACK_COMPONENTS_ALL} sharedlibs)
+#	set(CPACK_COMPONENT_SHAREDLIBS_DISPLAY_NAME "Shared libraries")
+#	set(CPACK_COMPONENT_SHAREDLIBS_DESCRIPTION "Shared library for general use.")
+#	set(CPACK_COMPONENT_SHAREDLIBS_GROUP "Development")
+#endif(BUILD_SHARED_LIBS)
+#
+##if(OPENGL_FOUND)
+#	set(CPACK_COMPONENTS_ALL ${CPACK_COMPONENTS_ALL} resources)
+##endif(OPENGL_FOUND)
 
 
 
@@ -172,42 +177,42 @@ IF(CMAKE_SIZEOF_VOID_P EQUAL 4)
     SET(PACK_ARCH .x86_64)
 endif(CMAKE_SIZEOF_VOID_P EQUAL 4)
 
-# Package information
-set(CPACK_PACKAGE_VERSION              ${VERSION_STRING})
-set(CPACK_PACKAGE_CONTACT              "Matt Bunting <matt@mogi.io>")
-set(CPACK_PACKAGE_DESCRIPTION          "libmogi library.")
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY  ${CPACK_PACKAGE_DESCRIPTION}
-                                       )
-
-# Package settings
-if(${UNIX})
-  set(CPACK_GENERATOR                    "DEB;RPM")
-  set(CPACK_CMAKE_GENERATOR              "Unix Makefiles")
-  set(CPACK_PACKAGE_NAME                 ${PROJECT_NAME})
-  set(CPACK_PACKAGE_FILE_NAME            ${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}${PACK_ARCH})
-endif(${UNIX})
-
-if(${WIN32})
-  set(CPACK_GENERATOR                    "NSIS")
-  set(CPACK_CMAKE_GENERATOR              "MinGW Makefiles")
-  set(CPACK_PACKAGE_NAME                 "${PROJECT_NAME}")
-  set(CPACK_PACKAGE_VENDOR               "")
-  set(CPACK_PACKAGE_INSTALL_DIRECTORY    "libmogi")
-  set(CPACK_PACKAGE_FILE_NAME            "${PROJECT_NAME}-${VERSION_STRING}-win32")
-  set(CPACK_NSIS_DISPLAY_NAME            "libmogi")
-  set(CPACK_NSIS_MODIFY_PATH             "ON")
-endif(${WIN32})
-
-set(CPACK_RESOURCE_FILE_LICENSE        ${CMAKE_SOURCE_DIR}/LICENSE)
-
-set(CPACK_SOURCE_GENERATOR             TGZ)
-set(CPACK_SOURCE_IGNORE_FILES          "\\\\.git")
-set(CPACK_SOURCE_PACKAGE_FILE_NAME     ${CPACK_PACKAGE_FILE_NAME})
-
-# Subdirectories
-if(${UNIX})
-  set(CPACK_SET_DESTDIR "ON")
-endif(${UNIX})
+## Package information
+#set(CPACK_PACKAGE_VERSION              ${VERSION_STRING})
+#set(CPACK_PACKAGE_CONTACT              "Matt Bunting <matt@mogi.io>")
+#set(CPACK_PACKAGE_DESCRIPTION          "libmogi library.")
+#set(CPACK_PACKAGE_DESCRIPTION_SUMMARY  ${CPACK_PACKAGE_DESCRIPTION}
+#                                       )
+#
+## Package settings
+#if(${UNIX})
+#  set(CPACK_GENERATOR                    "DEB;RPM")
+#  set(CPACK_CMAKE_GENERATOR              "Unix Makefiles")
+#  set(CPACK_PACKAGE_NAME                 ${PROJECT_NAME})
+#  set(CPACK_PACKAGE_FILE_NAME            ${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}${PACK_ARCH})
+#endif(${UNIX})
+#
+#if(${WIN32})
+#  set(CPACK_GENERATOR                    "NSIS")
+#  set(CPACK_CMAKE_GENERATOR              "MinGW Makefiles")
+#  set(CPACK_PACKAGE_NAME                 "${PROJECT_NAME}")
+#  set(CPACK_PACKAGE_VENDOR               "")
+#  set(CPACK_PACKAGE_INSTALL_DIRECTORY    "libmogi")
+#  set(CPACK_PACKAGE_FILE_NAME            "${PROJECT_NAME}-${VERSION_STRING}-win32")
+#  set(CPACK_NSIS_DISPLAY_NAME            "libmogi")
+#  set(CPACK_NSIS_MODIFY_PATH             "ON")
+#endif(${WIN32})
+#
+#set(CPACK_RESOURCE_FILE_LICENSE        ${CMAKE_SOURCE_DIR}/LICENSE)
+#
+#set(CPACK_SOURCE_GENERATOR             TGZ)
+#set(CPACK_SOURCE_IGNORE_FILES          "\\\\.git")
+#set(CPACK_SOURCE_PACKAGE_FILE_NAME     ${CPACK_PACKAGE_FILE_NAME})
+#
+## Subdirectories
+#if(${UNIX})
+#  set(CPACK_SET_DESTDIR "ON")
+#endif(${UNIX})
 
 
 
@@ -244,7 +249,31 @@ new_mogi_library( ${LIBNAME} ${DEPENDENCIES} )
 #message("-- Install Directory: ${CMAKE_INSTALL_PREFIX}")
 
 
+if (IPK)
+	#include (TargetArch)
+	set(DETECTED_ARCH "core2-32")
+	#target_architecture (DETECTED_ARCH)
+	#message( INFO " - Target arch is ${DETECTED_ARCH}")
 
+	#set(CPACK_GENERATOR "DEB" "TGZ")
+	set(CPACK_GENERATOR "DEB")
+	set(OPKG_ARCH ${DETECTED_ARCH})
+	set(CPACK_BINARY_DIR ${CMAKE_BINARY_DIR})
+	set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Mogi LLC") #required
+	set(CPACK_PACKAGE_VERSION ${VERSION_STRING})
+	set(CPACK_PACKAGE_NAME "libmogi")
+	set(CPACK_DEBIAN_PACKAGE_SECTION "libs")
+	set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE ${DETECTED_ARCH})
+	set(CPACK_SYSTEM_NAME ${DETECTED_ARCH})
+	set(CPACK_DEBIAN_PACKAGE_DEPENDS "libftdi1 (>= 1.2), jsoncpp (>= 0.6.0)")
+	set(CPACK_DEBIAN_PACKAGE_PROVIDES "libmogi-dev, libmogi-dbg, libmogi-doc")
+	set(CPACK_DEBIAN_PACKAGE_REPLACES "libmogi-dev, libmogi-dbg, libmogi-doc")
+	set(CPACK_DEBIAN_PACKAGE_CONFLICTS "libmogi-dev, libmogi-dbg, libmogi-doc")
+	set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Library for Mogi's robotics platforms.")
+	#SET(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA ${CMAKE_SOURCE_DIR}/cmake/postinst)
+	set(WDIR "${CPACK_TOPLEVEL_DIRECTORY}/${CPACK_PACKAGE_FILE_NAME}")
+	include (CPack)
+endif()
 
 
 

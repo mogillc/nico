@@ -3,13 +3,14 @@
  *             Copyright (C) 2016 Mogi, LLC - All Rights Reserved             *
  *                            Author: Matt Bunting                            *
  *                                                                            *
- *   Proprietary and confidential.                                            *
+ *            This program is distributed under the LGPL, version 2           *
  *                                                                            *
- *   Unauthorized copying of this file via any medium is strictly prohibited  *
- *   without the explicit permission of Mogi, LLC.                            *
+ *   This program is free software; you can redistribute it and/or modify     *
+ *   it under the terms of the GNU Lesser General Public License              *
+ *   version 2.1 as published by the Free Software Foundation;                *
  *                                                                            *
  *   See license in root directory for terms.                                 *
- *   http://www.binpress.com/license/view/l/0088eb4b29b2fcff36e42134b0949f93  *
+ *   https://github.com/mogillc/nico/tree/master/edisonLibmogiPackage/libmogi *
  *                                                                            *
  *****************************************************************************/
 
@@ -33,7 +34,6 @@ namespace Math {
 Time::Time() {
 	favg = 0;
 	fnum = 0;
-	maxDTime = 1;
 }
 
 void Time::initialize() {
@@ -48,12 +48,13 @@ void Time::update() {
 	gettimeofday(&tv, NULL);   // Grab the current time
 	oldtimecycle = timecycle;  // Store the old time
 	timecycle = tv.tv_sec + tv.tv_usec * 1e-6; // Compute the current time, in seconds
-	double dtimeTest = timecycle - oldtimecycle;
-	if (dtimeTest < maxDTime) { // The difference in time, most times, should be
-								// less than this.
-		dtime = dtimeTest; // Find the time difference.  This is used throughout
-						   // the main loop, for velocities and temporal filters
-	}
+//	double dtimeTest = timecycle - oldtimecycle;
+//	if (dtimeTest < maxDTime) { // The difference in time, most times, should be
+//								// less than this.
+//		dtime = dtimeTest; // Find the time difference.  This is used throughout
+//						   // the main loop, for velocities and temporal filters
+//	}
+	dtime = timecycle - oldtimecycle;
 
 	if (favg == 0) {
 		favg = 1 / dtime;
@@ -93,10 +94,6 @@ double Time::runningTime() {
 	return runningtime;
 }
 ;
-
-void Time::setMaxDeltaTime(double time) {
-	maxDTime = time;
-}
 
 double Time::dTime() {
 	return dtime;

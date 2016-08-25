@@ -13,10 +13,13 @@
  *                                                                            *
  *****************************************************************************/
 
+#include "mogiGL.h"
 #include "mesh.h"
 #include <math.h>
 #include "dynamicShader.h"
 #include <iostream>
+
+#include "texture.h"
 
 using namespace std;
 
@@ -24,54 +27,56 @@ using namespace std;
 extern "C" {
 #endif
 
-using namespace Mogi;
-using namespace Simulation;
+	using namespace Mogi;
+	using namespace Simulation;
 
-MBmesh::MBmesh()
+	MBmesh::MBmesh()
 	{// : material(NULL){
-	glGenBuffers(1, &vertexBufferObject);
-	glGenBuffers(1, &indexBufferObject);
-}
-
-MBmesh::~MBmesh() {
-	glDeleteBuffers(1, &vertexBufferObject);
-	glDeleteBuffers(1, &indexBufferObject);
-
-	for (int i = 0; i < bones.size(); i++) {
-		delete bones[i];
+		glGenBuffers(1, &vertexBufferObject);
+		glGenBuffers(1, &indexBufferObject);
 	}
-	bones.clear();
-}
 
-//MBmesh& MBmesh::operator=(const MBmesh& param) {
-//	name = param.name;
-//	indices = param.indices;
-//	data = param.data;
-//
-//	glBindBuffer(GL_ARRAY_BUFFER, vertexBufferObject);
-//	glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(VertexData), &data[0],
-//			GL_STATIC_DRAW);
-//
-//	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferObject);
-//	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int),
-//			&indices[0], GL_STATIC_DRAW);
-//
-//	glBindBuffer(GL_ARRAY_BUFFER, 0);
-//	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-//
-//	return *this;
-//}
+	MBmesh::~MBmesh() {
+		glDeleteBuffers(1, &vertexBufferObject);
+		glDeleteBuffers(1, &indexBufferObject);
+
+		for (int i = 0; i < bones.size(); i++) {
+			delete bones[i];
+		}
+		bones.clear();
+	}
+
+	//MBmesh& MBmesh::operator=(const MBmesh& param) {
+	//	name = param.name;
+	//	indices = param.indices;
+	//	data = param.data;
+	//
+	//	glBindBuffer(GL_ARRAY_BUFFER, vertexBufferObject);
+	//	glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(VertexData), &data[0],
+	//			GL_STATIC_DRAW);
+	//
+	//	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferObject);
+	//	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int),
+	//			&indices[0], GL_STATIC_DRAW);
+	//
+	//	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	//	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	//
+	//	return *this;
+	//}
 
 
-//	void MBmesh::sendMatricesToShader( MBshader *shader, Camera *camera) {
-//		MBmatrix myModelViewMatrix = camera->getViewMatrix() * ;
-//		MBmatrix myModelViewProjectionMatrix =
-//camera->getProjectionMatrix() * myModelViewMatrix;
-//		MBmatrix myNormalMatrix =
-//GLKMatrix4GetMatrix3(myModelViewMatrix);
-//	}
+	//	void MBmesh::sendMatricesToShader( MBshader *shader, Camera *camera) {
+	//		MBmatrix myModelViewMatrix = camera->getViewMatrix() * ;
+	//		MBmatrix myModelViewProjectionMatrix =
+	//camera->getProjectionMatrix() * myModelViewMatrix;
+	//		MBmatrix myNormalMatrix =
+	//GLKMatrix4GetMatrix3(myModelViewMatrix);
+	//	}
 
 	void MBmesh::bindForDrawing(MBshader* shader) {
+		checkGLError();
+
 		// attribute vec3 vertex
 		vertex = shader->getAttributeLocation("position");// glGetAttribLocation(shader->program(), "position");  // 0
 		normal = shader->getAttributeLocation("normal");// glGetAttribLocation(shader->program(), "normal");  // 1
@@ -80,7 +85,7 @@ MBmesh::~MBmesh() {
 		color = shader->getAttributeLocation("color");// glGetAttribLocation(shader->program(), "color");  // 3
 		UV = shader->getAttributeLocation("UV");// glGetAttribLocation(shader->program(), "UV");  // 4
 
-//		std::cout << "vertex = " << vertex << std::endl;
+		//		std::cout << "vertex = " << vertex << std::endl;
 		//	GLint currentObject;
 		//	glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &currentObject);
 		//	if (currentObject != vertexBufferObject) {
@@ -91,43 +96,62 @@ MBmesh::~MBmesh() {
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferObject);
 		//	}
 
-		glEnableVertexAttribArray(vertex);
-		glVertexAttribPointer(vertex, 3, GL_FLOAT, GL_FALSE, sizeof(VertexData), 0);
+		if(vertex >= 0) {
+			glEnableVertexAttribArray(vertex);
+			glVertexAttribPointer(vertex, 3, GL_FLOAT, GL_FALSE, sizeof(VertexData), 0);
+		}
 
-		glEnableVertexAttribArray(normal);
-		glVertexAttribPointer(normal, 3, GL_FLOAT, GL_FALSE, sizeof(VertexData), (void*) (3 * sizeof(float)));
+		if(normal >= 0) {
+			glEnableVertexAttribArray(normal);
+			glVertexAttribPointer(normal, 3, GL_FLOAT, GL_FALSE, sizeof(VertexData), (void*) (3 * sizeof(float)));
+		}
 
-		glEnableVertexAttribArray(tangent);
-		glVertexAttribPointer(tangent, 3, GL_FLOAT, GL_FALSE, sizeof(VertexData), (void*) (6 * sizeof(float)));
+		if(tangent >= 0) {
+			glEnableVertexAttribArray(tangent);
+			glVertexAttribPointer(tangent, 3, GL_FLOAT, GL_FALSE, sizeof(VertexData), (void*) (6 * sizeof(float)));
+		}
 
 		//	glEnableVertexAttribArray(bitangent);
 		//	glVertexAttribPointer(bitangent, 3, GL_FLOAT, GL_FALSE, sizeof(VertexData), (void*) (9 * sizeof(float)));
 
-		glEnableVertexAttribArray(color);
-		glVertexAttribPointer(color, 3, GL_FLOAT, GL_FALSE, sizeof(VertexData), (void*) (9 * sizeof(float)));
+		if(color >= 0) {
+			glEnableVertexAttribArray(color);
+			glVertexAttribPointer(color, 3, GL_FLOAT, GL_FALSE, sizeof(VertexData), (void*) (9 * sizeof(float)));
+		}
 
-		glEnableVertexAttribArray(UV);
-		glVertexAttribPointer(UV, 2, GL_FLOAT, GL_FALSE, sizeof(VertexData), (void*) (12 * sizeof(float)));
+		if(UV >= 0) {
+			glEnableVertexAttribArray(UV);
+			glVertexAttribPointer(UV, 2, GL_FLOAT, GL_FALSE, sizeof(VertexData), (void*) (12 * sizeof(float)));
+		}
 
+		checkGLError();
 	}
 
 	int MBmesh::draw(MBshader* shader) {
+		shader->updateUniforms();
+
 		glDrawElements(GL_TRIANGLES, (int)indices.size(), GL_UNSIGNED_INT, 0);
+		checkGLError();
 
 		return getNumberOfVertices()/3;
 	}
 
 	void MBmesh::unbindFromDrawing() {
+		checkGLError();
 
-		glDisableVertexAttribArray(vertex);
-		glDisableVertexAttribArray(normal);
-		glDisableVertexAttribArray(tangent);
+		if(vertex >= 0) glDisableVertexAttribArray(vertex);
+		if(normal >= 0) glDisableVertexAttribArray(normal);
+		if(tangent >= 0) glDisableVertexAttribArray(tangent);
 		//	glDisableVertexAttribArray(bitangent);
-		glDisableVertexAttribArray(color);
-		glDisableVertexAttribArray(UV);
+		if(color >= 0) glDisableVertexAttribArray(color);
+		if(UV >= 0) glDisableVertexAttribArray(UV);
 
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		//		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+		//		glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+		if (checkGLError() != GL_NO_ERROR) {
+			std::cout << " - v:" << vertex << " n:" << normal << " t:" << tangent << " c:" << color << " U:" << UV << std::endl;
+		}
 	}
 
 
@@ -171,11 +195,11 @@ MBmesh::~MBmesh() {
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 	}
 
-void MBmesh::matchBonesToNodes(Math::Node* rootNode) {
-	for (int i = 0; i < bones.size(); i++) {
-		bones[i]->findNode(rootNode);
+	void MBmesh::matchBonesToNodes(Math::Node* rootNode) {
+		for (int i = 0; i < bones.size(); i++) {
+			bones[i]->findNode(rootNode);
+		}
 	}
-}
 
 	void MBmesh::generateCodeFromMesh() {
 		std::cout << "Generated post process:" << std::endl;
@@ -196,9 +220,9 @@ void MBmesh::matchBonesToNodes(Math::Node* rootNode) {
 			std::cout << "data.tangent.x = " << (*it).tangent.x << ";" << std::endl;
 			std::cout << "data.tangent.y = " << (*it).tangent.y << ";" << std::endl;
 			std::cout << "data.tangent.z = " << (*it).tangent.z << ";" << std::endl;
-//			std::cout << "data.bitangent.x = " << (*it).bitangent.x << ";" << std::endl;
-//			std::cout << "data.bitangent.y = " << (*it).bitangent.y << ";" << std::endl;
-//			std::cout << "data.bitangent.z = " << (*it).bitangent.z << ";" << std::endl;
+			//			std::cout << "data.bitangent.x = " << (*it).bitangent.x << ";" << std::endl;
+			//			std::cout << "data.bitangent.y = " << (*it).bitangent.y << ";" << std::endl;
+			//			std::cout << "data.bitangent.z = " << (*it).bitangent.z << ";" << std::endl;
 			std::cout << "data.U = " << (*it).U << ";" << std::endl;
 			std::cout << "data.V = " << (*it).V << ";" << std::endl;
 			std::cout << "vertexData.push_back(data);" << std::endl;
@@ -275,9 +299,9 @@ void MBmesh::matchBonesToNodes(Math::Node* rootNode) {
 				data.tangent.x = tangent(0);	// TODO: test this
 				data.tangent.y = tangent(1);
 				data.tangent.z = tangent(2);
-//				Math::Vector bitangent = normal.cross(tangent);
-//				data.bitangent.x = bitangent(0);	// TODO: test this
-//				data.bitangent.y = bitangent(1);
+				//				Math::Vector bitangent = normal.cross(tangent);
+				//				data.bitangent.x = bitangent(0);	// TODO: test this
+				//				data.bitangent.y = bitangent(1);
 				//				data.bitangent.z = bitangent(2);
 				data.U = (double)j/numberLongitudeLines;
 				data.V = (double)i/numberLatitudeLines;
@@ -313,7 +337,7 @@ void MBmesh::matchBonesToNodes(Math::Node* rootNode) {
 		vertexData.push_back(data);
 
 		// Bottom Vertex:
-//		Math::Vector normal(3);
+		//		Math::Vector normal(3);
 		data.normal.x = 0;
 		data.normal.y = 0;
 		data.normal.z = -1;
@@ -323,7 +347,7 @@ void MBmesh::matchBonesToNodes(Math::Node* rootNode) {
 		data.position.x = radius * data.normal.x;
 		data.position.y = radius * data.normal.y;
 		data.position.z = radius * data.normal.z;
-//		Math::Vector tangent(3);
+		//		Math::Vector tangent(3);
 		tangent(0) = 0;	// TODO: test this
 		tangent(1) = -1;
 		tangent(2) = 0;
@@ -370,17 +394,17 @@ void MBmesh::matchBonesToNodes(Math::Node* rootNode) {
 		indices.push_back( vertexData.size()-2); // the index above
 		indices.push_back(numberLongitudeLines-1); // the index left (j = numberLongitudeLines)
 
-			for (int j = 1; j < numberLongitudeLines; j++) {
-				// Fill in the top ring:
-				indices.push_back(j ); // this index
-				indices.push_back( vertexData.size()-2); // the index above
-				indices.push_back(j-1); // the index left
+		for (int j = 1; j < numberLongitudeLines; j++) {
+			// Fill in the top ring:
+			indices.push_back(j ); // this index
+			indices.push_back( vertexData.size()-2); // the index above
+			indices.push_back(j-1); // the index left
 
-				// Fill in the bottom ring:
-				indices.push_back(j + (numberLatitudeLines-2)*numberLongitudeLines); // this index
-				indices.push_back(j-1 + (numberLatitudeLines-2)*numberLongitudeLines); // the index left
-				indices.push_back( vertexData.size()-1); // the index above
-			}
+			// Fill in the bottom ring:
+			indices.push_back(j + (numberLatitudeLines-2)*numberLongitudeLines); // this index
+			indices.push_back(j-1 + (numberLatitudeLines-2)*numberLongitudeLines); // the index left
+			indices.push_back( vertexData.size()-1); // the index above
+		}
 		// fill in the bottom final triangle:
 		indices.push_back(0  + (numberLatitudeLines-2)*numberLongitudeLines); // this index
 		indices.push_back(numberLongitudeLines-1 + (numberLatitudeLines-2)*numberLongitudeLines); // the index left
@@ -393,42 +417,42 @@ void MBmesh::matchBonesToNodes(Math::Node* rootNode) {
 	}
 
 	void MBmesh::makeSphereCorrectUV(double radius, int numberLatitudeLines, int numberLongitudeLines) {
-			if (numberLongitudeLines < 3 || numberLatitudeLines < 3) {
-				std::cerr << "Error: MBmesh::makeSphereCorrectUV(): Please specify more than 3 longitude and latitude lines." << std::endl;
-				return;
+		if (numberLongitudeLines < 3 || numberLatitudeLines < 3) {
+			std::cerr << "Error: MBmesh::makeSphereCorrectUV(): Please specify more than 3 longitude and latitude lines." << std::endl;
+			return;
+		}
+		numberLatitudeLines--;
+		VertexData data;
+		std::vector<VertexData> vertexData;
+		for (int i = 0; i <= numberLatitudeLines; i++) {
+			for (int j = 0; j <= numberLongitudeLines; j++) {
+				Math::Vector normal(3);
+				data.normal.x = sin(MOGI_PI * (double)i/numberLatitudeLines)*cos(2.0*MOGI_PI * (double)j/numberLongitudeLines);
+				data.normal.y = sin(MOGI_PI * (double)i/numberLatitudeLines)*sin(2.0*MOGI_PI * (double)j/numberLongitudeLines);
+				data.normal.z = cos(MOGI_PI * (double)i/numberLatitudeLines);
+				normal(0) = data.normal.x;
+				normal(1) = data.normal.y;
+				normal(2) = data.normal.z;
+				data.position.x = radius * data.normal.x;
+				data.position.y = radius * data.normal.y;
+				data.position.z = radius * data.normal.z;
+				Math::Vector tangent(3);
+				tangent(0) = cos(MOGI_PI * (double)i/numberLatitudeLines)*cos(2.0*MOGI_PI * (double)j/numberLongitudeLines);	// TODO: test this
+				tangent(1) = cos(MOGI_PI * (double)i/numberLatitudeLines)*sin(2.0*MOGI_PI * (double)j/numberLongitudeLines);
+				tangent(2) = -sin(MOGI_PI * (double)i/numberLatitudeLines);
+				tangent.normalize();
+				data.tangent.x = tangent(0);	// TODO: test this
+				data.tangent.y = tangent(1);
+				data.tangent.z = tangent(2);
+				//				Math::Vector bitangent = normal.cross(tangent);
+				//				data.bitangent.x = bitangent(0);	// TODO: test this
+				//				data.bitangent.y = bitangent(1);
+				//				data.bitangent.z = bitangent(2);
+				data.U = (double)j/numberLongitudeLines;
+				data.V = (double)i/numberLatitudeLines;
+				vertexData.push_back(data);
 			}
-			numberLatitudeLines--;
-			VertexData data;
-			std::vector<VertexData> vertexData;
-			for (int i = 0; i <= numberLatitudeLines; i++) {
-				for (int j = 0; j <= numberLongitudeLines; j++) {
-					Math::Vector normal(3);
-					data.normal.x = sin(MOGI_PI * (double)i/numberLatitudeLines)*cos(2.0*MOGI_PI * (double)j/numberLongitudeLines);
-					data.normal.y = sin(MOGI_PI * (double)i/numberLatitudeLines)*sin(2.0*MOGI_PI * (double)j/numberLongitudeLines);
-					data.normal.z = cos(MOGI_PI * (double)i/numberLatitudeLines);
-					normal(0) = data.normal.x;
-					normal(1) = data.normal.y;
-					normal(2) = data.normal.z;
-					data.position.x = radius * data.normal.x;
-					data.position.y = radius * data.normal.y;
-					data.position.z = radius * data.normal.z;
-					Math::Vector tangent(3);
-					tangent(0) = cos(MOGI_PI * (double)i/numberLatitudeLines)*cos(2.0*MOGI_PI * (double)j/numberLongitudeLines);	// TODO: test this
-					tangent(1) = cos(MOGI_PI * (double)i/numberLatitudeLines)*sin(2.0*MOGI_PI * (double)j/numberLongitudeLines);
-					tangent(2) = -sin(MOGI_PI * (double)i/numberLatitudeLines);
-					tangent.normalize();
-					data.tangent.x = tangent(0);	// TODO: test this
-					data.tangent.y = tangent(1);
-					data.tangent.z = tangent(2);
-					//				Math::Vector bitangent = normal.cross(tangent);
-					//				data.bitangent.x = bitangent(0);	// TODO: test this
-					//				data.bitangent.y = bitangent(1);
-					//				data.bitangent.z = bitangent(2);
-					data.U = (double)j/numberLongitudeLines;
-					data.V = (double)i/numberLatitudeLines;
-					vertexData.push_back(data);
-				}
-			}
+		}
 
 		std::vector<unsigned int> indices;
 		// Fill in the center main section:
@@ -690,18 +714,18 @@ void MBmesh::matchBonesToNodes(Math::Node* rootNode) {
 		} else { //if(Cmax == B) {
 			result.h = ((R-G)/delta + 4) / 6.0;
 		}
-
+		
 		if (Cmax == 0) {
 			result.s = 0;
 		} else {
 			result.s = delta/Cmax;
 		}
-
+		
 		result.v = Cmax;
-
+		
 		return result;
 	}
-
+	
 #ifdef _cplusplus
 }
 #endif

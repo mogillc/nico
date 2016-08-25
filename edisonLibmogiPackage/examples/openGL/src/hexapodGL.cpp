@@ -33,7 +33,7 @@ private:
  *	Shared memory
  ******************************************/
 // For UI/model updating:
-UIhandler mUIhandler;
+UIhandler mUIhandler(640,480);
 Time btime;
 
 // Hexapod and control:

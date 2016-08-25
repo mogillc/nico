@@ -13,6 +13,7 @@
  *                                                                            *
  *****************************************************************************/
 
+#include "mogiGL.h"
 #include "postprocess.h"
 #include <mogi.h>
 #include <math.h>
@@ -47,8 +48,8 @@ extern "C" {
 		biasedModelViewProjectionMatrix = biasMatrix * modelViewProjectionMatrix;
 
 		std::cout << "Loading Final Process shader ... ";
-		FinalProcessShaderParameters parameters;
-		basicShader = ShaderFactory::getInstance(&parameters);
+//		FinalProcessShaderParameters mFinalProcessShaderParameters;
+		basicShader = ShaderFactory::getInstance(&mFinalProcessShaderParameters);
 		std::cout << "Done." << std::endl;
 
 //		generatedPostProcessMeshCode(&renderPlane);
@@ -106,7 +107,8 @@ extern "C" {
 		glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-#ifdef OPENGLES_FOUND	// The polygogonmode function is undefined, as is GL_FILL
+//#ifdef OPENGLES_FOUND	// The polygogonmode function is undefined, as is GL_FILL
+#ifdef GL_ES_VERSION_2_0 // also defined for 3.0
 		//http://stackoverflow.com/questions/4627770/any-glpolygonmode-alternative-on-iphone-opengl-es
 		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINES);	// TODO: figure this out for ES
 #else
@@ -122,10 +124,15 @@ extern "C" {
 	}
 
 	void MBpostprocess::drawPlane(MBshader* shader) {
-		shader->sendMatrix("modelViewProjectionMatrix", modelViewProjectionMatrix);
-		shader->sendMatrix("biasedModelViewProjectionMatrix", biasedModelViewProjectionMatrix);
+//		shader->sendMatrix("modelViewProjectionMatrix", modelViewProjectionMatrix);
+//		shader->sendMatrix("biasedModelViewProjectionMatrix", biasedModelViewProjectionMatrix);
+		shader->setMatrix("modelViewProjectionMatrix", modelViewProjectionMatrix);
+		shader->setMatrix("biasedModelViewProjectionMatrix", biasedModelViewProjectionMatrix);
+
+		checkGLError();
 
 		renderPlane.bindForDrawing(shader);
+		shader->updateUniforms();
 		renderPlane.draw(shader);
 		renderPlane.unbindFromDrawing();
 	}
@@ -136,9 +143,12 @@ extern "C" {
 
 		renderTexture.setUniformName("bgl_RenderedTexture");
 
+		checkGLError();
+
 		basicShader->useProgram();
 		{
 			renderTexture.sendTextureToShader(basicShader);
+			basicShader->updateUniforms();
 			drawPlane(basicShader);
 		}
 		basicShader->stopProgram();
@@ -176,9 +186,9 @@ extern "C" {
 		glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		bokehShader->getParameters()->autoFocusEnable = autofocus;
-		bokehShader->getParameters()->vignettingEnable = vignetteEnable;
-		bokehShader->getParameters()->debugEnable = debugFocus;
+		bokehShader->getParametersBokeh()->autoFocusEnable = autofocus;
+		bokehShader->getParametersBokeh()->vignettingEnable = vignetteEnable;
+		bokehShader->getParametersBokeh()->debugEnable = debugFocus;
 
 		glDisable (GL_DEPTH_TEST);
 		bokehShader->useProgram();
@@ -188,7 +198,8 @@ extern "C" {
 
 
 			if (autofocus) {
-#ifdef OPENGLES_FOUND
+//#ifdef OPENGLES_FOUND
+#ifdef GL_ES_VERSION_2_0 // also defined for 3.0
 				// TODO: figure out how to get textures from ES
 				//		glGetTexImage(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, GL_FLOAT, data);
 				//glBindRenderbuffer(<#GLenum target#>, <#GLuint renderbuffer#>)
@@ -207,16 +218,26 @@ extern "C" {
 #endif
 			}
 
-			bokehShader->sendFloat("bgl_RenderedTextureWidth", renderCamera.getXresolution());
-			bokehShader->sendFloat("bgl_RenderedTextureHeight", renderCamera.getYresolution());
-			bokehShader->sendFloat("focalDepth", focalDepth);  // in m
-			bokehShader->sendFloat("focalLength", fLength);    // in mm
-			bokehShader->sendFloat("fstop", fstop);
-			bokehShader->sendInteger("showFocus", debugFocus);
+//			bokehShader->sendFloat("bgl_RenderedTextureWidth", renderCamera.getXresolution());
+//			bokehShader->sendFloat("bgl_RenderedTextureHeight", renderCamera.getYresolution());
+//			bokehShader->sendFloat("focalDepth", focalDepth);  // in m
+//			bokehShader->sendFloat("focalLength", fLength);    // in mm
+//			bokehShader->sendFloat("fstop", fstop);
+			bokehShader->setFloat("bgl_RenderedTextureWidth", renderCamera.getXresolution());
+			bokehShader->setFloat("bgl_RenderedTextureHeight", renderCamera.getYresolution());
+			bokehShader->setFloat("focalDepth", focalDepth);  // in m
+			bokehShader->setFloat("focalLength", fLength);    // in mm
+			bokehShader->setFloat("fstop", fstop);
+
+//			bokehShader->sendInteger("showFocus", debugFocus);
+//			bokehShader->getParametersBokeh()->
+			bokehShader->getParametersBokeh()->debugEnable = debugFocus;
 			//bokehShader->sendInteger("autofocus", 0);
 
-			bokehShader->sendFloat("zfar", renderCamera.getFarClip());
-			bokehShader->sendFloat("znear", renderCamera.getNearClip());
+//			bokehShader->sendFloat("zfar", renderCamera.getFarClip());
+//			bokehShader->sendFloat("znear", renderCamera.getNearClip());
+			bokehShader->setFloat("zfar", renderCamera.getFarClip());
+			bokehShader->setFloat("znear", renderCamera.getNearClip());
 
 			drawPlane(bokehShader);
 		}
@@ -237,8 +258,8 @@ extern "C" {
 	MBdeferredLighting::MBdeferredLighting(int xRes, int yRes)
  :MBpostprocess(xRes, yRes) {
 	 std::cout << "Loading Lighting shader...";
-	 DeferredLightingShaderParameters parameters;
-	 lightingShader = ShaderFactory::getInstance(&parameters);
+//	 DeferredLightingShaderParameters mDeferredLightingShaderParameters;
+	 lightingShader = ShaderFactory::getInstance(&mDeferredLightingShaderParameters);
 	 std::cout << "Done." << std::endl;
  }
 
@@ -267,8 +288,10 @@ extern "C" {
 			float uTanHalfFov = tan(renderCamera.getFOV() / 2);
 			float aspect = renderCamera.getAspect();
 
-			lightingShader->sendFloat("uTanHalfFov", uTanHalfFov);
-			lightingShader->sendFloat("uAspectRatio", aspect);
+//			lightingShader->sendFloat("uTanHalfFov", uTanHalfFov);
+//			lightingShader->sendFloat("uAspectRatio", aspect);
+			lightingShader->setFloat("uTanHalfFov", uTanHalfFov);
+			lightingShader->setFloat("uAspectRatio", aspect);
 
 			for (int i = 0; i < lights.size(); i++) {
 				// lights[i]->

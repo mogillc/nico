@@ -3,13 +3,14 @@
  *             Copyright (C) 2016 Mogi, LLC - All Rights Reserved             *
  *                            Author: Matt Bunting                            *
  *                                                                            *
- *   Proprietary and confidential.                                            *
+ *            This program is distributed under the GPL, version 2            *
  *                                                                            *
- *   Unauthorized copying of this file via any medium is strictly prohibited  *
- *   without the explicit permission of Mogi, LLC.                            *
+ *   This program is free software; you can redistribute it and/or modify     *
+ *   it under the terms of the GNU Lesser General Public License              *
+ *   version 2.1 as published by the Free Software Foundation;                *
  *                                                                            *
  *   See license in root directory for terms.                                 *
- *   http://www.binpress.com/license/view/l/0088eb4b29b2fcff36e42134b0949f93  *
+ *   https://github.com/mogillc/nico/tree/master/edisonLibmogiPackage/libmogi *
  *                                                                            *
  *****************************************************************************/
 
@@ -383,8 +384,7 @@ void printUsage(char* argv[]) {
 	std::cout << "Options:" << std::endl;
 	std::cout << "  -h,--help                  Display this information" << std::endl;
 	std::cout << "  -v,--verbose               Displays a more verbose output, if applicable" << std::endl;
-	std::cout << "  -s [<start,end>],--search=[<start,end>]" << std::endl;
-	std::cout << "                             Performs a motor search routine given a search start and end ID" << std::endl;
+	std::cout << "  -s,--search=[<start,end>]  Performs a motor search routine given a search start and end ID" << std::endl;
 	std::cout << "  -r,--read                  Performs a motor register read or sync_read instruction" << std::endl;
 	std::cout << "  -w <reg,value>,--write=<reg,value>" << std::endl;
 	std::cout << "                             Performs a write or sync_write command to registers with a value" << std::endl;
@@ -464,6 +464,7 @@ int main(int argc, char* argv[]) {
 		{ "bulkwrite", required_argument, NULL, 'W' },
 		{ "numbytes", required_argument, NULL, 'n' },
 		{ "datarange", required_argument, NULL, 'd' },
+//		{ "length", required_argument, NULL, 'l' },
 		{ 0, 0, 0, 0 } };
 
 	int opt;
@@ -505,7 +506,7 @@ int main(int argc, char* argv[]) {
 
 			case 's':
 				search = true;
-				if (optarg) {
+				if (optarg && *optarg) {
 					if(parseRange(optarg, &searchRange) != EXIT_SUCCESS) {
 						printUsage(argv);
 						return EXIT_FAILURE;
@@ -574,9 +575,20 @@ int main(int argc, char* argv[]) {
 				break;
 
 			case 'd':
+			{
+				unsigned short savedReg;
+				bool save = false;
+				if (packetType == Instruction::WRITE) {
+					savedReg = dataRange.reg;
+					save = true;
+				}
 				if(parseRange(optarg, &dataRange) != EXIT_SUCCESS) {
 					return EXIT_FAILURE;
 				}
+				if(save) {
+					dataRange.reg = savedReg;
+				}
+			}
 				break;
 
 			case '?':	// Let's be strict.
@@ -642,8 +654,7 @@ int main(int argc, char* argv[]) {
 			std::cout << (unsigned int) *it << " ";
 		}
 		std::cout << std::endl;
-		std::cout << " - Dynamixel version: " << (int) packetVersion
-		<< std::endl;
+		std::cout << " - Dynamixel protocol: " << (int) packetVersion << std::endl;
 		if (fileName != NULL) {
 			std::cout << " - Type: COM" << std::endl;
 		}
@@ -652,6 +663,12 @@ int main(int argc, char* argv[]) {
 			std::cout << " - Type: FTDI" << std::endl;
 		}
 #endif
+
+		if( search ) {
+			std::cout << " - Search range: " << searchRange.reg << "," << searchRange.length << std::endl;
+		} else {
+			std::cout << " - Data range: " << dataRange.reg << "," << dataRange.length << std::endl;
+		}
 	}
 
 	Interface* dynamixelInterface;
@@ -740,8 +757,7 @@ int searchDynamixels(Interface* interface, DataRange dataRange, bool verbose) {
 					   / (double) (dataRange.length - dataRange.reg));
 		}
 	}
-	while (dynamixelHandler.busy())
-		;
+	while (dynamixelHandler.busy());
 	if (verbose) {
 		printGraph(65,
 				   (double) ((double) (dataRange.length - dataRange.reg)
@@ -750,12 +766,10 @@ int searchDynamixels(Interface* interface, DataRange dataRange, bool verbose) {
 		std::cout << std::endl;
 	}
 
-	std::map<unsigned char, Motor*> dynamixels =
-	dynamixelHandler.getDynamixels();
+	std::map<unsigned char, Motor*> dynamixels = dynamixelHandler.getDynamixels();
 	if (verbose)
 		std::cout << "Found " << dynamixels.size() << " motors:" << std::endl;
-	for (std::map<unsigned char, Motor*>::iterator it = dynamixels.begin();
-			it != dynamixels.end(); it++) {
+	for (std::map<unsigned char, Motor*>::iterator it = dynamixels.begin(); it != dynamixels.end(); it++) {
 		Motor* dynamixel = it->second;
 		if (verbose)
 			std::cout << " - Motor " << (int) it->first << "\ttype: "

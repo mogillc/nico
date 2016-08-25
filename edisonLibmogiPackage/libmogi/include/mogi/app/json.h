@@ -3,13 +3,14 @@
  *             Copyright (C) 2016 Mogi, LLC - All Rights Reserved             *
  *                            Author: Matt Bunting                            *
  *                                                                            *
- *   Proprietary and confidential.                                            *
+ *            This program is distributed under the LGPL, version 2           *
  *                                                                            *
- *   Unauthorized copying of this file via any medium is strictly prohibited  *
- *   without the explicit permission of Mogi, LLC.                            *
+ *   This program is free software; you can redistribute it and/or modify     *
+ *   it under the terms of the GNU Lesser General Public License              *
+ *   version 2.1 as published by the Free Software Foundation;                *
  *                                                                            *
  *   See license in root directory for terms.                                 *
- *   http://www.binpress.com/license/view/l/0088eb4b29b2fcff36e42134b0949f93  *
+ *   https://github.com/mogillc/nico/tree/master/edisonLibmogiPackage/libmogi *
  *                                                                            *
  *****************************************************************************/
 
@@ -44,8 +45,11 @@ namespace Mogi {
 		public:
 
 			JsonValueInterface();
-			JsonValueInterface(const JsonValueInterface&);
 			~JsonValueInterface();
+
+			/// \cond
+			JsonValueInterface(const JsonValueInterface&);
+			/// \endcond
 
 			/*! \brief Parses the string containing a JSON string into the value framework.
 			 \param jsonString The JSON string, must be well formed, and begin and end with '{' and '}'
@@ -172,7 +176,7 @@ namespace Mogi {
 
 		/*!
 		 @class JsonSubject
-		 \brief Handles JSON parsing a nd observer notifications.
+		 \brief Handles JSON parsing and observer notifications.
 		 Notifications occur when the value, array, or object is changed from parsing.
 		 @since 2015-05-12
 		 */
@@ -188,6 +192,7 @@ namespace Mogi {
 				void eraseValueObserver(JsonValueObserver* valueObserver);
 				int valueObserverCount();
 				void update( JsonValueInterface& newValue); // notifies all value observers
+				void update( JsonValueInterface& newValue,std::string& resp); // notifies all value observers
 			};
 
 		private:
@@ -201,6 +206,12 @@ namespace Mogi {
 			 \param jsonObject The new value.
 			 */
 			void notifyObservers( JsonValueInterface& jsonObject);
+			/**
+			 \brief Notifies all observers of a value change and get response
+			 \param jsonObject The new value.
+			 \param resp Reference to the response string
+			 */
+			void notifyObservers( JsonValueInterface& jsonObject,std::string& resp);
 
 		public:
 			~JsonSubject();
@@ -222,6 +233,14 @@ namespace Mogi {
 			 */
 			bool parseJson(const std::string::iterator& begin,
 						   const std::string::iterator& end);
+
+			/**
+			 Notifies all key observers when the json string contains the key
+			 and get the return in resp
+			 */
+			bool parseJson(const std::string::iterator& begin,
+						   const std::string::iterator& end,
+						   std::string& resp);
 		};
 
 		/*!
@@ -240,6 +259,13 @@ namespace Mogi {
 			 \param newValue The new JSON value.
 			 */
 			virtual void update( JsonValueInterface& newValue) = 0;
+
+			/**
+			 \brief Called when a JSON value has been updated and get response
+			 \param newValue The new JSON value.
+			 \param resp Reference to the reponse string
+			 */
+			virtual void update( JsonValueInterface& newValue, std::string& resp) {};
 		};
 
 		/*!

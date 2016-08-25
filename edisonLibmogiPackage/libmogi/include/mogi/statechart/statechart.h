@@ -3,13 +3,14 @@
  *             Copyright (C) 2016 Mogi, LLC - All Rights Reserved             *
  *                            Author: Matt Bunting                            *
  *                                                                            *
- *   Proprietary and confidential.                                            *
+ *            This program is distributed under the LGPL, version 2           *
  *                                                                            *
- *   Unauthorized copying of this file via any medium is strictly prohibited  *
- *   without the explicit permission of Mogi, LLC.                            *
+ *   This program is free software; you can redistribute it and/or modify     *
+ *   it under the terms of the GNU Lesser General Public License              *
+ *   version 2.1 as published by the Free Software Foundation;                *
  *                                                                            *
  *   See license in root directory for terms.                                 *
- *   http://www.binpress.com/license/view/l/0088eb4b29b2fcff36e42134b0949f93  *
+ *   https://github.com/mogillc/nico/tree/master/edisonLibmogiPackage/libmogi *
  *                                                                            *
  *****************************************************************************/
 
@@ -402,6 +403,12 @@ public:
 	void setCallbackExit(actionCallback cb, void* parameter);
 
 	/*!
+	 \brief Returns the set of outgoing transitions.
+	 @return The outgoing transitions associated with this state.
+	 */
+	std::vector<Transition*> getOutgoingTransitions();
+
+	/*!
 	 \brief Creates a new Transition to another state.
 	 @param dst The State to transition to.
 	 @return The newly created Transition.
@@ -536,6 +543,12 @@ public:
 	 @param event The event that performs calls transition.
 	 */
 	void setEvent(Event* event);
+
+	/*!
+	 \brief Gets the guards that are used for this transition.
+	 @return The set of guards.
+	 */
+	std::vector<Guard*> getGuards();
 };
 
 /*!
@@ -563,6 +576,12 @@ public:
 	 @param parameter The object to be sent to the callback function.
 	 */
 	void setGuardCallback(guardCallback cb, void* parameter);
+
+	/*!
+	 \brief Gets the callback function to perform to check if the guard is met.
+	 @return The callback associated with this guard.
+	 */
+	CallbackGuard getGuardCallback();
 };
 
 }  // End StateChart namespace

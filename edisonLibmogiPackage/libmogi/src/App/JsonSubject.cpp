@@ -3,13 +3,14 @@
  *             Copyright (C) 2016 Mogi, LLC - All Rights Reserved             *
  *                            Author: Matt Bunting                            *
  *                                                                            *
- *   Proprietary and confidential.                                            *
+ *            This program is distributed under the LGPL, version 2           *
  *                                                                            *
- *   Unauthorized copying of this file via any medium is strictly prohibited  *
- *   without the explicit permission of Mogi, LLC.                            *
+ *   This program is free software; you can redistribute it and/or modify     *
+ *   it under the terms of the GNU Lesser General Public License              *
+ *   version 2.1 as published by the Free Software Foundation;                *
  *                                                                            *
  *   See license in root directory for terms.                                 *
- *   http://www.binpress.com/license/view/l/0088eb4b29b2fcff36e42134b0949f93  *
+ *   https://github.com/mogillc/nico/tree/master/edisonLibmogiPackage/libmogi *
  *                                                                            *
  *****************************************************************************/
 
@@ -79,6 +80,19 @@ extern "C" {
 		return parsingSuccessful;
 	}
 
+	bool JsonSubject::parseJson(const std::string::iterator& begin, const std::string::iterator& end,
+											std::string& resp) {
+		JsonValueInterface root; // will contains the root value after parsing.
+		
+		bool parsingSuccessful = !JsonValueInterface::parse(&*begin, &*end, root);
+
+		if (parsingSuccessful) {
+			notifyObservers(root,resp);
+		}
+
+		return parsingSuccessful;
+	}
+
 	void JsonSubject::notifyObservers( JsonValueInterface& jsonObject) {
 		for (std::vector<JsonKeyObserver*>::iterator it =
 			 keyObserversToRemove.begin(); it != keyObserversToRemove.end();
@@ -103,6 +117,29 @@ extern "C" {
 		}
 	}
 
+	void JsonSubject::notifyObservers( JsonValueInterface& jsonObject,std::string& resp) {
+		for (std::vector<JsonKeyObserver*>::iterator it =
+			 keyObserversToRemove.begin(); it != keyObserversToRemove.end();
+			 it++) {
+			for (std::map<std::string, JsonKeyObserver*>::iterator it2 =
+				 keyObservers.begin(); it2 != keyObservers.end(); it2++) {
+				if (*it == it2->second) {
+					keyObservers.erase(it2);
+					break;
+				}
+			}
+		}
+		keyObserversToRemove.clear();
+
+		std::vector<std::string> keys = jsonObject.getMemberNames();
+		for (std::vector<std::string>::iterator it = keys.begin(); it != keys.end();
+			 it++) {
+			JsonKeyObserver* keyObserver = keyObservers[*it];
+			if (keyObserver != NULL) {
+				keyObserver->update(jsonObject[*it],resp);
+			}
+		}
+	}
 	void JsonSubject::JsonKeyObserver::addValueObserver(
 														JsonValueObserver* valueObserver) {
 		valueObservers.push_back(valueObserver);
@@ -155,6 +192,37 @@ extern "C" {
 		for (std::vector<JsonValueObserver*>::iterator it = valueObservers.begin();
 			 it != valueObservers.end(); it++) {
 			(*it)->update(newValue);
+		}
+	}
+
+	void JsonSubject::JsonKeyObserver::update( JsonValueInterface& newValue,std::string& resp) {
+		//		if (valuesObserversToErase.size() > 0) {
+		//			std::cout << " - - number of value obxervers BEFORE pruning: "
+		//<< valueObservers.size() << std::endl;
+		//		}
+
+		for (std::vector<JsonValueObserver*>::iterator it =
+			 valuesObserversToErase.begin(); it != valuesObserversToErase.end();
+			 it++) {
+			//			std::cerr << "Actually erasing value obs now " <<
+			//std::endl;
+			for (std::vector<JsonValueObserver*>::iterator it2 =
+				 valueObservers.begin(); it2 != valueObservers.end(); it2++) {
+				if (*it == *it2) {
+					valueObservers.erase(it2);
+					break;
+				}
+			}
+		}
+		//		if (valuesObserversToErase.size() > 0) {
+		//			std::cout << " - - number of value obxervers AFTER pruning: " <<
+		//valueObservers.size() << std::endl;
+		//		}
+		valuesObserversToErase.clear();
+
+		for (std::vector<JsonValueObserver*>::iterator it = valueObservers.begin();
+			 it != valueObservers.end(); it++) {
+			(*it)->update(newValue,resp);
 		}
 	}
 

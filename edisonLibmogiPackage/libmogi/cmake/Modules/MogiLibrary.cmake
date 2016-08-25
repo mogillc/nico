@@ -1,3 +1,17 @@
+#                                               -*- cmake -*-
+#
+#  MogiLibrary.cmake
+#
+#  Copyright (C) 2016 Mogi LLC
+#
+#  This file is part of LibMogi.
+#
+#  LibMogi is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU Lesser General Public License
+#  version 2.1 as published by the Free Software Foundation;
+#
+
+# This provides a set of utilities for building libraries and tests.
 
 # Given a path, create a test:
 function( mogi_create_test TEST_SOURCE )
@@ -33,6 +47,29 @@ function( mogi_add_tests )
 	endif(TEST_SOURCES_LENGTH)
 endfunction()
 
+function( get_repo_version REVISION )
+	# Version information
+		set(_REVISION "0")
+		#set(${REVISION} "0")
+		execute_process(COMMAND svnversion ${CMAKE_CURRENT_SOURCE_DIR}
+		                OUTPUT_VARIABLE SVN_DESCRIBE_OUTPUT
+		                RESULT_VARIABLE SVN_DESCRIBE_RESULT
+		                OUTPUT_STRIP_TRAILING_WHITESPACE
+		                )
+		if(${SVN_DESCRIBE_RESULT} STREQUAL 0)
+			if(${SVN_DESCRIBE_OUTPUT} STREQUAL "Unversioned directory")
+			
+			else()
+				string(REGEX MATCH "([0-9]*)"
+       				_REVISION ${SVN_DESCRIBE_OUTPUT})
+				#set(_REVISION ${SVN_DESCRIBE_OUTPUT})
+				#message(STATUS "Detected svn version: _REVISION=${_REVISION}")
+			endif()
+		endif ()
+		
+		set(${REVISION} ${_REVISION} PARENT_SCOPE)
+endfunction()
+
 function( new_mogi_library LIBNAME )
 	# Everything below this comment is used to install the library in 
 	# the current directory.  LIBNAME is used to define the library name,
@@ -54,17 +91,19 @@ function( new_mogi_library LIBNAME )
 		                     ${CMAKE_CURRENT_SOURCE_DIR}
 			                     )
 		
-		# Version information
-		set(SNAPSHOT_VERSION "unknown")
-		execute_process(COMMAND svnversion ..
-		                OUTPUT_VARIABLE GIT_DESCRIBE_OUTPUT
-		                RESULT_VARIABLE GIT_DESCRIBE_RESULT
-		                OUTPUT_STRIP_TRAILING_WHITESPACE
-		                )
-		if(${GIT_DESCRIBE_RESULT} STREQUAL 0)
-			set(SVN_VERSION ${GIT_DESCRIBE_OUTPUT})
-			message(STATUS "Detected svn version: ${SVN_VERSION}")
-		endif ()
+		## Version information
+		#set(SNAPSHOT_VERSION "unknown")
+		#execute_process(COMMAND svnversion ..
+		#                OUTPUT_VARIABLE GIT_DESCRIBE_OUTPUT
+		#                RESULT_VARIABLE GIT_DESCRIBE_RESULT
+		#                OUTPUT_STRIP_TRAILING_WHITESPACE
+		#                )
+		#if(${GIT_DESCRIBE_RESULT} STREQUAL 0)
+		#	set(SVN_VERSION ${GIT_DESCRIBE_OUTPUT})
+		#	message(STATUS "Detected svn version: ${SVN_VERSION}")
+		#endif ()
+		#get_repo_version( SVN_VERSION )
+		#message(STATUS "Detected svn version: ${SVN_VERSION}")
 
 		if(BUILD_FOR_IOS)
 			set(PORT_HEADERS "\#include \"resourceInterface.h\"")
@@ -92,6 +131,7 @@ function( new_mogi_library LIBNAME )
 		#message( "${LIBNAME}_SOURCES=${${LIBNAME}_SOURCES}")
 	elseif( ANDROID )
 		set( ${LIBNAME}_SOURCES	${${LIBNAME}_SOURCES}  
+								${CMAKE_SOURCE_DIR}/port/android/src/AndroidEnvironment.cpp
 								${CMAKE_SOURCE_DIR}/port/android/src/resourceObject.cpp 
 								${CMAKE_SOURCE_DIR}/port/android/src/jsonWrapper.cpp
 								${CMAKE_SOURCE_DIR}/port/android/src/JavaStaticClass.cpp 

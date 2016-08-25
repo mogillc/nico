@@ -1,15 +1,16 @@
 /******************************************************************************
  *                                                                            *
  *             Copyright (C) 2016 Mogi, LLC - All Rights Reserved             *
- *                            Author: Adrian Lizarraga                        *
+ *                          Author: Adrian Lizarraga                          *
  *                                                                            *
- *   Proprietary and confidential.                                            *
+ *            This program is distributed under the LGPL, version 2           *
  *                                                                            *
- *   Unauthorized copying of this file via any medium is strictly prohibited  *
- *   without the explicit permission of Mogi, LLC.                            *
+ *   This program is free software; you can redistribute it and/or modify     *
+ *   it under the terms of the GNU Lesser General Public License              *
+ *   version 2.1 as published by the Free Software Foundation;                *
  *                                                                            *
  *   See license in root directory for terms.                                 *
- *   http://www.binpress.com/license/view/l/0088eb4b29b2fcff36e42134b0949f93  *
+ *   https://github.com/mogillc/nico/tree/master/edisonLibmogiPackage/libmogi *
  *                                                                            *
  *****************************************************************************/
 
@@ -85,17 +86,14 @@ namespace Mogi {
 			};
 
 			/**
-			 * Handle to the JNI environment
-			 */
-			JNIEnv* env;
-
-			/**
 			 * The Java class's name to which methods will be called.
 			 */
 			std::string className;
 
 			/**
-			 * Handle to the Java class
+			 * Handle to the Java class. This is a global reference to 
+			 * ensure accessibility in all threads. 
+			 * See: https://developer.android.com/training/articles/perf-jni.html 
 			 */
 			jclass clazz;
 
@@ -110,10 +108,15 @@ namespace Mogi {
 			/**
 			 * Creates a link to an existing Java class so that C++ code can call its (static) methods
 			 *
-			 * @param env the JNI environment
 			 * @param className the fully qualified name of an existing Java class (e.g., "mogi/hexapod/gl/GL2JNILib")
 			 */
-			JavaStaticClass(JNIEnv* env, const std::string& className);
+			JavaStaticClass(const std::string& className);
+
+			JavaStaticClass(jclass clazz);
+
+			JavaStaticClass(const std::string& className, jclass clazz);
+
+			~JavaStaticClass();
 
 
 			/**
@@ -135,6 +138,8 @@ namespace Mogi {
 			 * @param ... parameters passed to the Java method
 			 */
 			void callMethod(void* returnVal, const char* methodName, ...);
+
+			static std::string getJClassName(jclass clazz);
 
 		private:
 

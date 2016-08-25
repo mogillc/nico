@@ -3,13 +3,14 @@
  *             Copyright (C) 2016 Mogi, LLC - All Rights Reserved             *
  *                            Author: Matt Bunting                            *
  *                                                                            *
- *   Proprietary and confidential.                                            *
+ *            This program is distributed under the LGPL, version 2           *
  *                                                                            *
- *   Unauthorized copying of this file via any medium is strictly prohibited  *
- *   without the explicit permission of Mogi, LLC.                            *
+ *   This program is free software; you can redistribute it and/or modify     *
+ *   it under the terms of the GNU Lesser General Public License              *
+ *   version 2.1 as published by the Free Software Foundation;                *
  *                                                                            *
  *   See license in root directory for terms.                                 *
- *   http://www.binpress.com/license/view/l/0088eb4b29b2fcff36e42134b0949f93  *
+ *   https://github.com/mogillc/nico/tree/master/edisonLibmogiPackage/libmogi *
  *                                                                            *
  *****************************************************************************/
 
@@ -532,6 +533,16 @@ namespace Mogi {
 			 @param enabled True for enabled, false if disabled.
 			 */
 			void setBalanceGesturesEnabled( bool enabled );
+
+			/*! \brief Enables/Disabled the Inverse Kinematics before updating motor angles.
+			 @param enabled True for enabled, false if disabled.
+			 */
+			void setInverseKinematicsEnabled( bool enabled );
+
+			/*! \brief Enables/Disabled the Motor updates.
+			 @param enabled True for enabled, false if disabled.
+			 */
+			void setMotorUpdatesEnabled( bool enabled );
 
 			/*! \brief Gets the walking dynamics used for walking behavior.
 			 

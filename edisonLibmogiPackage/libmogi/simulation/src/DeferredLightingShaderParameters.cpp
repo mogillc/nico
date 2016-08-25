@@ -25,7 +25,8 @@ extern "C" {
 	using namespace Simulation;
 
 	const char* DeferredLightingShaderParameters::getVertexTemplate() const {
-		return "#HEADER\n"
+		return "// Generated: DeferredLightingShaderParameters::getVertexTemplate()\n"
+		"#HEADER\n"
 		"\n"
 		"layout(location=0) in vec3 position;\n"
 		"\n"
@@ -55,7 +56,8 @@ extern "C" {
 	}
 
 	const char* DeferredLightingShaderParameters::getFragmentTemplate() const {
-		return "#HEADER\n"
+		return "// Generated: DeferredLightingShaderParameters::getFragmentTemplate()\n"
+		"#HEADER\n"
 		"\n"
 		"uniform sampler2D uGBufferDiffuseTex;\n"
 		"uniform sampler2D uGBufferMaterialTex;\n"
@@ -102,7 +104,8 @@ extern "C" {
 
 	const void DeferredLightingShaderParameters::getMacros(std::map<std::string, std::string>& macros) const {
 
-#ifndef OPENGLES_FOUND
+//#ifndef OPENGLES_FOUND
+#ifndef GL_ES_VERSION_2_0 // also defined for 3.0
 		macros["#HEADER"] = "#version 410";
 #endif
 
@@ -111,11 +114,11 @@ extern "C" {
 
 	}
 
-	const bool DeferredLightingShaderParameters::lessThan(const ShaderParameters* right) const {
+	const bool DeferredLightingShaderParameters::lessThan(const ShaderParametersDynamic* right) const {
 		return false; // always equal?
 	}
 
-	ShaderParameters* DeferredLightingShaderParameters::copy() const {
+	ShaderParametersDynamic* DeferredLightingShaderParameters::copy() const {
 		DeferredLightingShaderParameters* result = new DeferredLightingShaderParameters;
 		*result = *this;
 		return result;

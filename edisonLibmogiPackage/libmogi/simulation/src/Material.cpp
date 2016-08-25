@@ -12,7 +12,7 @@
  *   http://www.binpress.com/license/view/l/0088eb4b29b2fcff36e42134b0949f93  *
  *                                                                            *
  *****************************************************************************/
-
+#include "mogiGL.h"
 #include "material.h"
 #include <iostream>
 #include "mogi/math/mmath.h"
@@ -121,34 +121,48 @@ void MBmaterial::sendToShader(MBshader *shader) {
 //	for (int i = 0; i < textures.size(); i++) {
 //		textures[i]->sendTextureToShader(shader);
 //	}
+	checkGLError();
 
 	if (normalMap) {
 		normalMap->sendTextureToShader(shader);
-		shader->sendInteger("normalMapEnable", true );
+//		shader->sendInteger("normalMapEnable", true );
+		shader->setInt("normalMapEnable", true);
 	} else {
-		shader->sendInteger("normalMapEnable", false );
+//		shader->sendInteger("normalMapEnable", false );
+		shader->setInt("normalMapEnable", false);
 	}
 	if (specularMap) {
 		specularMap->sendTextureToShader(shader);
-		shader->sendInteger("specularityMapEnable", true );
+//		shader->sendInteger("specularityMapEnable", true );
+		shader->setInt("specularityMapEnable", true);
 	} else {
-		shader->sendInteger("specularityMapEnable", false );
+//		shader->sendInteger("specularityMapEnable", false );
+		shader->setInt("specularityMapEnable", false);
 	}
 	if (heightMap) {
 		heightMap->sendTextureToShader(shader);
-		shader->sendInteger("heightMapEnable", true );
+//		shader->sendInteger("heightMapEnable", true );
+		shader->setInt("heightMapEnable", true);
 	} else {
-		shader->sendInteger("heightMapEnable", false );
+//		shader->sendInteger("heightMapEnable", false );
+		shader->setInt("heightMapEnable", false);
 	}
 
 	if (colorMap) {
 		colorMap->sendTextureToShader(shader);
 		colorSource = ShadowShaderParameters::COLOR_SOURCE_MAP;
 	}
-	shader->sendInteger("colorSource", colorSource);
+	checkGLError();
+
+//	shader->sendInteger("colorSource", colorSource);
+	shader->setInt("colorSource", colorSource);
+
+	checkGLError();
+
 	if(colorSource == ShadowShaderParameters::COLOR_SOURCE_MATERIAL) {
 //		shader->sendInteger("colorSource",  ShadowShaderParameters::COLOR_SOURCE_MATERIAL);
-		shader->sendMatrix("mColorDiffuse", colorDiffuse);
+//		shader->sendMatrix("mColorDiffuse", colorDiffuse);
+		shader->setMatrix("mColorDiffuse", colorDiffuse);
 	} else if (colorSource == ShadowShaderParameters::COLOR_SOURCE_VERTEX_DATA) {
 //		shader->sendInteger("colorSource",  ShadowShaderParameters::COLOR_SOURCE_VERTEX_DATA);
 	}
@@ -156,14 +170,26 @@ void MBmaterial::sendToShader(MBshader *shader) {
 //	shader->sendInteger("normalMapEnable", normalMapEnable );
 //	shader->sendInteger("specularityMapEnable", specularityMapEnable );
 
+	checkGLError();
+
 	Mogi::Math::Vector specular(2);
 	specular(0) = specularExponent;
 	specular(1) = specularStrength;
-	shader->sendMatrix("uSpecular", specular);
+//	shader->sendMatrix("uSpecular", specular);
+	//	shader->sendFloats("uSpecular", specular.dataAsFloat(), specular.size());//("uSpecular", specular);
+//	shader->sendFloat("specularProperties[0]", specular(0));
+//	shader->sendFloat("specularProperties[1]", specular(1));
+	shader->setFloat("specularProperties", specular(0), 0);
+	shader->setFloat("specularProperties", specular(1), 1);
+
+	checkGLError();
 //	std::cout << "Sending uSpecularExponent = " << specularExponent << std::endl;
 //	shader->sendFloat("uSpecularExponent", specularExponent );/// 1000);
 //	shader->sendFloat("uSpecularLevel", specularStrength);
-	shader->sendFloat("uMetallicLevel", metallicLevel);
+//	shader->sendFloat("uMetallicLevel", metallicLevel);
+	shader->setFloat("uMetallicLevel", metallicLevel);
+
+	checkGLError();
 }
 
 	void MBmaterial::setTexture(Mogi::Simulation::Texture *texture, Mogi::Simulation::MBmaterial::TextureType type) {

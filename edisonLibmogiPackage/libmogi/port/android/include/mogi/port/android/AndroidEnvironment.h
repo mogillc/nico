@@ -1,15 +1,16 @@
 /******************************************************************************
  *                                                                            *
  *             Copyright (C) 2016 Mogi, LLC - All Rights Reserved             *
- *                            Author: Adrian Lizarraga                        *
+ *                          Author: Adrian Lizarraga                          *
  *                                                                            *
- *   Proprietary and confidential.                                            *
+ *            This program is distributed under the LGPL, version 2           *
  *                                                                            *
- *   Unauthorized copying of this file via any medium is strictly prohibited  *
- *   without the explicit permission of Mogi, LLC.                            *
+ *   This program is free software; you can redistribute it and/or modify     *
+ *   it under the terms of the GNU Lesser General Public License              *
+ *   version 2.1 as published by the Free Software Foundation;                *
  *                                                                            *
  *   See license in root directory for terms.                                 *
- *   http://www.binpress.com/license/view/l/0088eb4b29b2fcff36e42134b0949f93  *
+ *   https://github.com/mogillc/nico/tree/master/edisonLibmogiPackage/libmogi *
  *                                                                            *
  *****************************************************************************/
 
@@ -21,12 +22,13 @@
 #define HEXAPOD_ANDROID_ENVIRONMENT_H
 
 #include <jni.h>
+#include <pthread.h>
 #include <map>
 #include <string>
 #include <mogi/port/android/JavaStaticClass.h>
 
 namespace Mogi {
-	namespace Android {
+	namespace Android {	
 
 		/**
 		 * Environment singleton (Scott Meyers' singleton) that holds a reference to the Android JNI environment and other environment variables.
@@ -34,16 +36,50 @@ namespace Mogi {
 		class Environment {
 		private:
 			/**
-			 * Handle to the JNI environment
+			 * Handle to the Java VM
 			 */
-			JNIEnv* env;
+			JavaVM *vm;
 
 			/**
 			 * Path to resources in Android device
 			 */
 			std::string resourceDirectory;
 
+			static pthread_key_t key_value;
+			static pthread_once_t key_init_once;
+
 			std::map<std::string, JavaStaticClass*> javaAPIs;
+
+			class ThreadJNIEnv {
+			public:
+				bool _detach;
+				JNIEnv *env;
+
+				ThreadJNIEnv() {
+					JavaVM* vm = Environment::getInstance().getJavaVM();
+
+					int status = vm->GetEnv((void**)&env, JNI_VERSION_1_6);
+					if (status < 0) {
+						vm->AttachCurrentThread(&env, NULL);
+						_detach = true;
+					}
+					else {
+						_detach = false;
+					}
+				}
+			 
+				ThreadJNIEnv(JNIEnv *e) {
+					env = e;
+					_detach = false;
+				}
+			 
+				~ThreadJNIEnv() {
+					if (_detach) {
+						JavaVM* vm = Environment::getInstance().getJavaVM();
+						vm->DetachCurrentThread();
+					}
+				}
+			};	
 
 		public:
 
@@ -58,20 +94,24 @@ namespace Mogi {
 			}	
 
 			/**
-			 * Sets the JNI environment handle used by this singleton
+			 * Sets the Java VM handle used by this singleton
 			 *
-			 * @param env the handle to the JNI environment
-			 */			
-			void setJNIEnvironment(JNIEnv* env) {
-				this->env = env;
+			 * @param vm the handle to the Java VM
+			 */	
+			void setJavaVM(JavaVM* vm) {
+				this->vm = vm;
+
+				cleanup();
+			}
+
+			JavaVM* getJavaVM() const {
+				return this->vm;
 			}
 
 			/**
 			 * Returns the JNI environment handle used by this singleton
-			 */		
-			JNIEnv* getJNIEnvironment() const {
-				return this->env;
-			}
+			 */	
+			JNIEnv* getJNIEnvironment() const;	
 
 			void setResourceDirectory(std::string path) {
 				this->resourceDirectory = path;
@@ -102,11 +142,15 @@ namespace Mogi {
 
 		private:
 			// Private constructors and assignment operator
-			Environment() {
+			Environment(): vm(0) {
 			
 			}
 
 			~Environment() {
+				cleanup();
+			}
+
+			void cleanup() {
 				// delete any API pointers
 				std::map<std::string, JavaStaticClass*>::iterator it;
 				for (it = this->javaAPIs.begin(); it != this->javaAPIs.end(); it++) {
@@ -116,7 +160,12 @@ namespace Mogi {
 						delete api;
 					}
 				}
+
+				javaAPIs.clear();
 			}
+
+			static void initKey();
+			static void destroyThreadJNIEnv(void* obj);
 
 			Environment(const Environment&);
 			Environment& operator=(const Environment&);

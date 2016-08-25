@@ -14,6 +14,7 @@ add_subdirectory( simple_footControl )
 
 add_subdirectory( appInterfaceDemo )
 add_subdirectory( dynamixel_examples )
+add_subdirectory( androidAppInterface )
 
 find_package(LibMBsimulation)
 if(LIBMBSIMULATION_FOUND)

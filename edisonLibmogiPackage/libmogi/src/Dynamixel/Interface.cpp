@@ -3,14 +3,16 @@
  *             Copyright (C) 2016 Mogi, LLC - All Rights Reserved             *
  *                            Author: Matt Bunting                            *
  *                                                                            *
- *   Proprietary and confidential.                                            *
+ *            This program is distributed under the LGPL, version 2           *
  *                                                                            *
- *   Unauthorized copying of this file via any medium is strictly prohibited  *
- *   without the explicit permission of Mogi, LLC.                            *
+ *   This program is free software; you can redistribute it and/or modify     *
+ *   it under the terms of the GNU Lesser General Public License              *
+ *   version 2.1 as published by the Free Software Foundation;                *
  *                                                                            *
  *   See license in root directory for terms.                                 *
- *   http://www.binpress.com/license/view/l/0088eb4b29b2fcff36e42134b0949f93  *
+ *   https://github.com/mogillc/nico/tree/master/edisonLibmogiPackage/libmogi *
  *                                                                            *
+ *****************************************************************************/
  *****************************************************************************/
 
 #include "dynamixel.h"
@@ -294,8 +296,7 @@ Interface::Status Interface::syncWrite(
 		return NOERROR;
 	}
 
-	std::vector<unsigned char> buffer = packetHandler.syncWrite(dynamixels,
-			range);
+	std::vector<unsigned char> buffer = packetHandler.syncWrite(dynamixels, range);
 
 	if (buffer.size() == 0) {
 		return NOERROR;
@@ -306,8 +307,7 @@ Interface::Status Interface::syncWrite(
 		return BAD_LENGTH;
 	}
 
-	for (std::map<unsigned char, Motor*>::iterator it = dynamixels->begin();
-			it != dynamixels->end(); it++) {
+	for (std::map<unsigned char, Motor*>::iterator it = dynamixels->begin(); it != dynamixels->end(); it++) {
 		Motor* dynamixel = it->second;
 
 		for (int i = range.reg; i < range.reg + range.length; i++) {
@@ -541,12 +541,44 @@ Interface::Status Interface::processInstruction(Instruction& instruction) {
 	case Instruction::SYNC_WRITE:
 		// HACK: This uses the first motor to get the register.  Not a great
 		// method.
+		{
+			// Let's group together sets of lists with similar registers:
+			std::map<int,std::map<unsigned char,Motor*> > syncWriteDynamixelLists;
+			for (std::map<unsigned char,Motor*>::iterator it = instruction.dynamixelList->begin(); it != instruction.dynamixelList->end(); it++) {
+				int reg = it->second->getMappedRegister(instruction.range.reg);
+				(syncWriteDynamixelLists[reg])[it->first] = it->second;
+			}
+
+			// Send the sync write command to the the first batch of motors:
+			status = this->syncWrite(&(syncWriteDynamixelLists.begin()->second),
+									 DataRange(syncWriteDynamixelLists.begin()->second.begin()->second->getMappedRegister(instruction.range.reg),
+											   instruction.range.length));
+
+			// For the remaining set of dynamixel lists, create new commands:
+			std::map<int,std::map<unsigned char,Motor*> >::iterator it = syncWriteDynamixelLists.begin();
+			for ( it++; it != syncWriteDynamixelLists.end(); it++) {
+//				std::cout << "Sending an additional command!" << std::endl;
+				std::map<unsigned char,Motor*> *currentList = &(it->second);
+				Instruction newInstruction(Instruction::SYNC_WRITE,
+										   DataRange(instruction.range.reg, instruction.range.length),
+										   NULL,
+										   currentList
+										   );
+				processInstruction(newInstruction);
+//
+//				status = this->syncWrite(currentList,
+//										 DataRange(currentList->begin()->second->getMappedRegister(instruction.range.reg),
+//												   instruction.range.length));
+
+			}
+
 		status =
 				this->syncWrite(instruction.dynamixelList,
 						DataRange(
 								instruction.dynamixelList->begin()->second->getMappedRegister(
 										instruction.range.reg),
 								instruction.range.length));
+		}
 		break;
 
 	case Instruction::BULK_READ:

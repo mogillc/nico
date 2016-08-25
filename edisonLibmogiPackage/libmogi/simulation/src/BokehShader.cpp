@@ -12,7 +12,7 @@
  *   http://www.binpress.com/license/view/l/0088eb4b29b2fcff36e42134b0949f93  *
  *                                                                            *
  *****************************************************************************/
-
+#include "shader.h"
 #include "dynamicShader.h"
 
 #include <string>
@@ -34,41 +34,58 @@ extern "C" {
 //		actualShader->setName(shaderName.str());
 //		std::cout << "Generated shader: " << actualShader->getName();
 		this->setName(shaderName.str());
+
 	}
 
 	BokehShader::~BokehShader() {
 	}
 
-	BokehShaderParameters* BokehShader::getParameters() {
-		if (parameters == NULL) {
-			parameters = new BokehShaderParameters;
-		}
-		return (BokehShaderParameters*)parameters;
+	BokehShaderParameters* BokehShader::getParametersBokeh() {
+//		if (params == NULL) {
+//			params = new BokehShaderParameters;
+//		}
+//		return (BokehShaderParameters*)params;
+		return (BokehShaderParameters*)getParameters();
 	}
 
 
 	int BokehShader::sendInteger(std::string name, int value) {
 		BokehShaderParameters test;
 		if (name.compare("autofocus") == 0) {
-			getParameters()->autoFocusEnable = value;
+			getParametersBokeh()->autoFocusEnable = value;
+			reuseProgram();
 			return 0;
 		} else if(name.compare("showFocus") == 0) {
-			getParameters()->debugEnable = value;
+			getParametersBokeh()->debugEnable = value;
+			reuseProgram();
 			return 0;
 		} else if(name.compare("vignettingEnable") == 0) {
-			getParameters()->vignettingEnable = value;
+			getParametersBokeh()->vignettingEnable = value;
+			reuseProgram();
 			return 0;
 		} else if(name.compare("rings") == 0) {
-			getParameters()->rings = value;
+			getParametersBokeh()->rings = value;
+			reuseProgram();
 			return 0;
 		} else if(name.compare("samples") == 0) {
-			getParameters()->samples = value;
+			getParametersBokeh()->samples = value;
+			reuseProgram();
 			return 0;
 		}
 
-		return MBshader::sendInteger(name, value);
+//		getParameters()->
+		setInt(name, value);
+		return 0;//MBshader::sendInteger(name, value);
 	}
 
+	ShaderParameters* BokehShader::allocateParameters() {
+		std::cout << "In BokehShader::allocateParameters()" << std::endl;
+		if(params == NULL) {
+			params = new BokehShaderParameters;
+			params->setParent(this);
+		}
+		return params;
+	}
 	
 
 #ifdef _cplusplus

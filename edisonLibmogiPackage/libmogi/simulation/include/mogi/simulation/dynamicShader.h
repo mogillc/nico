@@ -18,7 +18,7 @@
 
 #include <map>
 
-#include <mogi/simulation/shader.h>
+#include "mogi/simulation/shader.h"
 
 
 
@@ -26,22 +26,29 @@
 namespace Mogi {
 	namespace Simulation {
 
-		class ShaderParameters {
+		class ShaderParametersDynamic : public ShaderParameters {
 		public:
-			virtual ~ShaderParameters() {};
+			virtual ~ShaderParametersDynamic() {};
 			virtual const char* getVertexTemplate() const = 0;
 			virtual const char* getFragmentTemplate() const = 0;
 			virtual const void getMacros(std::map<std::string, std::string>& macros) const = 0;
-			virtual const bool lessThan(const ShaderParameters* right) const = 0;
-			virtual ShaderParameters* copy() const = 0;
-			
+			virtual const bool lessThan(const ShaderParametersDynamic* right) const = 0;
+			virtual ShaderParametersDynamic* copy() const = 0;
+//			virtual void setUniform(const std::string& name, void* value, int index = 0) = 0;
+
 		};
 
-		class ShadowShaderParameters : public ShaderParameters {
+		class ShadowShaderParameters : public ShaderParametersDynamic {
 		private:
 			int pcfKernelSize;
+
+			void configureParameters(StaticShader* shader);
+
 		public:
 			ShadowShaderParameters();
+			~ShadowShaderParameters();
+
+			void allocateBasedOnLightCount();
 
 			enum ColorSource {
 				COLOR_SOURCE_VERTEX_DATA,
@@ -49,6 +56,7 @@ namespace Mogi {
 				COLOR_SOURCE_MATERIAL
 			};
 
+			// Dynamic parameters, modifies shader source:
 			ColorSource mColorSource;
 //			bool colorMapEnable;
 			bool specularMapEnable;
@@ -62,17 +70,39 @@ namespace Mogi {
 			GLint numberOfShadowMaps;
 			bool useShadows;
 
+			// Uniforms that cahnge almost every render:
+			Math::Matrix modelViewProjectionMatrix;
+			Math::Matrix mColorDiffuse;
+			GLfloat specularProperties[2];
+			Math::Matrix normalMatrix;
+			Math::Matrix modelMatrix;
+			Math::Matrix viewPosition;
+			Math::Matrix viewMatrix;
+			Math::Matrix* lightPos;
+			Math::Matrix* lightColor;
+			Math::Matrix* kAtt;
+			Math::Matrix* lightModelViewProjectionMatrix;
+			GLint colorMap;
+			GLint normalMap;
+			GLint heightMap;
+			GLint specularityMap;
+
+
 			const char* getVertexTemplate() const;
 			const char* getFragmentTemplate() const;
 			const void getMacros(std::map<std::string, std::string>& macros) const;
-			const bool lessThan(const ShaderParameters* right) const;
-			ShaderParameters* copy() const;
+			const bool lessThan(const ShaderParametersDynamic* right) const;
+			ShaderParametersDynamic* copy() const;
+//			void setUniform(const std::string& name, void* value, int index = 0);
 
 			std::string unrollLightLoop( int numberOfLights, bool shadowEnable, const std::string& specularCode ) const;
 			std::string unrollShadowMapPCF( int lightIndex, bool shadowEnable ) const;
+
+			// Calling this will reallocated the correct number of lightpos, lightColor, kAtt, and lightModelVieProjectionMAtrix arrays:
+			void setNumberOfLights( GLint lightCount );
 		};
 
-		class BokehShaderParameters : public ShaderParameters {
+		class BokehShaderParameters : public ShaderParametersDynamic {
 		public:
 			BokehShaderParameters();
 
@@ -85,64 +115,70 @@ namespace Mogi {
 			const char* getVertexTemplate() const;
 			const char* getFragmentTemplate() const;
 			const void getMacros(std::map<std::string, std::string>& macros) const;
-			const bool lessThan(const ShaderParameters* right) const;
-			ShaderParameters* copy() const;
+			const bool lessThan(const ShaderParametersDynamic* right) const;
+			ShaderParametersDynamic* copy() const;
+//			void setUniform(const std::string& name, void* value, int index = 0);
 
 			std::string unrollSamplingLoop() const;
 		};
 
-		class FinalProcessShaderParameters : public ShaderParameters {
+		class FinalProcessShaderParameters : public ShaderParametersDynamic {
 		public:
 			const char* getVertexTemplate() const;
 			const char* getFragmentTemplate() const;
 			const void getMacros(std::map<std::string, std::string>& macros) const;
-			const bool lessThan(const ShaderParameters* right) const;
-			ShaderParameters* copy() const;
+			const bool lessThan(const ShaderParametersDynamic* right) const;
+			ShaderParametersDynamic* copy() const;
+//			void setUniform(const std::string& name, void* value, int index = 0);
 		};
 
-		class ShadowMapShaderParameters : public ShaderParameters {
+		class ShadowMapShaderParameters : public ShaderParametersDynamic {
 		public:
 			const char* getVertexTemplate() const;
 			const char* getFragmentTemplate() const;
 			const void getMacros(std::map<std::string, std::string>& macros) const;
-			const bool lessThan(const ShaderParameters* right) const;
-			ShaderParameters* copy() const;
+			const bool lessThan(const ShaderParametersDynamic* right) const;
+			ShaderParametersDynamic* copy() const;
+//			void setUniform(const std::string& name, void* value, int index = 0);
 		};
 
-		class GeometryShaderParameters : public ShaderParameters {
+		class GeometryShaderParameters : public ShaderParametersDynamic {
 		public:
 			const char* getVertexTemplate() const;
 			const char* getFragmentTemplate() const;
 			const void getMacros(std::map<std::string, std::string>& macros) const;
-			const bool lessThan(const ShaderParameters* right) const;
-			ShaderParameters* copy() const;
+			const bool lessThan(const ShaderParametersDynamic* right) const;
+			ShaderParametersDynamic* copy() const;
+//			void setUniform(const std::string& name, void* value, int index = 0);
 		};
 
-		class DeferredLightingShaderParameters : public ShaderParameters {
+		class DeferredLightingShaderParameters : public ShaderParametersDynamic {
 		public:
 			const char* getVertexTemplate() const;
 			const char* getFragmentTemplate() const;
 			const void getMacros(std::map<std::string, std::string>& macros) const;
-			const bool lessThan(const ShaderParameters* right) const;
-			ShaderParameters* copy() const;
+			const bool lessThan(const ShaderParametersDynamic* right) const;
+			ShaderParametersDynamic* copy() const;
+//			void setUniform(const std::string& name, void* value, int index = 0);
 		};
 
 		struct ShaderParametersCompare {
-			bool operator()(const ShaderParameters* left, const ShaderParameters* right) const;
+			bool operator()(const ShaderParametersDynamic* left, const ShaderParametersDynamic* right) const;
 		};
 
 		// Multiton factory
 		class ShaderFactory  {
 		protected:
-			static std::map< ShaderParameters*, MBshader*, ShaderParametersCompare> instances;
+			static std::map<ShaderParametersDynamic*, StaticShader*, ShaderParametersCompare> instances;
 			static int instanceCount;
 
 			static void getGlobalMacros(std::map<std::string, std::string>& macros);
-			static MBshader* create(const ShaderParameters* parameters);
+			static StaticShader* create(const ShaderParametersDynamic* parameters);
 
 		public:
-			static MBshader* getInstance( ShaderParameters* parameters);
-			static void destroyInstance( ShaderParameters* parameters);
+			static StaticShader* getInstance( ShaderParametersDynamic* parameters);
+			static void destroyInstance( ShaderParametersDynamic* parameters);
+			static bool instanceExists( ShaderParametersDynamic* parameters);
 		};
 
 
@@ -150,30 +186,46 @@ namespace Mogi {
 		// A class where based on the parameters, a singleton shader is returned.
 		class DynamicShader : public MBshader {
 		protected:
-			ShaderParameters* parameters;
+//			ShaderParametersDynamic* parameters;
+			void reuseProgram();
+			virtual void setUniform(const std::string& name, void* value, int index = 0);
 
 		public:
 			virtual ~DynamicShader() = 0;
 			DynamicShader();
+
+			void updateUniforms();
+
+			ShaderParametersDynamic* getParametersDynamic();
 
 			GLuint program();
 
 			// This is an interface class, this returns the true shader:
 			MBshader* getActualShader();
 
+			StaticShader* getActiveShader();
+
+			GLint getAttributeLocation(std::string name);
+//			GLint getUniformLocation(std::string name);
+//			TextureUniform* getTextureUniform(std::string name);
+
 		};
 
 		class ShadowShader : public DynamicShader {
 		public:
-			ShadowShaderParameters* getParameters();
+			ShadowShaderParameters* getParametersMaterial();
 			ShadowShader();
 			~ShadowShader();
 
+			void setUniform(const std::string& name, void* value, int index = 0);
+
 			// Overloaded from MBshader:
-			int sendInteger(std::string name, int value);
+//			int sendInteger(std::string name, int value);
 			//			int sendFloat(std::string name, float value);
 			//			int sendMatrix(std::string name, Math::Matrix &matrix);
 			//			int sendTexture(std::string name, GLuint texture);
+
+			ShaderParameters* allocateParameters();
 		};
 
 		class BokehShader : public DynamicShader {
@@ -181,13 +233,15 @@ namespace Mogi {
 			BokehShader();
 			~BokehShader();
 
-			BokehShaderParameters* getParameters();
+			BokehShaderParameters* getParametersBokeh();
 
 			// Overloaded from MBshader:
 			int sendInteger(std::string name, int value);
 			//			int sendFloat(std::string name, float value);
 			//			int sendMatrix(std::string name, Math::Matrix &matrix);
 			//			int sendTexture(std::string name, GLuint texture);
+
+			ShaderParameters* allocateParameters();
 		};
 		
 	}
