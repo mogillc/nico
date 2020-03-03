@@ -13,7 +13,6 @@
  *   https://github.com/mogillc/nico/tree/master/edisonLibmogiPackage/libmogi *
  *                                                                            *
  *****************************************************************************/
- *****************************************************************************/
 
 #include "dynamixel.h"
 #include <unistd.h>
