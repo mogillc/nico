@@ -115,6 +115,7 @@ else()
 	find_package (Threads REQUIRED)
 	if(THREADS_FOUND)
 		add_definitions(-DTHREADS_FOUND)
+		set( DEPENDENCIES ${DEPENDENCIES} pthread )
 	endif()
 endif()
 
