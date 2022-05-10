@@ -1,4 +1,5 @@
-cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
+cmake_minimum_required(VERSION 2.12 FATAL_ERROR)
+cmake_policy(SET CMP0048 NEW)
 
 if(APPLE)
 	set(CMAKE_MACOSX_RPATH 1)
